@@ -12,9 +12,14 @@ class DesignViewSet(ModelViewSet):
     """
     Client uploads designs, designer updates status.
     """
+    queryset = Design.objects.all()
     serializer_class = DesignSerializer
 
     def get_queryset(self):
+        """
+        Designer sees only assigned designs.
+        Admin sees all designs.
+        """        
         user = self.request.user
         if user.role == "designer":
             return Design.objects.filter(order__designrequest__designer=user)

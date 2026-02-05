@@ -5,9 +5,14 @@ from .serializers import NotificationSerializer
 # Create your views here.
 class NotificationViewSet(ModelViewSet):
     """
-    User notifications.
+    Notifications for clients, designers, and admins.
     """
+    queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        """
+        Users see only their notifications.
+        """        
+        user = self.request.user
+        return Notification.objects.filter(user=user)

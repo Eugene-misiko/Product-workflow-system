@@ -9,14 +9,24 @@ class OrderViewSet(ModelViewSet):
     """
     Order management with status control.
     """
+    queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [CanAccessOrder]
 
     def get_queryset(self):
+        """
+        Admin sees all orders.
+        Client sees only their own orders.
+        """        
         user = self.request.user
-        return Order.objects.all() if user.role == "admin" else Order.objects.filter(client=user)
+        if user.role == "admin":
+            return Order.objects.all()
+        return Order.objects.filter(client=user)
 
     def perform_create(self, serializer):
+        """
+        Assign authenticated user as the client.
+        """
         serializer.save(client=self.request.user)
 
     @action(detail=True, methods=["put"])

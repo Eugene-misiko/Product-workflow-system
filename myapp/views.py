@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
-from users.permissions import IsAdmin
+from accounts.permissions import IsAdmin
 
 class CategoryViewSet(ModelViewSet):
     """Admin manages categories"""
