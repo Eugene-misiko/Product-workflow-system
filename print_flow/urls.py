@@ -28,4 +28,5 @@ urlpatterns = [
     path('api/', include('designs.urls')),
     path('api/',include('documents.urls')),
     path('api/',include('deliveries.urls')),
+    path('api/',include('notifications.urls')),
 ]

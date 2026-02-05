@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'payments',
     'documents',
     'deliveries',
+    'notifications',
 ]
 
 MIDDLEWARE = [
