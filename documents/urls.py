@@ -2,6 +2,6 @@ from rest_framework.routers import DefaultRouter
 from .views import LegalDocumentViewSet
 
 router = DefaultRouter()
-router.register("documents", LegalDocumentViewSet)
+router.register(r"documents", LegalDocumentViewSet)
 
-urlpatterns = router.urls
+urlpatterns = [router.urls]
