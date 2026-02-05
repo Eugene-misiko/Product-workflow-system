@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 from django.db import models
 from orders.models import Order
-from users.models import User
+from accounts.models import User
 
 class Design(models.Model):
     """Uploaded design file"""
