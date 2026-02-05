@@ -6,7 +6,6 @@ from .serializers import RegisterSerializer
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
-
     def perform_create(self, serializer):
         client_role = Role.objects.get(name=Role.CLIENT)
         serializer.save(role=client_role)
