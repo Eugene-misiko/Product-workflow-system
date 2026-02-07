@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import RegisterView, LogoutView, UserProfileView, UserListView, AssignRoleView
+from .views import RegisterView, LogoutView, UserProfileView, UserListView, AssignRoleView,user_list_template, user_profile_template
 
 urlpatterns = [
     # Registration
@@ -24,5 +24,9 @@ urlpatterns = [
     # Admin
     path("users/", UserListView.as_view(), name='users'),
     path("users/<int:user_id>/role/", AssignRoleView.as_view(), name='users_id'),
+     
+     #path for users
+    path("view/users/", user_list_template, name="user_list_template"),
+    path("view/profile/", user_profile_template, name="user_profile_template")
 ]
 

@@ -3,11 +3,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.shortcuts import render  
 from .models import User
 from .serializers import RegisterSerializer, UserProfileSerializer
 from .permissions import IsAdmin
 
-# create your view here
+#create your views here
+
 class RegisterView(generics.CreateAPIView):
     """
     Client registration endpoint for creating new users.
@@ -59,5 +61,25 @@ class AssignRoleView(APIView):
         user.save()
 
         return Response({"message": "Role updated successfully"})
+
+def user_list_template(request):
+    """
+    Admin-only: Render all users in an HTML table.
+    """
+    if not request.user.is_authenticated or request.user.role != "admin":
+        return render(request, "forbidden.html", status=403)
+
+    users = User.objects.all()
+    return render(request, "user_list.html", {"users": users})
+
+def user_profile_template(request):
+    """
+    Render the logged-in user's profile.
+    """
+    if not request.user.is_authenticated:
+        return render(request, "forbidden.html", status=403)
+
+    return render(request, "user_profile.html", {"user": request.user})
+
 
 
