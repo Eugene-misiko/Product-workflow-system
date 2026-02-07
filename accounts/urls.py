@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import RegisterView, LogoutView, UserProfileView, UserListView, AssignRoleView,user_list_template, user_profile_template
+from .views import RegisterView, LogoutView, UserProfileView, UserListView, AssignRoleView,user_list_template, user_profile_template,post_login_redirect
 
 urlpatterns = [
     # Registration
@@ -27,6 +27,9 @@ urlpatterns = [
      #path for users(templates)
     path("view/users/", user_list_template, name="user_list_template"),
     path("view/profile/", user_profile_template, name="user_profile_template"),
+
+    # redict according to the roles
+    path("redirect/", post_login_redirect, name="post_login_redirect"),
     
 ]
 

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.shortcuts import render  
+from django.shortcuts import render, redirect  
 from .models import User
 from .serializers import RegisterSerializer, UserProfileSerializer
 from .permissions import IsAdmin
@@ -80,6 +80,19 @@ def user_profile_template(request):
         return render(request, "forbidden.html", status=403)
 
     return render(request, "user_profile.html", {"user": request.user})
+
+def post_login_redirect(request):
+    """
+    Redirect users after login based on role.
+    """
+    user = request.user
+
+    if user.role == "admin":
+        return redirect("/api/view/admin/summary/")
+    elif user.role == "designer":
+        return redirect("/api/view/designs/")
+    else:
+        return redirect("/api/view/orders/")
 
 
 
