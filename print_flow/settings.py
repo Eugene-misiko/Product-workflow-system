@@ -110,7 +110,15 @@ DATABASES = {
         'PORT': config('PORT'),
     }
 }
+# configuring email backend
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# configuring email host
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -154,9 +162,9 @@ AUTH_USER_MODEL = "accounts.User"
 
 
  # configuring login redirect
-LOGIN_REDIRECT_URL = '/'
-LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/auth/view/profile'
+LOGIN_URL = '/auth/login'
 #configuring logout redirect
 LOGOUT_URL = 'login'
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = "/auth/login/"
 
