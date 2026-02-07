@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deliveries</title>
+</head>
+<body>
+    <h1>All Deliveries</h1>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>ID</th>
+            <th>Order ID</th>
+            <th>Delivered At</th>
+        </tr>
+        {% for delivery in deliveries %}
+        <tr>
+            <td>{{ delivery.id }}</td>
+            <td>{{ delivery.order.id }}</td>
+            <td>{{ delivery.delivered_at }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No deliveries found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
