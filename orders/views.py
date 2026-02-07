@@ -51,7 +51,7 @@ def order_list_template(request):
     Admin sees all orders, client sees their own orders.
     """
     if not request.user.is_authenticated:
-        return render(request, "orders/forbidden.html", status=403)
+        return render(request, "forbidden.html", status=403)
 
     user = request.user
     if user.role == "admin":
@@ -59,22 +59,22 @@ def order_list_template(request):
     else:
         orders = Order.objects.filter(client=user)
 
-    return render(request, "orders/order_list.html", {"orders": orders})
+    return render(request, "order_list.html", {"orders": orders})
 
 def order_detail_template(request, order_id):
     """
     Display a single order and its items.
     """
     if not request.user.is_authenticated:
-        return render(request, "orders/forbidden.html", status=403)
+        return render(request, "forbidden.html", status=403)
 
     try:
         order = Order.objects.get(id=order_id)
     except Order.DoesNotExist:
-        return render(request, "orders/not_found.html", {"message": "Order not found."}, status=404)
+        return render(request, "not_found.html", {"message": "Order not found."}, status=404)
 
     if request.user.role != "admin" and order.client != request.user:
-        return render(request, "orders/forbidden.html", status=403)
+        return render(request, "forbidden.html", status=403)
 
     items = order.items.all()
-    return render(request, "orders/order_detail.html", {"order": order, "items": items})
+    return render(request, "order_detail.html", {"order": order, "items": items})
