@@ -36,3 +36,20 @@ class PaymentViewSet(ModelViewSet):
         ).aggregate(Sum("amount"))["amount__sum"] or 0
 
         return Response({"total_paid": total_paid})
+    
+    #adding views for the payment
+
+def payment_list_template(request):
+    """
+    Display payments. Admin sees all, client sees only their payments.
+    """
+    if not request.user.is_authenticated:
+        return render(request, "forbidden.html", status=403)
+
+    user = request.user
+    if user.role == "admin":
+        payments = Payment.objects.all()
+    else:
+        payments = Payment.objects.filter(order__client=user)
+
+    return render(request, "payment_list.html", {"payments": payments})    
