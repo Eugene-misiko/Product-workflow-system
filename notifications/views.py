@@ -16,3 +16,14 @@ class NotificationViewSet(ModelViewSet):
         """        
         user = self.request.user
         return Notification.objects.filter(user=user)
+    
+
+def notification_list_template(request):
+    """
+    Display notifications for the logged-in user.
+    """
+    if not request.user.is_authenticated:
+        return render(request, "forbidden.html", status=403)
+
+    notifications = Notification.objects.filter(user=request.user)
+    return render(request, "notification_list.html", {"notifications": notifications})    
