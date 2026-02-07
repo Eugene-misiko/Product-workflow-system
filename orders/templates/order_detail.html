@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Details</title>
+</head>
+<body>
+    <h1>Order {{ order.id }} Details</h1>
+    <p><strong>Client:</strong> {{ order.client.username }}</p>
+    <p><strong>Status:</strong> {{ order.status }}</p>
+    <p><strong>Total Price:</strong> {{ order.total_price }}</p>
+
+    <h2>Items</h2>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price at Order</th>
+        </tr>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.price_at_order }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No items found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
