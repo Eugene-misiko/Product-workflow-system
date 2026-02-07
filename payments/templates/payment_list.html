@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payments</title>
+</head>
+<body>
+    <h1>Payments</h1>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>ID</th>
+            <th>Order ID</th>
+            <th>Amount</th>
+            <th>Confirmed</th>
+        </tr>
+        {% for payment in payments %}
+        <tr>
+            <td>{{ payment.id }}</td>
+            <td>{{ payment.order.id }}</td>
+            <td>{{ payment.amount }}</td>
+            <td>{{ payment.confirmed }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No payments found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
