@@ -39,3 +39,33 @@ class DesignRequestViewSet(ModelViewSet):
     """
     queryset = DesignRequest.objects.all()
     serializer_class = DesignRequestSerializer
+
+def design_list_template(request):
+    """
+    Display designs in HTML.
+    Designer sees only assigned designs.
+    Admin sees all designs.
+    """
+    if not request.user.is_authenticated:
+        return render(request, "forbidden.html", status=403)
+
+    user = request.user
+    if user.role == "designer":
+        designs = Design.objects.filter(order__designrequest__designer=user)
+    elif user.role == "admin":
+        designs = Design.objects.all()
+    else:
+        designs = Design.objects.none()
+
+    return render(request, "design_list.html", {"designs": designs})
+
+
+def design_request_list_template(request):
+    """
+    Admin-only: View all design requests.
+    """
+    if not request.user.is_authenticated or request.user.role != "admin":
+        return render(request, "forbidden.html", status=403)
+
+    requests = DesignRequest.objects.all()
+    return render(request, "design_request_list.html", {"requests": requests})    
