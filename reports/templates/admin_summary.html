@@ -1,6 +1,9 @@
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html>
-<head><title>Admin Dashboard</title></head>
+<head>
+   {% block title %}Admin Dashboard{% endblock title %} 
+</head>
 <body>
 <h1>Admin Summary</h1>
 <p>Total Orders: {{ orders_count }}</p>

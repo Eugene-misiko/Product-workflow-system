@@ -76,7 +76,7 @@ ROOT_URLCONF = 'print_flow.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -162,9 +162,9 @@ AUTH_USER_MODEL = "accounts.User"
 
 
  # configuring login redirect
-LOGIN_REDIRECT_URL = '/auth/view/profile'
-LOGIN_URL = '/auth/login'
+LOGIN_REDIRECT_URL = "/auth/login/"
+LOGIN_URL = '/login'
 #configuring logout redirect
 LOGOUT_URL = 'login'
-LOGOUT_REDIRECT_URL = "/auth/login/"
+LOGOUT_REDIRECT_URL = "auth/login/"
 

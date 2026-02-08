@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>Welcome to PrintFlow</h1>
+
+{% if user.is_authenticated %}
+    <p>Hello <strong>{{ user.username }}</strong></p>
+    <p>Role: <strong>{{ user.role }}</strong></p>
+
+    {% if user.role == "admin" %}
+        <p>Use the navigation bar to manage the system.</p>
+    {% elif user.role == "designer" %}
+        <p>Check your assigned design tasks.</p>
+    {% else %}
+        <p>View and track your orders.</p>
+    {% endif %}
+{% else %}
+    <p>Please login or register to continue.</p>
+{% endif %}
+{% endblock %}

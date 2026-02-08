@@ -1,9 +1,11 @@
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My Profile</title>
+    {% block title %}<title>My Profile</title>{% endblock title %}
 </head>
 <body>
+    {% block content %}
     <h1>My Profile</h1>
     <p><strong>Username:</strong> {{ user.username }}</p>
     <p><strong>Email:</strong> {{ user.email }}</p>
@@ -11,3 +13,4 @@
     <p><strong>Phone:</strong> {{ user.phone }}</p>
 </body>
 </html>
+{% endblock content %}

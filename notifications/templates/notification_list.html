@@ -1,7 +1,11 @@
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html>
-<head><title>Notifications</title></head>
+<head>
+    {% block title %}Notifications{% endblock title %}
+</head>
 <body>
+    {% block content %}
 <h1>My Notifications</h1>
 <table border="1">
 <tr>
@@ -19,3 +23,4 @@
 </table>
 </body>
 </html>
+{% endblock content %}

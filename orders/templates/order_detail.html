@@ -1,9 +1,11 @@
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Order Details</title>
+   {% block title %}Order Details{% endblock title %} 
 </head>
 <body>
+    {% block content %}
     <h1>Order {{ order.id }} Details</h1>
     <p><strong>Client:</strong> {{ order.client.username }}</p>
     <p><strong>Status:</strong> {{ order.status }}</p>
@@ -30,3 +32,4 @@
     </table>
 </body>
 </html>
+{% endblock content %}

@@ -1,9 +1,11 @@
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Orders</title>
+   {% block title %}Orders{% endblock title %} 
 </head>
 <body>
+    {% block content %}
     <h1>Orders</h1>
     <table border="1" cellpadding="5">
         <tr>
@@ -29,3 +31,4 @@
     </table>
 </body>
 </html>
+{% endblock content %}

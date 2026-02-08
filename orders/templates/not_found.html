@@ -1,10 +1,13 @@
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Not Found</title>
+   {% block title %}Not Found{% endblock title %} 
 </head>
 <body>
+    {% block content %}
     <h1>Not Found</h1>
     <p>{{ message }}</p>
 </body>
 </html>
+{% endblock content %}
