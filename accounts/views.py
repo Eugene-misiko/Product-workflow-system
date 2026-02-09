@@ -7,7 +7,8 @@ from django.shortcuts import render, redirect
 from .models import User
 from .serializers import RegisterSerializer, UserProfileSerializer
 from .permissions import IsAdmin
-
+from django.contrib.auth import logout as django_logout
+from django.contrib.auth.decorators import login_required
 #create your views here
 
 class RegisterView(generics.CreateAPIView):
@@ -62,25 +63,15 @@ class AssignRoleView(APIView):
 
         return Response({"message": "Role updated successfully"})
 
-def user_list_template(request):
-    """
-    Admin-only: Render all users in an HTML table.
-    """
-    if not request.user.is_authenticated or request.user.role != "admin":
-        return render(request, "forbidden.html", status=403)
-
-    users = User.objects.all()
-    return render(request, "user_list.html", {"users": users})
-
+@login_required
 def user_profile_template(request):
     """
     Render the logged-in user's profile.
     """
-    if not request.user.is_authenticated:
-        return render(request, "forbidden.html", status=403)
-
     return render(request, "user_profile.html", {"user": request.user})
 
+
+@login_required
 def post_login_redirect(request):
     """
     Redirect users after login based on role.
@@ -91,18 +82,18 @@ def post_login_redirect(request):
         return redirect("/api/view/admin/summary/")
     elif user.role == "designer":
         return redirect("/api/view/designs/")
-    
-    elif user.role == "client" :
+    elif user.role == "client":
         return redirect("/api/view/orders/")
-    else: 
-        return redirect("/auth/logout/")
-    
+    else:
+        return redirect("logout")
+
+
 def logout(request):
     """
-    Redirect users in the logout page
+    Log the user out and redirect to login page.
     """
-    
-    return redirect("/auth/logout/")
+    django_logout(request)
+    return redirect("/auth/login/")
 
 
 
