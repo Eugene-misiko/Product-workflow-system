@@ -29,6 +29,7 @@ urlpatterns = [
     path("view/profile/", user_profile_template, name="user_profile_template"),
 
     # redict according to the roles
+    
     path("redirect/", post_login_redirect, name="post_login_redirect"),
     
 ]

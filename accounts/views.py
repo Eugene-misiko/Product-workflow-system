@@ -7,8 +7,11 @@ from django.shortcuts import render, redirect
 from .models import User
 from .serializers import RegisterSerializer, UserProfileSerializer
 from .permissions import IsAdmin
-from django.contrib.auth import logout as django_logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout as django_logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+
 #create your views here
 
 class RegisterView(generics.CreateAPIView):
@@ -63,13 +66,24 @@ class AssignRoleView(APIView):
 
         return Response({"message": "Role updated successfully"})
 
-@login_required
+def user_list_template(request):
+    """
+    Admin-only: Render all users in an HTML table.
+    """
+    if not request.user.is_authenticated or request.user.role != "admin":
+        return render(request, "forbidden.html", status=403)
+
+    users = User.objects.all()
+    return render(request, "user_list.html", {"users": users})
+
 def user_profile_template(request):
     """
     Render the logged-in user's profile.
     """
-    return render(request, "user_profile.html", {"user": request.user})
+    if not request.user.is_authenticated:
+        return render(request, "forbidden.html", status=403)
 
+    return render(request, "user_profile.html", {"user": request.user})
 
 @login_required
 def post_login_redirect(request):
@@ -95,6 +109,23 @@ def logout(request):
     django_logout(request)
     return redirect("/auth/login/")
 
+def register(request):
+    """
+    User registration (signup).
+    """
+    if request.user.is_authenticated:
+        return redirect("/auth/redirect/")
+
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("/auth/redirect/")
+    else:
+        form = UserCreationForm()
+
+    return render(request, "register.html", {"form": form})
 
 
 
