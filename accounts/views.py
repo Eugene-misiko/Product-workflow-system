@@ -91,8 +91,19 @@ def post_login_redirect(request):
         return redirect("/api/view/admin/summary/")
     elif user.role == "designer":
         return redirect("/api/view/designs/")
-    else:
+    
+    elif user.role == "client" :
         return redirect("/api/view/orders/")
+    else: 
+        return redirect("/auth/logout/")
+    
+def logout(request):
+    """
+    Redirect users in the logout page
+    """
+    
+    return redirect("/auth/logout/")
+
 
 
 

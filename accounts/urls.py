@@ -1,13 +1,13 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import RegisterView, LogoutView, UserProfileView, UserListView, AssignRoleView,user_list_template, user_profile_template,post_login_redirect
+from .views import RegisterView, LogoutView, UserProfileView, UserListView, AssignRoleView,user_list_template, user_profile_template,post_login_redirect, logout
 
 urlpatterns = [
     # Registration
     path("register/", RegisterView.as_view(), name='register'),
 
     # JWT login/logout (for API)
-    path("logout/", auth_views.LogoutView.as_view(template_name='logout.html'), name="logout"),
+    path("logout/", logout, name="logout"),
     path("login/",auth_views.LoginView.as_view(template_name="login.html",redirect_authenticated_user=True),name="login",),    
     # Password management
     path("password_change/", auth_views.PasswordChangeView.as_view(template_name="password_change.html",success_url="/auth/password_change/done/"), name="password_change"),

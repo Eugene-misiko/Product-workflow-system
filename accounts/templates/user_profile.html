@@ -1,16 +1,14 @@
-{% extends 'base.html' %}
-<!DOCTYPE html>
-<html>
-<head>
-    {% block title %}<title>My Profile</title>{% endblock title %}
-</head>
-<body>
-    {% block content %}
-    <h1>My Profile</h1>
-    <p><strong>Username:</strong> {{ user.username }}</p>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <p><strong>Role:</strong> {{ user.role }}</p>
-    <p><strong>Phone:</strong> {{ user.phone }}</p>
-</body>
-</html>
-{% endblock content %}
+{% extends "base.html" %}
+
+{% block content %}
+<h2>My Profile</h2>
+
+<ul>
+    <li><strong>Username:</strong> {{ user_obj.username }}</li>
+    <li><strong>Email:</strong> {{ user_obj.email }}</li>
+    <li><strong>Phone:</strong> {{ user_obj.phone }}</li>
+    <li><strong>Role:</strong> {{ user_obj.role }}</li>
+</ul>
+
+<a href="{% url 'password_change' %}">Change Password</a>
+{% endblock %}
