@@ -4,20 +4,21 @@
 <h1>Payments</h1>
 
 <table border="1" cellpadding="8">
-    <tr>
-        <th>ID</th>
-        <th>Order</th>
-        <th>Amount</th>
-        <th>Confirmed</th>
-    </tr>
-    {% for p in payments %}
-    <tr>
-        <td>{{ p.id }}</td>
-        <td>{{ p.order.id }}</td>
-        <td>{{ p.amount }}</td>
-        <td>{{ p.confirmed }}</td>
-    </tr>
-    {% endfor %}
+    <tr>
+        <th>ID</th>
+        <th>Order</th>
+        <th>Amount</th>
+        <th>Confirmed</th>
+    </tr>
+    {% for p in payments %}
+    <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.order.id }}</td>
+        <td>{{ p.amount }}</td>
+        <td>{{ p.confirmed }}</td>
+    </tr>
+    {% endfor %}
 </table>
 
 {% endblock %}
+
