@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-
+from .forms import CustomUserCreationForm
 #create your views here
 
 class RegisterView(generics.CreateAPIView):
@@ -111,7 +111,7 @@ def logout(request):
 
 def register(request):
     """
-    User registration (signup).
+    User registration (signup). -using custom User model
     """
     if request.user.is_authenticated:
         return redirect("/auth/redirect/")
@@ -123,7 +123,7 @@ def register(request):
             login(request, user)
             return redirect("/auth/redirect/")
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
 
     return render(request, "register.html", {"form": form})
 

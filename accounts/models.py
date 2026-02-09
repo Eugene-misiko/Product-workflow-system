@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 
 class User(AbstractUser):
@@ -28,6 +28,8 @@ class User(AbstractUser):
         blank=True,
         help_text="User phone number"
     )
+
+    objects = UserManager()
 
     def __str__(self):
         return f"{self.username} {self.role}"
