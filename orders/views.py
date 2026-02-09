@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, OrderItemSerializer
 from .permissions import CanAccessOrder
-from django.shortcuts import render
+from django.shortcuts import render,redirect
+from django.contrib.auth.decorators import login_required
+from .forms import OrderForm
 # Create your views here.
+
 class OrderViewSet(ModelViewSet):
     """
     Order management with status control.
@@ -44,7 +47,22 @@ class OrderViewSet(ModelViewSet):
         return Response({"message": "Status updated"})
 
 #views for backend templates
+@login_required
+def order_create(request):
+    """
+    Client creates an order (HTML form).
+    """
+    if request.method == "POST":
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.client = request.user  # attach current user as client
+            order.save()
+            return redirect("orders_list")
+    else:
+        form = OrderForm()
 
+    return render(request, "order_form.html", {"form": form})
 def order_list_template(request):
     """
     Display orders in an HTML table.
