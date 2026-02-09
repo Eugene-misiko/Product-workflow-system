@@ -1,14 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
 from .models import Design, DesignRequest
 from .serializers import DesignSerializer,DesignRequestSerializer
-
+from .forms import DesignUploadForm
 # Create your views here.
- 
-
 class DesignViewSet(ModelViewSet):
     """
     Client uploads designs, designer updates status.
@@ -40,6 +38,29 @@ class DesignRequestViewSet(ModelViewSet):
     """
     queryset = DesignRequest.objects.all()
     serializer_class = DesignRequestSerializer
+
+
+@login_required
+def upload_design(request, order_id):
+    """
+    Client uploads a design file.
+    """
+    # Only clients can upload designs
+    if request.user.role != "client":
+        return render(request, "forbidden.html", status=403)
+
+    if request.method == "POST":
+        form = DesignUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            design = form.save(commit=False)
+            design.order_id = order_id  
+            design.save()
+            return redirect("designs_list")
+    else:
+        form = DesignUploadForm()
+
+    return render(request, "design_upload.html", {"form": form}) 
+#    
 @login_required
 def design_list_template(request):
     """
