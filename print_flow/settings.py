@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'deliveries',
     'notifications',
     'reports',
+    'audit',
 ]
 
 MIDDLEWARE = [
@@ -167,3 +168,5 @@ LOGIN_URL = "/auth/login/"
 #configuring logout redirect
 LOGOUT_REDIRECT_URL = "/auth/login/"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
