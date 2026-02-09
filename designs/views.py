@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
+from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
 from .models import Design, DesignRequest
 from .serializers import DesignSerializer,DesignRequestSerializer
@@ -39,7 +40,7 @@ class DesignRequestViewSet(ModelViewSet):
     """
     queryset = DesignRequest.objects.all()
     serializer_class = DesignRequestSerializer
-
+@login_required
 def design_list_template(request):
     """
     Display designs in HTML.
