@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,7 +8,8 @@ from .serializers import PaymentSerializer
 from django.contrib.auth.decorators import login_required
 from .forms import PaymentForm
 
-# Create your views here.
+# Create your views here
+
 class PaymentViewSet(ModelViewSet):
     """
     Payment handling with backend enforcement.
@@ -44,7 +45,7 @@ class PaymentViewSet(ModelViewSet):
 @login_required
 def payments_list(request):
     """
-    Payments list page (HTML).
+    Payments list page (HTML).
     Admin sees all payments.
     Client sees own payments.
     """
@@ -56,6 +57,7 @@ def payments_list(request):
     return render(request, "payment_list.html", {
         "payments": payments
     })
+
 
 @login_required
 def payment_create(request, order_id):
@@ -78,4 +80,5 @@ def payment_create(request, order_id):
         form = PaymentForm()
 
     return render(request, "payment_form.html", {"form": form})
+
 

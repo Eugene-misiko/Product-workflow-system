@@ -1,32 +1,23 @@
-{% extends 'base.html' %}
-<!DOCTYPE html>
-<html>
-<head>
-    {% block title %}Payments{% endblock title %}
-</head>
-<body>
-    {% block content %}
-    <h1>Payments</h1>
-    <table border="1" cellpadding="5">
-        <tr>
-            <th>ID</th>
-            <th>Order ID</th>
-            <th>Amount</th>
-            <th>Confirmed</th>
-        </tr>
-        {% for payment in payments %}
-        <tr>
-            <td>{{ payment.id }}</td>
-            <td>{{ payment.order.id }}</td>
-            <td>{{ payment.amount }}</td>
-            <td>{{ payment.confirmed }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="4">No payments found.</td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
-{% endblock content %}
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Payments</h1>
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>ID</th>
+        <th>Order</th>
+        <th>Amount</th>
+        <th>Confirmed</th>
+    </tr>
+    {% for p in payments %}
+    <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.order.id }}</td>
+        <td>{{ p.amount }}</td>
+        <td>{{ p.confirmed }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
