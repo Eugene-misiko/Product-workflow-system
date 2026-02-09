@@ -1,19 +1,40 @@
 {% extends 'base.html' %}
-<!DOCTYPE html>
-<html>
-<head>
-    {% block title %}<title>Login</title>{% endblock title %}
-</head>
-<body>
-    {% block content %}
-    <h1>Login</h1>
-    <form method="post">
+
+{% block title %}
+<title>Login</title>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-white">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center mb-6">Login</h1>
+    
+    <form method="post" class="space-y-4">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
+        {% for field in form %}
+            <div>
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded flex justify-center">
+            Login
+        </button>
     </form>
-    <p><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
-    <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
-</body>
-</html>
-{% endblock content %}
+
+    <div class="mt-4 text-center">
+        <p class="text-sm text-gray-600">
+            <a href="{% url 'password_reset' %}" class="text-blue-500 hover:underline">Forgot your password?</a>
+        </p>
+        <p class="text-sm text-gray-600 mt-2">
+            Don't have an account? 
+            <a href="{% url 'register_view' %}" class="text-blue-500 hover:underline">Register here</a>
+        </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
