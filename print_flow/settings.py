@@ -162,9 +162,8 @@ AUTH_USER_MODEL = "accounts.User"
 
 
  # configuring login redirect
-LOGIN_REDIRECT_URL = "/auth/login/"
-LOGIN_URL = '/login'
+LOGIN_REDIRECT_URL = "/auth/redirect/"
+LOGIN_URL = "/auth/login/"
 #configuring logout redirect
-LOGOUT_URL = 'login'
-LOGOUT_REDIRECT_URL = "auth/login/"
+LOGOUT_REDIRECT_URL = "/auth/login/"
 
