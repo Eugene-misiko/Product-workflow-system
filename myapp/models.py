@@ -24,8 +24,12 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
 
 class ProductImage(models.Model):
+    """Images for products """
     product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
-    image =CloudinaryField('image')
+    image = CloudinaryField('image')
+
+    def __str__(self):
+        return f"Image for {self.product.name}"
 
 
 

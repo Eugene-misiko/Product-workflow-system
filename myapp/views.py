@@ -38,6 +38,13 @@ def product_list_template(request):
 
     products = Product.objects.all()
     return render(request, "product_list.html", {"products": products})
- 
+
+def home(request):
+    """
+    Root landing page for PrintFlow.
+    Acts as a dashboard entry point.
+    """
+    products = Product.objects.filter(is_active=True)
+    return render(request, 'home.html', {'products': products}) 
 
         
