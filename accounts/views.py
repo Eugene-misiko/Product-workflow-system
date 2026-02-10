@@ -117,7 +117,7 @@ def register(request):
         return redirect("/auth/redirect/")
 
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)

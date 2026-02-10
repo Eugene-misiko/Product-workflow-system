@@ -63,7 +63,7 @@ def order_create(request):
         form = OrderForm()
 
     return render(request, "order_form.html", {"form": form})
-def order_list_template(request):
+def orders_list(request):
     """
     Display orders in an HTML table.
     Admin sees all orders, client sees their own orders.

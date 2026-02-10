@@ -15,7 +15,7 @@
                         
                         {% if user.role == "admin" %}
                             <a href="/api/view/admin/summary/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                            <a href="/api/view/users/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Users</a>
+                            <a href="/auth/view/users/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Users</a>
                             <a href="/api/view/categories/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Categories</a>
                             <a href="/api/view/products/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Products</a>
                             <a href="/api/view/orders/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Orders</a>
@@ -28,6 +28,7 @@
                         
                         {% if user.role == "client" %}
                             <a href="/api/view/orders/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">My Orders</a>
+                            <a href="/api/view/create" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Create order</a>
                             <a href="/api/view/payments/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Payments</a>
                         {% endif %}
                         

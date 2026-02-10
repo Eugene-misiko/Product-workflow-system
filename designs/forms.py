@@ -7,4 +7,4 @@ class DesignUploadForm(forms.ModelForm):
     """
     class Meta:
         model = Design
-        field = ["file"]
+        fields = ["file"]
