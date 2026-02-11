@@ -18,7 +18,7 @@ class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAdmin]
     
-   #this is the template views for backend 
+#this is the template views for backend 
 def category_list_template(request):
     """
     Admin-only: Display all categories in a table.
@@ -45,6 +45,5 @@ def home(request):
     Acts as a dashboard entry point.
     """
     products = Product.objects.filter(is_active=True)
-    return render(request, 'base.html', {'products': products}) 
+    return render(request, 'base.html', {'products': products})
 
-        

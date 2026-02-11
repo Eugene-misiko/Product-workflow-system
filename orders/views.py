@@ -6,7 +6,9 @@ from .serializers import OrderSerializer, OrderItemSerializer
 from .permissions import CanAccessOrder
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
+from notifications.utils import notitfy
 from .forms import OrderForm
+
 # Create your views here.
 
 class OrderViewSet(ModelViewSet):
@@ -63,6 +65,7 @@ def order_create(request):
         form = OrderForm()
 
     return render(request, "order_form.html", {"form": form})
+
 def orders_list(request):
     """
     Display orders in an HTML table.
@@ -76,7 +79,7 @@ def orders_list(request):
         orders = Order.objects.all()
     else:
         orders = Order.objects.filter(client=user)
-
+    
     return render(request, "order_list.html", {"orders": orders})
 
 def order_detail_template(request, order_id):

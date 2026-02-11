@@ -1,0 +1,71 @@
+<footer class="bg-gray-800 border-t border-gray-700 mt-12">
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <!-- Product Categories Section -->
+            <div>
+                <h3 class="text-sm font-semibold text-white tracking-wider uppercase">Products</h3>
+                <ul class="mt-4 space-y-4">
+                    {% if categories %}
+                        {% for category in categories %}
+                            <li>
+                                <a href="" class="text-gray-400 hover:text-white transition duration-300">
+                                    {{ category.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Books</a></li>
+                        <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Burners</a></li>
+                        <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Cards</a></li>
+                        <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Envelopes</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Company Section -->
+            <div>
+                <h3 class="text-sm font-semibold text-white tracking-wider uppercase">Company</h3>
+                <ul class="mt-4 space-y-4">
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">About Us</a></li>
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Contact</a></li>
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Careers</a></li>
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Privacy Policy</a></li>
+                </ul>
+            </div>
+
+            <!-- Resources/Support Section -->
+            <div>
+                <h3 class="text-sm font-semibold text-white tracking-wider uppercase">Support</h3>
+                <ul class="mt-4 space-y-4">
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">FAQ</a></li>
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Transport Info</a></li>
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Returns</a></li>
+                    <li><a href="" class="text-gray-400 hover:text-white transition duration-300">Terms of Service</a></li>
+                </ul>
+            </div>
+            
+            <!-- Newsletter/Social Section -->
+            <div class="col-span-2 md:col-span-1">
+                <h3 class="text-sm font-semibold text-white tracking-wider uppercase">Stay Updated</h3>
+                <p class="mt-4 text-gray-400">Subscribe to our newsletter for the latest products and deals.</p>
+                <!-- A basic form example -->
+                <form class="mt-4 sm:flex">
+                    <label for="email-address" class="sr-only">Email address</label>
+                    <input type="email" autocomplete="email" required class="appearance-none min-w-0 w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-4 text-base text-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your email">
+                    <div class="mt-3 rounded-md shadow sm:mt-0 sm:ml-3 sm:flex-shrink-0">
+                        <button type="submit" class="w-full bg-indigo-600 flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white hover:bg-indigo-700">
+                            Subscribe
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Copyright Section -->
+        <div class="mt-12 border-t border-gray-700 pt-8">
+            <p class="text-base text-gray-400 xl:text-center">
+                &copy; {% now "Y" %} Your E-commerce Store. All rights reserved.
+            </p>
+        </div>
+    </div>
+</footer>

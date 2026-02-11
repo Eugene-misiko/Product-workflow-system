@@ -7,7 +7,7 @@ class Category(models.Model):
     CARDS= "cards"
 
     category = [
-        (BURNERS, "burners"),
+        (BURNERS, "banners"),
         (BOOKS, "books"),
         (CARDS, "cards"),
     ]    
@@ -22,7 +22,6 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=True)
-
 class ProductImage(models.Model):
     """Images for products """
     product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)

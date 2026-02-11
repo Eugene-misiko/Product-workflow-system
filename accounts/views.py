@@ -115,6 +115,7 @@ def register(request):
     """
     if request.user.is_authenticated:
         return redirect("/auth/redirect/")
+    
 
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
@@ -124,7 +125,7 @@ def register(request):
             return redirect("/auth/redirect/")
     else:
         form = CustomUserCreationForm()
-
+    
     return render(request, "register.html", {"form": form})
 
 

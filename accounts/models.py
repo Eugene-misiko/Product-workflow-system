@@ -1,11 +1,11 @@
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
-
+from cloudinary.models import CloudinaryField
 class User(AbstractUser):
     """
     Custom User model with role-based access control.
     """
-
+    image = CloudinaryField('image', folder='profile_pics', overwrite=True, resource_type='image')
     CLIENT = "client"
     ADMIN = "admin"
     DESIGNER = "designer"

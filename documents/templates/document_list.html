@@ -5,7 +5,7 @@
     {% block title %}Documents{% endblock title %}
 </head>
 <body>
-    {% block content %}
+{% block content %}
 <h1>Legal Documents</h1>
 <table border="1">
 <tr>
@@ -23,6 +23,6 @@
 <tr><td colspan="3">No documents</td></tr>
 {% endfor %}
 </table>
+{% endblock content %}
 </body>
 </html>
-{% endblock content %}

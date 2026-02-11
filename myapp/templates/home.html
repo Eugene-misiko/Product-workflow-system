@@ -1,4 +1,4 @@
-<h1 class="text-3xl font-bold text-blue-600 mb-6">Our Products</h1>
+<a href="/" class="text-3xl font-bold text-blue-600 mb-6">Our Products</a>
 
 <div class="flex flex-wrap gap-6 justify-center">
   {% for product in products %}
@@ -14,6 +14,7 @@
       alt="{{ product.name }}"
       class="w-full h-auto object-cover rounded-lg transition-all duration-500 hover:scale-105 hover:rotate-1 hover:shadow-2xl"
     />
+    <a href="api/view/create" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 mt-5">Order</a>
     {% else %}
     <p class="text-gray-500 italic">No image available</p>
     {% endif %}

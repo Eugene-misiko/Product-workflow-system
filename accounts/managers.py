@@ -5,6 +5,9 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("Email is required")
+        User = email
+        if User.objects.filter(email=email).exists():
+            raise ValueError("Email already taken")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
