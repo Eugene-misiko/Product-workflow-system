@@ -119,3 +119,21 @@ def order_approve(request, order_id):
 
     return redirect("orders_list")
 
+
+@login_required
+def order_reject(request, order_id):
+    """
+    Admin rejects an order.
+    """
+    if request.user.role != "admin":
+        return render(request, "403.html", status=403)
+
+    order = Order.objects.get(id=order_id)
+    order.status = "pending"
+    order.save()
+
+    notify(order.client, f"Your order #{order.id} was rejected.")
+    audit_log(request.user, "REJECT_ORDER", f"Order {order.id}")
+
+    return redirect("orders_list")
+
