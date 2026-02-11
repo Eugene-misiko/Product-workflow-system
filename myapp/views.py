@@ -45,6 +45,6 @@ def home(request):
     Acts as a dashboard entry point.
     """
     products = Product.objects.filter(is_active=True)
-    return render(request, 'home.html', {'products': products}) 
+    return render(request, 'base.html', {'products': products}) 
 
         

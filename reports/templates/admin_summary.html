@@ -5,8 +5,10 @@
    {% block title %}Admin Dashboard{% endblock title %} 
 </head>
 <body>
+   {% block content %}
 <h1>Admin Summary</h1>
 <p>Total Orders: {{ orders_count }}</p>
 <p>Total Payments: {{ payments_count }}</p>
 </body>
 </html>
+{% endblock content %}
