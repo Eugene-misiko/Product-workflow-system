@@ -6,7 +6,8 @@ from .serializers import OrderSerializer, OrderItemSerializer
 from .permissions import CanAccessOrder
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
-from notifications.utils import notitfy
+from notifications.utils import notify
+from audit.utils import audit_log
 from .forms import OrderForm
 
 # Create your views here.
@@ -99,3 +100,22 @@ def order_detail_template(request, order_id):
 
     items = order.items.all()
     return render(request, "order_detail.html", {"order": order, "items": items})
+
+
+@login_required
+def order_approve(request, order_id):
+    """
+    Admin approves an order.
+    """
+    if request.user.role != "admin":
+        return render(request, "403.html", status=403)
+
+    order = Order.objects.get(id=order_id)
+    order.status = "confirmed"
+    order.save()
+
+    notify(order.client, f"Your order #{order.id} was approved.")
+    audit_log(request.user, "APPROVE_ORDER", f"Order {order.id}")
+
+    return redirect("orders_list")
+
