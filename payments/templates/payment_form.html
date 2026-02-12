@@ -1,10 +1,24 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
+
 {% block content %}
 <h2>Make Payment</h2>
 
-<form method="post">
+<form method="POST">
     {% csrf_token %}
-    {{ form.as_p}}
-    <button type="submit">Pay</button>
+
+    <!-- Payment Method -->
+    <div class="form-group">
+        <label for="id_method_of_payment">Payment Method:</label>
+        {{ form.method_of_payment }}
+    </div>
+
+    <!-- Amount -->
+    <div class="form-group">
+        <label for="id_amount">Amount:</label>
+        {{ form.amount }}
+    </div>
+
+    <button type="submit" class="btn btn-success">Pay</button>
 </form>
-{% endblock content %}
+{% endblock %}

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',  
     'audit',  
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [
@@ -175,7 +176,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 #authentication for users
 AUTH_USER_MODEL = "accounts.User"

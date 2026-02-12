@@ -1,25 +1,61 @@
 from django.db import models
 from myapp.models import Product
-from accounts.models import User
-# Create your models here.
+from django.conf import settings
+from decimal import Decimal
+
 class Order(models.Model):
-    """Client order"""
+    """
+    Represents a customer's order.
+
+    An order belongs to one client and contains multiple OrderItems.
+    The total price is calculated automatically from its items.
+    """
+
     STATUS = [
         ("pending", "Pending"),
         ("confirmed", "Confirmed"),
         ("in_production", "In Production"),
         ("delivered", "Delivered"),
     ]
-    client = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
+    def calculate_total(self):
+        """
+        Recalculate total price from all related order items.
+        """
+        total = sum(item.price_at_order * item.quantity for item in self.items.all())
+        self.total_price = total
+        self.save()
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.client.username}"
 class OrderItem(models.Model):
-    """Items inside an order"""
+    """
+    Represents a single product inside an order.
+
+    Stores the product price at the time of ordering to
+    protect against future price changes.
+    """
+
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
     price_at_order = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        """
+        Automatically set price_at_order from product price
+        if not already provided.
+        """
+        if not self.price_at_order:
+            self.price_at_order = self.product.price
+        super().save(*args, **kwargs)
+        self.order.calculate_total()
+
 
 
         

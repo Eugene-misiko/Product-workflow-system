@@ -8,7 +8,7 @@ from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
 from notifications.utils import notify
 from audit.utils import audit_log
-from .forms import OrderForm
+from .forms import OrderCreateForm
 
 # Create your views here.
 
@@ -53,34 +53,64 @@ class OrderViewSet(ModelViewSet):
 @login_required
 def order_create(request):
     """
-    Client creates an order (HTML form).
+    Create a new order with one product item.
+
+    Workflow:
+    - User selects category
+    - User selects product
+    - User enters quantity
+    - Order is created
+    - OrderItem is created
+    - Total price calculated automatically
     """
+
+    if request.user.role != "client":
+        return render(request, "forbidden.html", status=403)
+
     if request.method == "POST":
-        form = OrderForm(request.POST)
+        form = OrderCreateForm(request.POST)
         if form.is_valid():
-            order = form.save(commit=False)
-            order.client = request.user  # attach current user as client
-            order.save()
-            return redirect("orders_list")
+            category = form.cleaned_data["category"]
+            product = form.cleaned_data["product"]
+            quantity = form.cleaned_data["quantity"]
+
+            # Create order
+            order = Order.objects.create(client=request.user)
+
+            # Create order item
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=quantity,
+                price_at_order=product.price
+            )
+
+            return redirect("order_detail", order_id=order.id)
+
     else:
-        form = OrderForm()
+        form = OrderCreateForm()
 
     return render(request, "order_form.html", {"form": form})
 
 def orders_list(request):
     """
-    Display orders in an HTML table.
-    Admin sees all orders, client sees their own orders.
+    Render a list of orders for the current user.
+
+    - Admin sees all orders.
+    - Clients see only their own orders.
+    Orders are sorted by creation date, newest first.
     """
-    if not request.user.is_authenticated:
-        return render(request, "forbidden.html", status=403)
 
     user = request.user
+
+    # Admin sees all orders
     if user.role == "admin":
-        orders = Order.objects.all()
+        orders = Order.objects.all().order_by('-created_at')
     else:
-        orders = Order.objects.filter(client=user)
-    
+        # Client sees only their own orders
+        orders = Order.objects.filter(client=user).order_by('-created_at')
+
+   
     return render(request, "order_list.html", {"orders": orders})
 
 def order_detail_template(request, order_id):
@@ -118,7 +148,6 @@ def order_approve(request, order_id):
     audit_log(request.user, "APPROVE_ORDER", f"Order {order.id}")
 
     return redirect("orders_list")
-
 
 @login_required
 def order_reject(request, order_id):

@@ -1,40 +1,61 @@
-{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
 
-{% block title %}
-<title>Login</title>
-{% endblock %}
+<html>
+<head>
+    <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
-{% block content %}
-<div class="min-h-screen flex items-center justify-center bg-white">
-  <div class="bg-white p-8 rounded-lg  w-full max-w-md">
-    <h1 class="text-2xl font-bold text-center mb-6">Login</h1>
-    
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        {% for field in form %}
-            <div>
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.errors %}
-                    <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded flex justify-center">
-            Login
-        </button>
-    </form>
+<body>
 
-    <div class="mt-4 text-center">
-        <p class="text-sm text-gray-600">
-            <a href="{% url 'password_reset' %}" class="text-blue-500 hover:underline">Forgot your password?</a>
-        </p>
-        <p class="text-sm text-gray-600 mt-2">
-            Don't have an account? 
-            <a href="{% url 'register_view' %}" class="text-blue-500 hover:underline">Register here</a>
-        </p>
+{% include 'navbar.html' %}
+
+<div class="relative h-screen bg-cover bg-center flex items-center justify-center"
+     style="background-image: url('{% static "image/background.jpg" %}');">
+
+    <div class="absolute inset-0 bg-black/60"></div>
+
+    <div class="relative z-10 w-full max-w-md p-8 rounded-2xl 
+                bg-white/20 backdrop-blur-xl 
+                border border-white/30 
+                shadow-2xl shadow-black/40">
+
+        <h1 class="text-3xl font-bold text-center text-white mb-8">
+            Welcome Back
+        </h1>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% for field in form %}
+                <div class="space-y-2">
+
+                    <label class="block text-sm font-medium text-white">
+                        {{ field.label }}
+                    </label>
+
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="text-red-400 text-sm">
+                            {{ field.errors|striptags }}
+                        </p>
+                    {% endif %}
+
+                </div>
+            {% endfor %}
+
+            <button type="submit"
+                class="w-full bg-gradient-to-r from-blue-400 to-indigo-500 
+                       hover:from-blue-500 hover:to-indigo-600
+                       text-white font-semibold py-3 rounded-xl
+                       transition duration-300
+                       shadow-lg hover:shadow-xl">
+                Login
+            </button>
+        </form>
     </div>
-  </div>
 </div>
-{% endblock %}
 
+</body>
+</html>

@@ -8,7 +8,7 @@ router.register("orders", OrderViewSet)
 urlpatterns = router.urls
 urlpatterns += [
     path("view/orders/", orders_list, name="orders_list"),
-    path("view/orders/<int:order_id>/", order_detail_template, name="order_detail_template"),
+    path("view/orders/<int:order_id>/", order_detail_template, name="order_detail"),
     path("view/create", order_create, name="order_create"),
     path('view/<int:order_id>/reject/', order_reject, name='order_reject'),
     path('view/<int:order_id>/approve/', order_approve, name='order_approve'),

@@ -50,14 +50,14 @@ def home(request):
 
 def subscribe(request):
     if request.method == 'POST':
-        email = request.POST['email']
+        email = request.POST.get('email')
         if Subscriber.objects.filter(email=email).exists():
             messages.error(request, 'You are already subscribed.')
         else:
-            subscriber = Subscriber(email=email)
-            subscriber.save()
+            Subscriber.objects.create(email=email)
             messages.success(request, 'Thank you for subscribing!')
-            return redirect('subscribe')
-        return render(request, 'footer.html')    
+
+        return redirect('subscribe')  
+    return render(request, 'footer.html')  
 
 

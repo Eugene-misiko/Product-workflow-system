@@ -11,6 +11,6 @@ urlpatterns = router.urls
 urlpatterns += [
     path("view/categories/", category_list_template, name="category_list_template"),
     path("view/products/", product_list_template, name="product_list_template"),
-    path('subscribe/', subscribe, name='subscribe'),
+    path('view/subscribe/', subscribe, name='subscribe'),
 ]
 

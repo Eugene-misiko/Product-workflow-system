@@ -7,7 +7,7 @@ from .models import Payment,Order
 from .serializers import PaymentSerializer
 from django.contrib.auth.decorators import login_required
 from .forms import PaymentForm
-
+from django.shortcuts import get_object_or_404
 # Create your views here
 
 class PaymentViewSet(ModelViewSet):
@@ -43,31 +43,34 @@ class PaymentViewSet(ModelViewSet):
     
  #adding views for the payment   
 @login_required
-def payments_list(request):
+def payments_list(request):#--added
     """
-    Payments list page (HTML).
-    Admin sees all payments.
-    Client sees own payments.
+    Display payments. Admin sees all, client sees only their payments.
     """
-    if request.user.role == "admin":
+    if not request.user.is_authenticated:
+        return render(request, "forbidden.html", status=403)
+
+    user = request.user
+    if user.role == "admin":
         payments = Payment.objects.all()
     else:
-        payments = Payment.objects.filter(order__client=request.user)
+        payments = Payment.objects.filter(order__client=user)
 
-    return render(request, "payment_list.html", {
-        "payments": payments
-    })
-
+    return render(request, "payment_list.html", {"payments": payments})
 
 @login_required
+
 def payment_create(request, order_id):
     """
-    Client creates a payment (HTML form).
+    Create a payment for a specific order.
+
+    Only the owner of the order can pay.
     """
-    order = Order.objects.get(id=order_id)
+
+    order = get_object_or_404(Order, id=order_id)
 
     if order.client != request.user:
-        return render(request, "403.html", status=403)
+        return render(request, "forbidden.html", status=403)
 
     if request.method == "POST":
         form = PaymentForm(request.POST)
@@ -75,10 +78,16 @@ def payment_create(request, order_id):
             payment = form.save(commit=False)
             payment.order = order
             payment.save()
-            return redirect("payments_list")
+
+            
+            order.status = "confirmed"
+            order.save()
+
+            return redirect("orders_list")
     else:
         form = PaymentForm()
 
     return render(request, "payment_form.html", {"form": form})
+
 
 
