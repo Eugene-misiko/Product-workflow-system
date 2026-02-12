@@ -9,13 +9,18 @@
 <body class="bg-gray-100 text-gray-900 min-h-screen">
  {% include 'navbar.html' %}
  {% include 'home.html' %}
+ 
     <!-- Main Content Area -->
     <main class="max-w-7xl mx-auto  p-4 md:p-6 lg:p-8">
         <div class="">
             {% block content %}{% endblock %}
         </div>
     </main>
+{% if user.role != "admin" %}
 {% include 'footer.html' %}
+{% else %}
+
+{% endif %}
 </body>
 </html>
 

@@ -17,4 +17,4 @@ class Item(forms.ModelForm):
 
     class Meta:
         model = OrderItem
-        fields = "__all__"
+        fields = '__all__'
