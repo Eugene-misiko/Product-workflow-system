@@ -3,8 +3,9 @@ from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
 from accounts.permissions import IsAdmin
 from accounts.models import User
-from django.shortcuts import render
-
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Subscriber
 # create your views here
 class CategoryViewSet(ModelViewSet):
     """Admin manages categories"""
@@ -46,4 +47,17 @@ def home(request):
     """
     products = Product.objects.filter(is_active=True)
     return render(request, 'base.html', {'products': products})
+
+def subscribe(request):
+    if request.method == 'POST':
+        email = request.POST['email']
+        if Subscriber.objects.filter(email=email).exists():
+            messages.error(request, 'You are already subscribed.')
+        else:
+            subscriber = Subscriber(email=email)
+            subscriber.save()
+            messages.success(request, 'Thank you for subscribing!')
+            return redirect('subscribe')
+        return render(request, 'footer.html')    
+
 
