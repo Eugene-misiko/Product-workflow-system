@@ -24,16 +24,22 @@
             <td>{{ order.total_price }}</td>
             <td><a href="{% url 'order_detail_template' order.id %}">View Items</a></td>
         </tr>
+
+    {% if user.role == "admin" %}
+        <td><a href="{% url 'order_approve' order.id %}">Approve</a></td>
+        <td><a href="{% url 'order_reject' order.id %}">Reject</a></td>
+    {% endif %}
+
         {% empty %}
         <tr>
             <td colspan="5">No orders found.</td>
         </tr>
         {% endfor %}
     </table>
+   
+{% endblock content %} 
 </body>
 </html>
 
 
 
-
-{% endblock content %}

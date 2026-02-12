@@ -7,7 +7,7 @@ class OrderForm(forms.ModelForm):
         Order creation/edit form
     """
     class Meta:
-        model = Product
+        model = Order #Product
         fields = '__all__'
  
 class Item(forms.ModelForm):
