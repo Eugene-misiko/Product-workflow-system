@@ -6,6 +6,7 @@ from accounts.models import User
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Subscriber
+from django.contrib.auth.decorators import login_required
 # create your views here
 class CategoryViewSet(ModelViewSet):
     """Admin manages categories"""
@@ -39,7 +40,7 @@ def product_list_template(request):
 
     products = Product.objects.all()
     return render(request, "product_list.html", {"products": products})
-
+@login_required
 def home(request):
     """
     Root landing page for PrintFlow.
@@ -48,6 +49,7 @@ def home(request):
     products = Product.objects.filter(is_active=True)
     return render(request, 'base.html', {'products': products})
 
+@login_required
 def subscribe(request):
     if request.method == 'POST':
         email = request.POST.get('email')
