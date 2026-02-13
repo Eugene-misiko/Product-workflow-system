@@ -60,7 +60,7 @@ def upload_design(request, order_id):
         form = DesignUploadForm()
 
     return render(request, "design_upload.html", {"form": form}) 
-#    
+
 @login_required
 def design_list_template(request):
     """

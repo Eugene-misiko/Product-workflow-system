@@ -1,28 +1,56 @@
 {% extends 'base.html' %}
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    {% block title %}Categories{% endblock title %} 
+    {% block title %}Categories{% endblock title %}
 </head>
-<body>
-    <h1>All Categories</h1>
-    <table border="1" cellpadding="5">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Active</th>
-        </tr>
-        {% for category in categories %}
-        <tr>
-            <td>{{ category.id }}</td>
-            <td>{{ category.name }}</td>
-            <td>{{ category.is_active }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">No categories found.</td>
-        </tr>
-        {% endfor %}
-    </table>
+<body class="bg-gray-100 p-8">
+    {% block content %}
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">All Categories</h1>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for category in categories %}
+
+                        <tr class="hover:bg-gray-50 {% if loop.index is even %}bg-gray-50{% else %}bg-white{% endif %}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ category.id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ category.name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if category.is_active %}
+
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Yes
+                                </span>
+                                {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    No
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No categories found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endblock content %}
 </body>
 </html>
+
