@@ -1,14 +1,27 @@
 {% extends 'base.html' %}
+
 <!DOCTYPE html>
 <html>
 <head>
-   {% block title %}Admin Dashboard{% endblock title %} 
+    {% block title %}Admin Dashboard{% endblock title %}
 </head>
-<body>
-   {% block content %}
-<h1>Admin Summary</h1>
-<p>Total Orders: {{ orders_count }}</p>
-<p>Total Payments: {{ payments_count }}</p>
+<body class="bg-gray-100 font-sans antialiased">
+    {% block content %}
+    <div class="container mx-auto mt-10 p-5">
+        <div class="max-w-md mx-auto bg-white shadow-lg rounded-lg p-6">
+            <h1 class="text-3xl font-bold mb-4 text-gray-800 border-b pb-2">Admin Summary</h1>
+            <div class="space-y-4">
+                <p class="text-gray-600">
+                    <span class="font-semibold text-gray-800">Total Orders:</span> 
+                    <span class="text-blue-600 font-bold text-xl">{{ orders_count }}</span>
+                </p>
+                <p class="text-gray-600">
+                    <span class="font-semibold text-gray-800">Total Payments:</span> 
+                    <span class="text-green-600 font-bold text-xl">{{ payments_count }}</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endblock content %}
 </body>
 </html>
-{% endblock content %}
