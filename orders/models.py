@@ -25,7 +25,18 @@ class Order(models.Model):
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     rejection_reason = models.TextField(blank=True, null=True)
+    DESIGN_TYPE = [
+        ("designed", "Already Designed"),
+        ("not_designed", "Not Designed"),]  
+    design_type = models.CharField( max_length=20,choices=DESIGN_TYPE,default="not_designed")
 
+    COLOR_CHOICES = [
+    ("full_color", "Full Color"),
+    ("black_white", "Black & White"),]
+    color_type = models.CharField(
+        max_length=20,
+        choices=COLOR_CHOICES,
+        default="full_color")
 
     def calculate_total(self):
         """
