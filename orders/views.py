@@ -165,4 +165,16 @@ def order_reject(request, order_id):
         return redirect("orders_list")
     return render(request, "reject_order.html", {"order": order})
 
-
+@login_required
+def move_to_design(request, order_id):
+    """
+    Admin moves approved order to design stage.
+    """
+    if request.user.role != "admin":
+        return render(request, "403.html", status=403)
+    order = Order.objects.get(id=order_id)
+    if order.status == "approved":
+        order.status = "in_design"
+        order.save()
+        notify(order.client, f"Your order #{order.id} is now in design stage.")
+    return redirect("order_detail", order_id=order.id)
