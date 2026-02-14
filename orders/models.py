@@ -13,11 +13,13 @@ class Order(models.Model):
 
     STATUS = [
         ("pending", "Pending"),
-        ("confirmed", "Confirmed"),
-        ("in_production", "In Production"),
-        ("delivered", "Delivered"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("in_design", "In Design"),
+        ("on_printing", "On Printing"),
+        ("on_delivery", "On Delivery"),
+        ("completed", "Completed"),
     ]
-
     client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
