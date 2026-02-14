@@ -296,3 +296,26 @@ def confirm_arrival(request, order_id):
 
     return redirect("order_detail", order_id=order.id)
 
+@login_required
+def report_delivery_issue(request, order_id):
+    """
+    Client reports delivery problem.
+    """
+
+    order = get_object_or_404(Order, id=order_id)
+
+    if order.client != request.user:
+        return render(request, "forbidden.html", status=403)
+
+    if request.method == "POST":
+        reason = request.POST.get("reason")
+
+        order.delivery_status = "issue"
+        order.save()
+
+        notify(order.client, f"Delivery issue reported for Order #{order.id}: {reason}")
+
+        return redirect("order_detail", order_id=order.id)
+
+    return render(request, "delivery_issue.html", {"order": order})
+
