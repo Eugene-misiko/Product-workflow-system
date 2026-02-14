@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from django.contrib.auth.decorators import login_required
@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from .models import Design, DesignRequest
 from .serializers import DesignSerializer,DesignRequestSerializer
 from .forms import DesignUploadForm
+from notifications.utils import notify
 # Create your views here.
 class DesignViewSet(ModelViewSet):
     """
@@ -60,6 +61,36 @@ def upload_design(request, order_id):
         form = DesignUploadForm()
 
     return render(request, "design_upload.html", {"form": form}) 
+@login_required
+def mark_design_completed(request, design_id):
+    """
+    Designer marks a design as completed.
+    Order automatically moves to printing stage.
+    """
+
+    if request.user.role != "designer":
+        return render(request, "forbidden.html", status=403)
+
+    design = get_object_or_404(Design, id=design_id)
+
+    # Ensure designer owns this task
+    if design.order.designrequest.designer != request.user:
+        return render(request, "forbidden.html", status=403)
+
+    # Update design status
+    design.status = "completed"
+    design.save()
+
+    # Update order status to printing
+    order = design.order
+    order.status = "on_printing"
+    order.save()
+
+    notify(order.client, f"Your order #{order.id} design is completed and is now being printed.")
+
+    return redirect("design_list_template")
+
+
 
 @login_required
 def design_list_template(request):
