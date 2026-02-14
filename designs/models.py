@@ -19,6 +19,13 @@ class Design(models.Model):
         return f"Design for Order #{self.order.id}"    
 
 class DesignRequest(models.Model):
-    """Design work request"""
+    """
+    Design work request
+    Represents a design request when client selects
+    'Not Designed'
+    Admin assigns a designer.    
+    """
     order = models.OneToOneField(Order, on_delete=models.CASCADE)
     designer = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    def __str__(self):
+        return f"Design Request for Order #{self.order.id}"    
