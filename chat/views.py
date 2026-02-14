@@ -15,42 +15,38 @@ def order_chat(request, order_id):
     - Designer can chat with admin
     """
     order = get_object_or_404(Order, id=order_id)
-    # Access control
     if request.user.role == "client" and order.client != request.user:
         return render(request, "forbidden.html", status=403)
     messages = order.messages.all().order_by("timestamp")
-
     if request.method == "POST":
         content = request.POST.get("content")
-
         if content:
-            message = Message.objects.create(
+            Message.objects.create(
                 order=order,
                 sender=request.user,
                 content=content
             )
+
             sender = request.user
 
             if sender.role == "client":
-                # Notify all admins
                 admins = User.objects.filter(role="admin")
                 for admin in admins:
                     notify(admin, f"New message from client on Order #{order.id}")
 
             elif sender.role == "designer":
-                # Notify all admins
                 admins = User.objects.filter(role="admin")
                 for admin in admins:
                     notify(admin, f"New message from designer on Order #{order.id}")
 
             elif sender.role == "admin":
-                # Notify client
                 notify(order.client, f"Admin replied on Order #{order.id}")
 
-                # If design request exists, notify designer
                 if hasattr(order, "designrequest") and order.designrequest.designer:
-                    notify(order.designrequest.designer,
-                           f"Admin replied on Order #{order.id}")
+                    notify(
+                        order.designrequest.designer,
+                        f"Admin replied on Order #{order.id}"
+                    )
 
         return redirect("order_chat", order_id=order.id)
 
@@ -58,4 +54,3 @@ def order_chat(request, order_id):
         "order": order,
         "messages": messages
     })
-
