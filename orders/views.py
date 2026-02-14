@@ -1,3 +1,4 @@
+from django.contrib import messages
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -320,3 +321,27 @@ def report_delivery_issue(request, order_id):
         return redirect("order_detail", order_id=order.id)
 
     return render(request, "delivery_issue.html", {"order": order})
+
+@login_required
+def delete_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    #Permission Control
+    if request.user.role == "client":
+        if order.client != request.user:
+            return render(request, "forbidden.html", status=403)
+
+        if order.status != "pending":
+            messages.error(request, "You can only delete pending orders.")
+            return redirect("order_detail", order_id=order.id)
+
+    elif request.user.role != "admin":
+        return render(request, "forbidden.html", status=403)
+
+    # Confirm Delete
+    if request.method == "POST":
+        order.delete()
+        messages.success(request, "Order deleted successfully.")
+        return redirect("orders_list")
+
+    return render(request, "delete_order.html", {"order": order})
