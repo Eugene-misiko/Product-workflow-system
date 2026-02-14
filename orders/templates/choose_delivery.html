@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Choose Delivery Mode for Order #{{ order.id }}</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label>
+        <input type="radio" name="delivery_mode" value="uber" required>
+        Uber Delivery
+    </label><br>
+
+    <label>
+        <input type="radio" name="delivery_mode" value="pickup">
+        I Will Pick It Up
+    </label><br><br>
+
+    <button type="submit">Confirm Delivery Mode</button>
+</form>
+{% endblock content %}
