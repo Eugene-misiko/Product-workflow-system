@@ -277,3 +277,22 @@ def choose_delivery_mode(request, order_id):
 
     return render(request, "choose_delivery.html", {"order": order})
 
+@login_required
+def confirm_arrival(request, order_id):
+    """
+    Client confirms delivery arrived safely.
+    """
+
+    order = get_object_or_404(Order, id=order_id)
+
+    if order.client != request.user:
+        return render(request, "forbidden.html", status=403)
+
+    order.delivery_status = "arrived"
+    order.status = "completed"
+    order.save()
+
+    notify(order.client, f"Order #{order.id} marked as completed.")
+
+    return redirect("order_detail", order_id=order.id)
+
