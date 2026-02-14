@@ -1,16 +1,10 @@
 from django.db import models
 from cloudinary.models import CloudinaryField
 class Category(models.Model):
-    """Product category"""
-    BURNERS = "burner"
-    BOOKS = "books"
-    CARDS= "cards"
-
-    category = [
-        (BURNERS, "banners"),
-        (BOOKS, "books"),
-        (CARDS, "cards"),
-    ]    
+    """
+    Represents a product category
+    (e.g., banners, books, cards).
+    """
     name = models.CharField(max_length=100,)
     is_active = models.BooleanField(default=True)
     def __str__(self):
