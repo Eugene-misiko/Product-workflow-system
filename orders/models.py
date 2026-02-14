@@ -71,6 +71,26 @@ class OrderItem(models.Model):
         super().save(*args, **kwargs)
         self.order.calculate_total()
 
+class DesignDetail(models.Model):
+    """
+    Extra design details when client selects
+    'Not Designed'.
+
+    Stores design instructions for designer.
+    """
+    PAPER_TYPE = [
+        ("glossy", "Glossy"),
+        ("matte", "Matte"),
+        ("bond", "Bond Paper"),]
+    EDITING_TYPE = [
+        ("basic", "Basic Editing"),
+        ("advanced", "Advanced Editing"),]
+    order = models.OneToOneField(Order, on_delete=models.CASCADE)
+    description = models.TextField()
+    paper_type = models.CharField(max_length=20, choices=PAPER_TYPE)
+    editing_type = models.CharField(max_length=20, choices=EDITING_TYPE)
+
+
 
 
         
