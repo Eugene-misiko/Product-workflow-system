@@ -324,9 +324,9 @@ def report_delivery_issue(request, order_id):
 
 @login_required
 def delete_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    order = get_object_or_404(Order, id=order_id, is_deleted=False)
 
-    #Permission Control
+    #permission control
     if request.user.role == "client":
         if order.client != request.user:
             return render(request, "forbidden.html", status=403)
@@ -337,11 +337,14 @@ def delete_order(request, order_id):
 
     elif request.user.role != "admin":
         return render(request, "forbidden.html", status=403)
-
+    
     # Confirm Delete
     if request.method == "POST":
-        order.delete()
+        order.is_deleted = True
+        order.save()
+
         messages.success(request, "Order deleted successfully.")
         return redirect("orders_list")
 
     return render(request, "delete_order.html", {"order": order})
+

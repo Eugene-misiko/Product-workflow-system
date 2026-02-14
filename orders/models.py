@@ -25,6 +25,7 @@ class Order(models.Model):
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     rejection_reason = models.TextField(blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
     DESIGN_TYPE = [
         ("designed", "Already Designed"),
         ("not_designed", "Not Designed"),]  
