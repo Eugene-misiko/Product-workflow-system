@@ -107,7 +107,9 @@ def order_create(request):
                 )
                 order.status = "in_design"
                 order.save()
-                
+
+            if design_type == "designed":
+                return redirect("upload_design", order_id=order.id)
             return redirect("order_detail", order_id=order.id)
 
     else:
