@@ -1,48 +1,132 @@
 {% extends 'base.html' %} 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     {% block title %}Order Details{% endblock title %}
 </head>
 <body class="bg-gray-100 p-8">
-    {% block content %}
-    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 class="text-3xl font-bold mb-4 text-gray-800">Order {{ order.id }} Details</h1>
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
+    <h1 class="text-3xl font-bold mb-4 text-gray-800">
+        Order {{ order.id }} Details
+    </h1>
+    <div class="mb-6 space-y-2">
+        <p class="text-gray-600"><strong>Client:</strong> {{ order.client.username }}</p>
 
-        <div class="mb-6 space-y-2">
-            <p class="text-gray-600"><strong>Client:</strong> {{ order.client.username }}</p>
-            <p class="text-gray-600"><strong>Status:</strong> {{ order.status }}</p>
-            <p class="text-gray-600"><strong>Total Price:</strong> {{ order.total_price }}</p>
-        </div>
+        <p class="text-gray-600">
+            <strong>Status:</strong> {{ order.get_status_display }}
+        </p>
+        {% if order.delivery_mode %}
+        <p class="text-gray-600">
+            <strong>Delivery Mode:</strong> {{ order.get_delivery_mode_display }}
+        </p>
+        {% endif %}
+        {% if order.delivery_status %}
+        <p class="text-gray-600">
+            <strong>Delivery Status:</strong> {{ order.get_delivery_status_display }}
+        </p>
+        {% endif %}
 
-        <h2 class="text-2xl font-semibold mb-3 text-gray-800">Items</h2>
-
-        <div class="overflow-x-auto shadow-md rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 ">Product</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 ">Quantity</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 ">Price at Order</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for item in items %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ item.product.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ item.quantity }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ item.price_at_order }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No items found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        {% if order.status == "rejected" %}
+        <p class="text-red-600">
+            <strong>Rejection Reason:</strong> {{ order.rejection_reason }}
+        </p>
+        {% endif %}
+        <p class="text-gray-600"><strong>Total Price:</strong> {{ order.total_price }}</p>
     </div>
-    {% endblock content %}
+    <h2 class="text-2xl font-semibold mb-3 text-gray-800">Items</h2>
+    <div class="overflow-x-auto shadow-md rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-200">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Product</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Quantity</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Price at Order</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for item in items %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">{{ item.product.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ item.quantity }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ item.price_at_order }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="px-6 py-4 text-center text-gray-500">
+                        No items found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-6 flex flex-wrap gap-3">
+        {% if user.role == "client" %}
+            <a href="{% url 'order_chat' order.id %}"
+               class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+                Open Chat
+            </a>
+            {% if order.status == "on_printing" %}
+            <a href="{% url 'choose_delivery_mode' order.id %}"
+               class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
+                Choose Delivery Mode
+            </a>
+            {% endif %}
+            {% if order.status == "on_delivery" %}
+            <a href="{% url 'confirm_arrival' order.id %}"
+               class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
+                Confirm Arrival
+            </a>
+            <a href="{% url 'report_delivery_issue' order.id %}"
+               class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700">
+                Report Delivery Issue
+            </a>
+            {% endif %}
+        {% endif %}
+        {% if user.role == "admin" %}
+            <a href="{% url 'order_chat' order.id %}"
+               class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+                Open Chat
+            </a>
+            {% if order.status == "pending" %}
+            <a href="{% url 'order_approve' order.id %}"
+               class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
+                Approve
+            </a>
+            <a href="{% url 'order_reject' order.id %}"
+               class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700">
+                Reject
+            </a>
+            {% endif %}
+            {% if order.status == "approved" %}
+            <a href="{% url 'move_to_design' order.id %}"
+               class="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700">
+                Move to Design
+            </a>
+            {% endif %}
+            {% if order.status == "in_design" %}
+            <a href="{% url 'move_to_printing' order.id %}"
+               class="bg-yellow-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-yellow-700">
+                Mark as Printing
+            </a>
+            {% endif %}
+            {% if order.status == "on_printing" %}
+            <a href="{% url 'move_to_delivery' order.id %}"
+               class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
+                Send to Delivery
+            </a>
+            {% endif %}
+        {% endif %}
+        {% if user.role == "designer" %}
+            <a href="{% url 'order_chat' order.id %}"
+               class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+                Open Chat
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}
 </body>
 </html>
+
