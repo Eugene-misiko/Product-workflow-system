@@ -139,15 +139,14 @@ def order_approve(request, order_id):
     """
     if request.user.role != "admin":
         return render(request, "403.html", status=403)
-
     order = Order.objects.get(id=order_id)
-    order.status = "confirmed"
+    order.status = "approved"
+    order.rejection_reason = None
     order.save()
-
-    notify(order.client, f"Your order #{order.id} was approved.")
+    notify(order.client, f"Your order #{order.id} has been approved.")
     audit_log(request.user, "APPROVE_ORDER", f"Order {order.id}")
-
     return redirect("orders_list")
+
 
 @login_required
 def order_reject(request, order_id):
