@@ -193,3 +193,17 @@ def move_to_printing(request, order_id):
         notify(order.client, f"Your order #{order.id} is now being printed.")
     return redirect("order_detail", order_id=order.id)
 
+@login_required
+def move_to_delivery(request, order_id):
+    """
+    Admin marks order as out for delivery.
+    """
+    if request.user.role != "admin":
+        return render(request, "403.html", status=403)
+    order = Order.objects.get(id=order_id)
+    if order.status == "on_printing":
+        order.status = "on_delivery"
+        order.save()
+        notify(order.client, f"Your order #{order.id} is now out for delivery.")
+    return redirect("order_detail", order_id=order.id)
+
