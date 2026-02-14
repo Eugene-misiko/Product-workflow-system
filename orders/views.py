@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Order, OrderItem
+from .models import Order, OrderItem, DesignDetail
 from .serializers import OrderSerializer, OrderItemSerializer
 from .permissions import CanAccessOrder
 from django.shortcuts import render,redirect
@@ -62,6 +62,11 @@ def order_create(request):
     - Order is created
     - OrderItem is created
     - Total price calculated automatically
+    Create a new order with:
+    - Product
+    - Quantity
+    - Design type
+    - Color    
     """
 
     if request.user.role != "client":
@@ -73,9 +78,13 @@ def order_create(request):
             category = form.cleaned_data["category"]
             product = form.cleaned_data["product"]
             quantity = form.cleaned_data["quantity"]
+            design_type = form.cleaned_data["design_type"]
+            color_type = form.cleaned_data["color_type"]        
 
             # Create order
-            order = Order.objects.create(client=request.user)
+            order = Order.objects.create(client=request.user,
+                                         design_type=design_type,
+                                         color_type=color_type,)
 
             # Create order item
             OrderItem.objects.create(
@@ -85,6 +94,20 @@ def order_create(request):
                 price_at_order=product.price
             )
 
+            if design_type == "not_designed":
+                description = form.cleaned_data["description"]
+                paper_type = form.cleaned_data["paper_type"]
+                editing_type = form.cleaned_data["editing_type"]
+
+                DesignDetail.objects.create(
+                    order=order,
+                    description=description,
+                    paper_type=paper_type,
+                    editing_type=editing_type,
+                )
+                order.status = "in_design"
+                order.save()
+                
             return redirect("order_detail", order_id=order.id)
 
     else:
