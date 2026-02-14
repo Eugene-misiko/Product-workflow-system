@@ -11,24 +11,24 @@
                 {% if user.is_authenticated %}
                     <a href="/auth/view/profile/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Profile</a>
                     {% if user.role == "admin" %}
-                        <a href="/view/admin/summary/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="/api/view/admin/summary/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
                         <a href="/auth/view/users/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Users</a>
-                        <a href="/view/categories/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Categories</a>
-                        <a href="/view/products/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Products</a>
-                        <a href="/view/orders/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Orders</a>
-                        <a href="/view/design-requests/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Design Requests</a>
-                        <a href="/view/deliveries/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Deliveries</a>
-                        <a href="/view/payments/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Payments</a>
+                        <a href="/api/view/categories/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Categories</a>
+                        <a href="/api/view/products/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Products</a>
+                        <a href="/api/view/orders/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Orders</a>
+                        <a href="/api/view/design-requests/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Design Requests</a>
+                        <a href="/api/view/deliveries/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Deliveries</a>
+                        <a href="/api/view/payments/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Payments</a>
                     {% endif %}
                     {% if user.role == "designer" %}
-                        <a href="/view/designs/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">My Designs</a>
+                        <a href="/api/view/designs/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">My Designs</a>
                     {% endif %}
                     {% if user.role == "client" %}
-                        <a href="/view/orders/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">My Orders</a>
-                        <a href="/view/create" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Create Order</a>
-                        <a href="/view/payments/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Payments</a>
+                        <a href="/api/view/orders/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">My Orders</a>
+                        <a href="/api/view/create" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Create Order</a>
+                        <a href="/api/view/payments/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Payments</a>
                     {% endif %}
-                    <a href="/view/notifications/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Notifications</a>
+                    <a href="/api/view/notifications/" class="text-white hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Notifications</a>
                     <a href="/auth/logout/" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Logout</a>
                 {% else %}
                     <a href="/auth/register_view/" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Register</a>

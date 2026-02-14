@@ -182,19 +182,24 @@ def order_approve(request, order_id):
 @login_required
 def order_reject(request, order_id):
     """
-    Admin rejects an order and provides reason.
+    Admin rejects an order with optional reason.
     """
     if request.user.role != "admin":
-        return render(request, "403.html", status=403)
-    order = Order.objects.get(id=order_id)
+        return render(request, "forbidden.html", status=403)
+
+    order = get_object_or_404(Order, id=order_id, is_deleted=False)
+
     if request.method == "POST":
-        reason = request.POST.get("reason")
-        order.status = "rejected"
+        reason = request.POST.get("reason", "")
+        order.status = "pending"  
         order.rejection_reason = reason
         order.save()
+
         notify(order.client, f"Your order #{order.id} was rejected. Reason: {reason}")
-        audit_log(request.user, "REJECT_ORDER", f"Order {order.id}")
+        audit_log(request.user, "REJECT_ORDER", f"Order {order.id}, Reason: {reason}")
+
         return redirect("orders_list")
+
     return render(request, "reject_order.html", {"order": order})
 
 @login_required
