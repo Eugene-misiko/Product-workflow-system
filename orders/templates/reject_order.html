@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Reject Order #{{ order.id }}</h2>
+<form method="POST">
+    {% csrf_token %}
+    <label>Reason for rejection:</label><br>
+    <textarea name="reason" required></textarea><br><br>
+    <button type="submit">Reject Order</button>
+</form>
+{% endblock content %}
