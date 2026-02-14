@@ -8,5 +8,5 @@ urlpatterns = router.urls
 
 urlpatterns += [
     path("view/payments/", payments_list, name="payment_list_template"),
-    path("view/payments/create/int:order\_id/", payment_create, name="payment_create"),
+    path("view/payments/create/<int:order_id>/", payment_create, name="payment_create"),
 ]

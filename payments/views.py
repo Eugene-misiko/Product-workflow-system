@@ -80,7 +80,7 @@ def payment_create(request, order_id):
             payment.save()
 
             
-            order.status = "confirmed"
+            order.status = "approved"
             order.save()
 
             return redirect("orders_list")

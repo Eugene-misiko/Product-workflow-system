@@ -2,7 +2,8 @@ from .models import AuditLog
 
 def audit_log(user, action, details=""):
     """
-    create audit log entry
+    Create an audit log entry for tracking
+    important admin/system actions.    
     """
     AuditLog.objects.create(
         user=user,

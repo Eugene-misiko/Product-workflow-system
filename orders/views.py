@@ -158,7 +158,7 @@ def order_reject(request, order_id):
         return render(request, "403.html", status=403)
 
     order = Order.objects.get(id=order_id)
-    order.status = "pending"
+    order.status = "rejected"
     order.save()
 
     notify(order.client, f"Your order #{order.id} was rejected.")

@@ -24,6 +24,8 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+    rejection_reason = models.TextField(blank=True, null=True)
+
 
     def calculate_total(self):
         """
