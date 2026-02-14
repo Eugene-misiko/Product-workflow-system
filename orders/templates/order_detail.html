@@ -67,6 +67,13 @@
                class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
                 Open Chat
             </a>
+
+            {% if order.status == "pending" %}
+                <a href="{% url 'delete_order' order.id %}"
+                class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700">
+                    Delete Order
+                </a>
+            {% endif %}
             {% if order.status == "on_printing" %}
             <a href="{% url 'choose_delivery_mode' order.id %}"
                class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
