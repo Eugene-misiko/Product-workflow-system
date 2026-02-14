@@ -207,3 +207,22 @@ def move_to_delivery(request, order_id):
         notify(order.client, f"Your order #{order.id} is now out for delivery.")
     return redirect("order_detail", order_id=order.id)
 
+@login_required
+def confirm_delivery(request, order_id):
+    """
+    Client confirms order was received safely.
+    """
+    order = Order.objects.get(id=order_id)
+
+    if order.client != request.user:
+        return render(request, "403.html", status=403)
+
+    if order.status == "on_delivery":
+        order.status = "completed"
+        order.save()
+
+        notify(order.client, f"Order #{order.id} marked as completed.")
+    
+    return redirect("order_detail", order_id=order.id)
+
+
