@@ -61,48 +61,45 @@ def order_create(request):
     - User selects category
     - User selects product
     - User enters quantity
-    - Order is created
-    - OrderItem is created
-    - Total price calculated automatically
-    Create a new order with:
-    - Product
-    - Quantity
-    - Design type
-    - Color    
+    - User selects color
+    - User selects design type (designed/not designed)
+    - Order and OrderItem created
+    - If not designed, create DesignDetail
+    - If designed, redirect to upload_design page
     """
-
     if request.user.role != "client":
         return render(request, "forbidden.html", status=403)
-    
 
-    categories = Category.objects.filter(is_active=True).prefetch_related('product_set')
+    categories = Category.objects.filter(is_active=True)
+
     if request.method == "POST":
         form = OrderCreateForm(request.POST)
         if form.is_valid():
             category = form.cleaned_data["category"]
             product = form.cleaned_data["product"]
             quantity = form.cleaned_data["quantity"]
-            design_type = form.cleaned_data["design_type"]
-            color_type = form.cleaned_data["color_type"]        
+            color = form.cleaned_data["color"]
+            design_type = form.cleaned_data.get("design_type")
 
             # Create order
-            order = Order.objects.create(client=request.user,
-                                         design_type=design_type,
-                                         color_type=color_type,)
+            order = Order.objects.create(client=request.user)
 
             # Create order item
             OrderItem.objects.create(
                 order=order,
                 product=product,
                 quantity=quantity,
-                price_at_order=product.price
+                price_at_order=product.price,
+                color=color
             )
 
+            # Handle design type
             if design_type == "not_designed":
-                description = form.cleaned_data["description"]
-                paper_type = form.cleaned_data["paper_type"]
-                editing_type = form.cleaned_data["editing_type"]
+                description = form.cleaned_data.get("description")
+                paper_type = form.cleaned_data.get("paper_type")
+                editing_type = form.cleaned_data.get("editing_type")
 
+                # Create design detail record
                 DesignDetail.objects.create(
                     order=order,
                     description=description,
@@ -112,13 +109,17 @@ def order_create(request):
                 order.status = "in_design"
                 order.save()
 
-            if design_type == "designed":
+            elif design_type == "designed":
+                # Redirect client to upload their design
                 return redirect("upload_design", order_id=order.id)
+
             return redirect("order_detail", order_id=order.id)
 
     else:
         form = OrderCreateForm()
-    return render(request, "order_form.html", {"form": form, 'categories':categories})
+
+    return render(request, "order_form.html", {"form": form, "categories": categories})
+
 
 def orders_list(request):
     """
