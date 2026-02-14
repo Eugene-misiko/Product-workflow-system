@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from .views import DesignViewSet, DesignRequestViewSet, design_list_template, design_request_list_template
+from .views import DesignViewSet, DesignRequestViewSet, design_list_template, design_request_list_template,mark_design_completed
 from django.urls import path
 router = DefaultRouter()
 router.register("designs", DesignViewSet)
@@ -10,4 +10,6 @@ urlpatterns = router.urls
 urlpatterns += [
     path("view/designs/", design_list_template, name="design_list_template"),
     path("view/design-requests/", design_request_list_template, name="design_request_list_template"),
+    path("view/design/<int:design_id>/complete/", mark_design_completed, name="mark_design_completed"),
+
 ]

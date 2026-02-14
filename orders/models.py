@@ -38,6 +38,31 @@ class Order(models.Model):
         choices=COLOR_CHOICES,
         default="full_color")
 
+    DELIVERY_MODE = [
+        ("uber", "Uber Delivery"),
+        ("pickup", "Client Pickup"),
+    ]
+
+    delivery_mode = models.CharField(
+        max_length=20,
+        choices=DELIVERY_MODE,
+        null=True,
+        blank=True
+    )
+    DELIVERY_STATUS = [
+        ("waiting", "Waiting"),
+        ("on_delivery", "On Delivery"),
+        ("arrived", "Arrived Safely"),
+        ("issue", "Delivery Issue"),
+    ]
+
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DELIVERY_STATUS,
+        default="waiting"
+    )
+
+
     def calculate_total(self):
         """
         Recalculate total price from all related order items.

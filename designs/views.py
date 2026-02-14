@@ -73,7 +73,7 @@ def mark_design_completed(request, design_id):
 
     design = get_object_or_404(Design, id=design_id)
 
-    # Ensure designer owns this task
+    # Ensure designer owns this task##
     if design.order.designrequest.designer != request.user:
         return render(request, "forbidden.html", status=403)
 
@@ -83,8 +83,9 @@ def mark_design_completed(request, design_id):
 
     # Update order status to printing
     order = design.order
-    order.status = "on_printing"
-    order.save()
+    if order.status == "in_design":
+        order.status = "on_printing"
+        order.save()
 
     notify(order.client, f"Your order #{order.id} design is completed and is now being printed.")
 
