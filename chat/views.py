@@ -8,7 +8,6 @@ from orders.models import Order
 def order_chat(request, order_id):
     """
     Chat page for a specific order.
-
     - Client can chat with admin
     - Admin can chat with client and designer
     - Designer can chat with admin
