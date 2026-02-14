@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from .models import Order, OrderItem, DesignDetail
 from .serializers import OrderSerializer, OrderItemSerializer
 from .permissions import CanAccessOrder
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from notifications.utils import notify
 from audit.utils import audit_log
@@ -250,4 +250,30 @@ def confirm_delivery(request, order_id):
     
     return redirect("order_detail", order_id=order.id)
 
+@login_required
+def choose_delivery_mode(request, order_id):
+    """
+    Client selects delivery mode:
+    - Uber
+    - Pickup
+    """
+
+    order = get_object_or_404(Order, id=order_id)
+
+    if order.client != request.user:
+        return render(request, "forbidden.html", status=403)
+
+    if request.method == "POST":
+        mode = request.POST.get("delivery_mode")
+
+        order.delivery_mode = mode
+        order.status = "on_delivery"
+        order.delivery_status = "on_delivery"
+        order.save()
+
+        notify(order.client, f"Your order #{order.id} is now on delivery.")
+
+        return redirect("order_detail", order_id=order.id)
+
+    return render(request, "choose_delivery.html", {"order": order})
 
