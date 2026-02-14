@@ -131,7 +131,7 @@ def orders_list(request):
 
     # Admin sees all orders
     if user.role == "admin":
-        orders = Order.objects.all().order_by('-created_at')
+        orders = Order.objects.filter(is_deleted=False).order_by('-created_at')
     else:
         # Client sees only their own orders
         orders = Order.objects.filter(client=user).order_by('-created_at')
@@ -139,24 +139,30 @@ def orders_list(request):
    
     return render(request, "order_list.html", {"orders": orders})
 
+
+@login_required
 def order_detail_template(request, order_id):
     """
     Display a single order and its items.
     """
-    if not request.user.is_authenticated:
-        return render(request, "forbidden.html", status=403)
 
-    try:
-        order = Order.objects.get(id=order_id)
-    except Order.DoesNotExist:
-        return render(request, "not_found.html", {"message": "Order not found."}, status=404)
+    #Prevent access to deleted orders
+    order = get_object_or_404(
+        Order,
+        id=order_id,
+        is_deleted=False
+    )
 
+    #  Permission control
     if request.user.role != "admin" and order.client != request.user:
         return render(request, "forbidden.html", status=403)
 
     items = order.items.all()
-    return render(request, "order_detail.html", {"order": order, "items": items})
 
+    return render(request, "order_detail.html", {
+        "order": order,
+        "items": items
+    })
 
 @login_required
 def order_approve(request, order_id):
