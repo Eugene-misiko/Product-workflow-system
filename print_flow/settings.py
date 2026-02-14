@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'tailwind',
     'theme',
+    'chat',
 ]
 TAILWIND_APP_NAME = 'theme'
 MIDDLEWARE = [

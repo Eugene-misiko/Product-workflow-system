@@ -32,5 +32,6 @@ urlpatterns = [
     path('api/',include('deliveries.urls')),
     path('api/',include('notifications.urls')),
     path('api/',include('reports.urls')),
+    path('api/', include('chat.urls')),
     
 ]
