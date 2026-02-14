@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from notifications.utils import notify
 from audit.utils import audit_log
 from .forms import OrderCreateForm
-
+from accounts.models import User
 # Create your views here.
 
 class OrderViewSet(ModelViewSet):
@@ -313,9 +313,10 @@ def report_delivery_issue(request, order_id):
         order.delivery_status = "issue"
         order.save()
 
-        notify(order.client, f"Delivery issue reported for Order #{order.id}: {reason}")
+        admins = User.objects.filter(role="admin")
+        for admin in admins:
+            notify(admin, f"Delivery issue reported for Order #{order.id}: {reason}")
 
         return redirect("order_detail", order_id=order.id)
 
     return render(request, "delivery_issue.html", {"order": order})
-
