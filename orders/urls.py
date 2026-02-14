@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from .views import OrderViewSet,orders_list, order_detail_template, order_create,order_approve,order_reject
+from .views import OrderViewSet,orders_list, order_detail_template, order_create,order_approve,order_reject,move_to_delivery,move_to_design,move_to_printing,confirm_delivery
 from django.urls import path
 router = DefaultRouter()
 router.register("orders", OrderViewSet)
@@ -12,4 +12,9 @@ urlpatterns += [
     path("view/create", order_create, name="order_create"),
     path('view/<int:order_id>/reject/', order_reject, name='order_reject'),
     path('view/<int:order_id>/approve/', order_approve, name='order_approve'),
+    path('view/<int:order_id>/design/', move_to_design, name='move_to_design'),
+    path('view/<int:order_id>/printing/', move_to_printing, name='move_to_printing'),
+    path('view/<int:order_id>/delivery/', move_to_delivery, name='move_to_delivery'),
+    path('view/<int:order_id>/confirm/', confirm_delivery, name='confirm_delivery'),
+
 ]
