@@ -13,23 +13,12 @@ class OrderCreateForm(forms.Form):
     3. Enter quantity
     """
 
-    category = forms.ModelChoiceField(
-        queryset=Category.objects.filter(is_active=True),
-        empty_label="Select category"
-    )
-
-    product = forms.ModelChoiceField(
-        queryset=Product.objects.filter(is_active=True),
-        empty_label="Select product"
-    )
-
-    quantity = forms.IntegerField(min_value=1)
-
-class Item(forms.ModelForm):
-    """
-    creating Item form
-    """
+class OrderCreateForm(forms.ModelForm):
+    category = forms.ModelChoiceField(queryset=Category.objects.filter(is_active=True), required=True)
+    product = forms.ModelChoiceField(queryset=Product.objects.none(), required=True)
+    quantity = forms.IntegerField(min_value=1, required=True)
+    color = forms.CharField(max_length=50, required=True)
 
     class Meta:
         model = OrderItem
-        fields = '__all__'
+        fields = ['category', 'product', 'quantity', 'color']

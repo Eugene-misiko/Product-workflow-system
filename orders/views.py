@@ -11,6 +11,7 @@ from notifications.utils import notify
 from audit.utils import audit_log
 from .forms import OrderCreateForm
 from accounts.models import User
+from myapp.models import Category
 # Create your views here.
 
 class OrderViewSet(ModelViewSet):
@@ -72,7 +73,9 @@ def order_create(request):
 
     if request.user.role != "client":
         return render(request, "forbidden.html", status=403)
+    
 
+    categories = Category.objects.filter(is_active=True).prefetch_related('product_set')
     if request.method == "POST":
         form = OrderCreateForm(request.POST)
         if form.is_valid():
@@ -115,8 +118,7 @@ def order_create(request):
 
     else:
         form = OrderCreateForm()
-
-    return render(request, "order_form.html", {"form": form})
+    return render(request, "order_form.html", {"form": form, 'categories':categories})
 
 def orders_list(request):
     """
