@@ -147,21 +147,22 @@ def order_approve(request, order_id):
     audit_log(request.user, "APPROVE_ORDER", f"Order {order.id}")
     return redirect("orders_list")
 
-
 @login_required
 def order_reject(request, order_id):
     """
-    Admin rejects an order.
+    Admin rejects an order and provides reason.
     """
     if request.user.role != "admin":
         return render(request, "403.html", status=403)
-
     order = Order.objects.get(id=order_id)
-    order.status = "rejected"
-    order.save()
+    if request.method == "POST":
+        reason = request.POST.get("reason")
+        order.status = "rejected"
+        order.rejection_reason = reason
+        order.save()
+        notify(order.client, f"Your order #{order.id} was rejected. Reason: {reason}")
+        audit_log(request.user, "REJECT_ORDER", f"Order {order.id}")
+        return redirect("orders_list")
+    return render(request, "reject_order.html", {"order": order})
 
-    notify(order.client, f"Your order #{order.id} was rejected.")
-    audit_log(request.user, "REJECT_ORDER", f"Order {order.id}")
-
-    return redirect("orders_list")
 
