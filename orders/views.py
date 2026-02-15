@@ -119,7 +119,11 @@ def order_create(request):
         form = OrderCreateForm()
 
     return render(request, "order_form.html", {"form": form, "categories": categories})
-
+@login_required
+def products_by_category(request, category_id):
+    products = Product.objects.filter(category_id=category_id, is_active=True)
+    data = [{"id": p.id, "name": p.name} for p in products]
+    return JsonResponse(data, safe=False)
 
 def orders_list(request):
     """

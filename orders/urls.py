@@ -20,6 +20,7 @@ urlpatterns += [
     path('view/<int:order_id>/confirm-arrival/', confirm_arrival, name='confirm_arrival'),
     path('view/<int:order_id>/report-issue/', report_delivery_issue, name='report_delivery_issue'),
     path("view/order/<int:order_id>/delete/", delete_order, name="delete_order"),
+    path('products-by-category/<int:category_id>/', products_by_category, name='products_by_category'),
 
 
 ]
