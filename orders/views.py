@@ -72,21 +72,26 @@ def order_create(request):
     if request.user.role != "client":
         return render(request, "forbidden.html", status=403)
 
-    categories = Category.objects.filter(is_active=True)
+    form = OrderCreateForm(request.POST or None)
 
+    # If category selected → filter products
     if request.method == "POST":
-        form = OrderCreateForm(request.POST)
-        if form.is_valid():
-            category = form.cleaned_data["category"]
+        category_id = request.POST.get("category")
+        if category_id:
+            form.fields["product"].queryset = Product.objects.filter(
+                category_id=category_id,
+                is_active=True
+            )
+
+        # If full form submitted
+        if form.is_valid() and form.cleaned_data.get("product"):
             product = form.cleaned_data["product"]
             quantity = form.cleaned_data["quantity"]
             color = form.cleaned_data["color"]
-            design_type = form.cleaned_data.get("design_type")
+            design_type = form.cleaned_data["design_type"]
 
-            # Create order
             order = Order.objects.create(client=request.user)
 
-            # Create order item
             OrderItem.objects.create(
                 order=order,
                 product=product,
@@ -95,32 +100,23 @@ def order_create(request):
                 color=color
             )
 
-            # Handle design type
             if design_type == "not_designed":
-                description = form.cleaned_data.get("description")
-                paper_type = form.cleaned_data.get("paper_type")
-                editing_type = form.cleaned_data.get("editing_type")
-
-                # Create design detail record
                 DesignDetail.objects.create(
                     order=order,
-                    description=description,
-                    paper_type=paper_type,
-                    editing_type=editing_type,
+                    description=form.cleaned_data["description"],
+                    paper_type=form.cleaned_data["paper_type"],
+                    editing_type=form.cleaned_data["editing_type"],
                 )
                 order.status = "in_design"
                 order.save()
 
             elif design_type == "designed":
-                # Redirect client to upload their design
                 return redirect("upload_design", order_id=order.id)
 
             return redirect("order_detail", order_id=order.id)
 
-    else:
-        form = OrderCreateForm()
+    return render(request, "order_form.html", {"form": form})
 
-    return render(request, "order_form.html", {"form": form, "categories": categories})
 @login_required
 def products_by_category(request, category_id):
     products = Product.objects.filter(category_id=category_id, is_active=True)
