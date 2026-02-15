@@ -5,7 +5,6 @@ class User(AbstractUser):
     """
     Custom User model with role-based access control.
     """
-    image = CloudinaryField('image', folder='profile_pics', overwrite=True, resource_type='image')
     CLIENT = "client"
     ADMIN = "admin"
     DESIGNER = "designer"

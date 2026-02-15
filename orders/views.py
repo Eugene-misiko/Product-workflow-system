@@ -12,6 +12,8 @@ from audit.utils import audit_log
 from .forms import OrderCreateForm
 from accounts.models import User
 from myapp.models import Category
+from myapp.models import Product
+from django.http import JsonResponse
 # Create your views here.
 
 class OrderViewSet(ModelViewSet):

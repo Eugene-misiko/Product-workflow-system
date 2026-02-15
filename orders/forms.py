@@ -28,15 +28,13 @@ class OrderCreateForm(forms.Form):
     3. Enter quantity
     """
     category = forms.ModelChoiceField(queryset=Category.objects.filter(is_active=True))
-    product = forms.ModelChoiceField(queryset=Product.objects.none())  # Initially empty
-    quantity = forms.IntegerField(min_value=1)
-    color = forms.CharField(max_length=50)
-    design_type = forms.ChoiceField(choices=DESIGN_CHOICES)
-    
-    # Fields for not_designed
-    description = forms.CharField(widget=forms.Textarea, required=False)
+    product = forms.ModelChoiceField(queryset=Product.objects.none(), required=False)
+    quantity = forms.IntegerField(min_value=1, required=False)
+    design_type = forms.ChoiceField(choices=DESIGN_CHOICES, required=False)
+    description = forms.CharField(required=False)
     paper_type = forms.ChoiceField(choices=PAPER_CHOICES, required=False)
     editing_type = forms.ChoiceField(choices=EDIT_CHOICES, required=False)
+    color = forms.CharField(required=False)
 
 
 

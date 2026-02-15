@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from .views import OrderViewSet,orders_list, order_detail_template, order_create,order_approve,order_reject,move_to_delivery,move_to_design,move_to_printing,confirm_delivery,delete_order ,choose_delivery_mode,confirm_arrival,report_delivery_issue
+from .views import OrderViewSet,orders_list, order_detail_template, order_create,order_approve,order_reject,move_to_delivery,move_to_design,move_to_printing,confirm_delivery,delete_order ,choose_delivery_mode,confirm_arrival,report_delivery_issue,products_by_category
 from django.urls import path
 router = DefaultRouter()
 router.register("orders", OrderViewSet)

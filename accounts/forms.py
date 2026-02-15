@@ -5,7 +5,7 @@ from .models import User
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ['username', 'email', 'role', 'phone','image']  
+        fields = ['username', 'email', 'role', 'phone',]  
         widgets = {
             'role': forms.Select(attrs={
                 'class': 'border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500'}),
