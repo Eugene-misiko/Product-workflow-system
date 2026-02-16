@@ -28,4 +28,6 @@ class Payment(models.Model):
     method_of_payment = models.ForeignKey(MethodPay, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     confirmed = models.BooleanField(default=False)
-    
+    mpesa_checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
+    mpesa_response = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)    
