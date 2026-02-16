@@ -135,6 +135,20 @@
                 Open Chat
             </a>
         {% endif %}
+
+
+        {% if user.role == "admin" and order.status == "approved" and not order.delivery %}
+            <a href="{% url 'create_delivery' order.id %}">Create Delivery</a>
+        {% endif %}
+
+        {% if user.role == "admin" and order.delivery %}
+            <a href="{% url 'update_delivery_status' order.id %}">Update Delivery</a>
+        {% endif %}
+
+        {% if order.delivery %}
+            <p>Delivery Status: {{ order.delivery.status }}</p>
+        {% endif %}
+
     </div>
 </div>
 {% endblock content %}
