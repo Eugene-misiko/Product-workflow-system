@@ -1,18 +1,18 @@
 from django import forms
-from .models import Payment, MethodPay
+from .models import Payment
 
 class PaymentForm(forms.ModelForm):
+    """
+    Payment creation form including phone number for MPESA STK Push.
+    """
     phone_number = forms.CharField(
-        max_length=15, 
+        max_length=15,
         required=True,
-        label="Phone Number"
+        label="Phone Number",
+        widget=forms.TextInput(attrs={"placeholder": "2547XXXXXXXX"})
     )
 
     class Meta:
         model = Payment
         fields = ["method_of_payment", "amount", "phone_number"]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Make method_of_payment a dropdown with choices
-        self.fields['method_of_payment'].queryset = MethodPay.objects.all()
