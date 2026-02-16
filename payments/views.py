@@ -63,3 +63,41 @@ def payment_create(request, order_id):
         form = PaymentForm()
 
     return render(request, "payment_form.html", {"form": form})
+
+def get_access_token():
+    consumer_key = settings.MPESA_CONSUMER_KEY
+    consumer_secret = settings.MPESA_CONSUMER_SECRET
+    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    response = requests.get(url, auth=(consumer_key, consumer_secret))
+    return response.json().get('access_token')
+
+
+def generate_password():
+    shortcode = settings.MPESA_SHORTCODE
+    passkey = settings.MPESA_PASSKEY
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    string_to_encode = shortcode + passkey + timestamp
+    encoded_string = base64.b64encode(string_to_encode.encode())
+    return encoded_string.decode('utf-8')
+
+
+def initialize_stk_push(mpesa_request):
+    access_token = get_access_token()
+    api_url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+    headers = {"Authorization": f"Bearer {access_token}"}
+    payload = {
+        "BusinessShortCode": settings.MPESA_SHORTCODE,
+        "Password": generate_password(),
+        "Timestamp": datetime.now().strftime('%Y%m%d%H%M%S'),
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": float(mpesa_request.amount),
+        "PartyA": mpesa_request.phone_number,
+        "PartyB": settings.MPESA_SHORTCODE,
+        "PhoneNumber": mpesa_request.phone_number,
+        "CallBackURL": settings.MPESA_CALLBACK_URL,
+        "AccountReference": mpesa_request.account_reference,
+        "TransactionDesc": mpesa_request.transaction_desc
+    }
+
+    response = requests.post(api_url, json=payload, headers=headers)
+    return response.json()
