@@ -87,17 +87,18 @@ def order_create(request):
         if form.is_valid() and form.cleaned_data.get("product"):
             product = form.cleaned_data["product"]
             quantity = form.cleaned_data["quantity"]
-            color = form.cleaned_data["color"]
+            color_type = form.cleaned_data.get("color_type")
             design_type = form.cleaned_data["design_type"]
 
-            order = Order.objects.create(client=request.user)
+            order = Order.objects.create(client=request.user, color_type=color_type,
+                                          design_type=design_type)
 
             OrderItem.objects.create(
                 order=order,
                 product=product,
                 quantity=quantity,
                 price_at_order=product.price,
-                color=color
+                
             )
 
             if design_type == "not_designed":
@@ -106,6 +107,7 @@ def order_create(request):
                     description=form.cleaned_data["description"],
                     paper_type=form.cleaned_data["paper_type"],
                     editing_type=form.cleaned_data["editing_type"],
+                    
                 )
                 order.status = "in_design"
                 order.save()

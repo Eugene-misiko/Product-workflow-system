@@ -27,14 +27,14 @@ class OrderCreateForm(forms.Form):
     2. Select product (filtered by category)
     3. Enter quantity
     """
-    category = forms.ModelChoiceField(queryset=Category.objects.filter(is_active=True))
-    product = forms.ModelChoiceField(queryset=Product.objects.none(), required=False)
-    quantity = forms.IntegerField(min_value=1, required=False)
-    design_type = forms.ChoiceField(choices=DESIGN_CHOICES, required=False)
-    description = forms.CharField(required=False)
-    paper_type = forms.ChoiceField(choices=PAPER_CHOICES, required=False)
-    editing_type = forms.ChoiceField(choices=EDIT_CHOICES, required=False)
-    color = forms.CharField(required=False)
+    category = forms.ModelChoiceField(queryset=Category.objects.filter(is_active=True),required=True)
+    product = forms.ModelChoiceField(queryset=Product.objects.none(),required=False)
+    quantity = forms.IntegerField(min_value=1,required=True)
+    color_type = forms.CharField(max_length=50,required=False)
+    design_type = forms.ChoiceField(choices=DESIGN_CHOICES,required=False)
+    description = forms.CharField(widget=forms.Textarea,required=False)
+    paper_type = forms.ChoiceField(choices=PAPER_CHOICES,required=False)
+    editing_type = forms.ChoiceField(choices=EDIT_CHOICES,required=False)
 
 
 

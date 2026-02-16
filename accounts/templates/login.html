@@ -11,8 +11,8 @@
 
 {% include 'navbar.html' %}
 
-<div class="relative h-screen bg-cover bg-center flex items-center justify-center"
-     style="background-image: url('{% static "image/background.jpg" %}');">
+<div class="relative h-screen bg-cover bg-center flex items-center justify-center bg-fixed"
+     style="background-image: url('{% static "image/chlgnImg.jpg" %}');">
 
     <div class="absolute inset-0 bg-black/60"></div>
 
@@ -25,7 +25,7 @@
             Welcome Back
         </h1>
 
-        <form method="post" action="/auth/login/" class="space-y-6">
+        <form method="post" action="/auth/login/" class="space-y-6 ">
             {% csrf_token %}
 
             {% for field in form %}

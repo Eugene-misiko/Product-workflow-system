@@ -56,7 +56,7 @@ def upload_design(request, order_id):
             design = form.save(commit=False)
             design.order_id = order_id  
             design.save()
-            return redirect("designs_list")
+            return redirect("design_list")
     else:
         form = DesignUploadForm()
 
@@ -89,7 +89,7 @@ def mark_design_completed(request, design_id):
 
     notify(order.client, f"Your order #{order.id} design is completed and is now being printed.")
 
-    return redirect("design_list_template")
+    return redirect("design_list")
 
 
 
