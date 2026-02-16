@@ -131,3 +131,17 @@ def report_delivery_issue(request, order_id):
     return render(request, "report_issue.html", {
         "order": order
     })
+
+@login_required
+def admin_issue_list(request):
+
+    if request.user.role != "admin":
+        return render(request, "forbidden.html", status=403)
+
+    issues = DeliveryIssue.objects.select_related(
+        "delivery", "delivery__order", "reported_by"
+    ).order_by("-created_at")
+
+    return render(request, "admin_issue_list.html", {
+        "issues": issues
+    })
