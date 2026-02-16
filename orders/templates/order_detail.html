@@ -156,6 +156,19 @@
             Track Delivery
             </a>
         {% endif %}
+
+        {% if user.role == "client" %}
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <h3 class="text-xl font-semibold mb-2 text-gray-800">Make Payment</h3>
+                {% if order.status != "approved" %}
+                    <a href="{% url 'payment_create' order.id %}" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        Pay Now
+                    </a>
+                {% else %}
+                    <span class="text-green-600 font-semibold">Payment Completed</span>
+                {% endif %}
+            </div>
+       {% endif %}
     </div>
 </div>
 {% endblock content %}
