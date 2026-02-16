@@ -145,3 +145,22 @@ def admin_issue_list(request):
     return render(request, "admin_issue_list.html", {
         "issues": issues
     })
+
+@login_required
+def update_issue_status(request, issue_id):
+
+    if request.user.role != "admin":
+        return render(request, "forbidden.html", status=403)
+
+    issue = get_object_or_404(DeliveryIssue, id=issue_id)
+
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        issue.status = new_status
+        issue.save()
+
+        return redirect("admin_issue_list")
+
+    return render(request, "deliveries/update_issue.html", {
+        "issue": issue
+    })
