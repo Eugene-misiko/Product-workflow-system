@@ -5,6 +5,7 @@ from orders.models import Order
 from django.contrib.auth.decorators import login_required
 from .serializers import DeliverySerializer
 from django.utils import timezone
+from .models import Delivery
 # Create your views here.
 
 class DeliveryViewSet(ModelViewSet):
@@ -81,4 +82,34 @@ def update_delivery_status(request, order_id):
 
         return redirect("order_detail", order_id=order.id)
 
-    return render(request, "deliveries/update_delivery.html", {"delivery": delivery})
+    return render(request, "update_delivery.html", {"delivery": delivery})
+@login_required
+def create_delivery(request, order_id):
+
+    if request.user.role != "admin":
+        return render(request, "forbidden.html", status=403)
+
+    order = get_object_or_404(Order, id=order_id)
+
+    # Prevent duplicate delivery
+    if hasattr(order, "delivery"):
+        return redirect("order_detail", order_id=order.id)
+
+    if request.method == "POST":
+        address = request.POST.get("address")
+        phone = request.POST.get("phone")
+        tracking_number = request.POST.get("tracking_number")
+
+        Delivery.objects.create(
+            order=order,
+            address=address,
+            phone=phone,
+            tracking_number=tracking_number
+        )
+
+        order.status = "on_delivery"
+        order.save()
+
+        return redirect("order_detail", order_id=order.id)
+
+    return render(request, "deliveries/create_delivery.html", {"order": order})
