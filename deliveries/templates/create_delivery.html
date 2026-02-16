@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Create Delivery for Order #{{ order.id }}</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label>Address:</label>
+    <textarea name="address" required></textarea>
+
+    <label>Phone:</label>
+    <input type="text" name="phone" required>
+
+    <label>Tracking Number:</label>
+    <input type="text" name="tracking_number">
+
+    <button type="submit">Create Delivery</button>
+</form>
+{% endblock %}
