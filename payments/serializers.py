@@ -1,11 +1,13 @@
 from rest_framework import serializers
-from .models import Payment
+from .models import MpesaRequest, MpesaResponse
 
-class PaymentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for order payments.
-    """
+class MpesaRequestSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Payment
+        model = MpesaRequest
         fields = "__all__"
-        read_only_fields = ("confirmed",)
+
+class MpesaResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MpesaResponse
+        fields = "__all__"
+
