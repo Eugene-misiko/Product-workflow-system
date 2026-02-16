@@ -7,6 +7,7 @@ from .models import Payment, MethodPay, MpesaRequest, MpesaResponse
 from .serializers import MpesaRequestSerializer, MpesaResponseSerializer
 import requests, base64
 from datetime import datetime
+from django.views.decorators.csrf import csrf_exempt
 from orders.models import Order
 #create your views here
 # Payment list (client sees own, admin sees all)
@@ -101,3 +102,27 @@ def initialize_stk_push(mpesa_request):
 
     response = requests.post(api_url, json=payload, headers=headers)
     return response.json()
+@csrf_exempt
+@api_view(['POST'])
+def mpesa_callback(request):
+    data = request.data.get('Body', {})
+    stk_callback = data.get('stkCallback', {})
+    checkout_request_id = stk_callback.get('CheckoutRequestID')
+    result_code = stk_callback.get('ResultCode')
+    result_desc = stk_callback.get('ResultDesc')
+
+    mpesa_response = MpesaResponse.objects.filter(checkout_request_id=checkout_request_id).first()
+    if mpesa_response:
+        mpesa_response.response_code = result_code
+        mpesa_response.response_description = result_desc
+        mpesa_response.save()
+
+        # Mark payment confirmed if successful
+        if result_code == 0:
+            payment = mpesa_response.request.payment
+            payment.confirmed = True
+            payment.order.status = "approved"
+            payment.order.save()
+            payment.save()
+
+    return Response({"status": "success"})
