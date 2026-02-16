@@ -1,5 +1,6 @@
 from django.db import models
 from orders.models import Order
+from django.conf import settings
 # Create your models here.
 class Delivery(models.Model):
     """Delivery note-Represents the delivery information of an order.
@@ -34,3 +35,35 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f"Delivery for Order #{self.order.id}"
+
+class DeliveryIssue(models.Model):
+
+    STATUS_CHOICES = [
+        ("open", "Open"),
+        ("in_review", "In Review"),
+        ("resolved", "Resolved"),
+    ]
+
+    delivery = models.ForeignKey(
+        Delivery,
+        on_delete=models.CASCADE,
+        related_name="issues"
+    )
+
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+    description = models.TextField()
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="open"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Issue for Order #{self.delivery.order.id}"

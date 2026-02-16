@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'tailwind',
     'theme',
     'chat',
+    
 ]
 TAILWIND_APP_NAME = 'theme'
 MIDDLEWARE = [

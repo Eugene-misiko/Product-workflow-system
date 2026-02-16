@@ -148,7 +148,14 @@
         {% if order.delivery %}
             <p>Delivery Status: {{ order.delivery.status }}</p>
         {% endif %}
+   
 
+        {% if order.delivery %}
+            <a href="{% url 'track_delivery' order.id %}"
+            class="text-blue-600 hover:text-blue-900">
+            Track Delivery
+            </a>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}
