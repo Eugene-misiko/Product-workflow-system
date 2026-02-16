@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Delivery Issues</h2>
+
+<table>
+    <tr>
+        <th>Order</th>
+        <th>Client</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+
+    {% for issue in issues %}
+    <tr>
+        <td>#{{ issue.delivery.order.id }}</td>
+        <td>{{ issue.reported_by.username }}</td>
+        <td>{{ issue.description }}</td>
+        <td>{{ issue.status }}</td>
+        <td>
+            <a href="{% url 'update_issue_status' issue.id %}">
+                Update
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
