@@ -128,6 +128,6 @@ def report_delivery_issue(request, order_id):
 
         return redirect("track_delivery", order_id=order.id)
 
-    return render(request, "deliveries/report_issue.html", {
+    return render(request, "report_issue.html", {
         "order": order
     })

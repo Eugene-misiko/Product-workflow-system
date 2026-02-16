@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-4">
+        Report Delivery Issue for Order #{{ order.id }}
+    </h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Description:</label>
+        <textarea name="description" required></textarea>
+
+        <button type="submit">Submit Issue</button>
+    </form>
+</div>
+{% endblock %}
