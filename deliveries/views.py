@@ -1,11 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from rest_framework.viewsets import ModelViewSet
-from .models import Delivery
+from .models import Delivery, DeliveryIssue
 from orders.models import Order
 from django.contrib.auth.decorators import login_required
 from .serializers import DeliverySerializer
 from django.utils import timezone
-from .models import Delivery
 # Create your views here.
 
 class DeliveryViewSet(ModelViewSet):
@@ -102,4 +101,33 @@ def track_delivery(request, order_id):
     return render(request, "track_delivery.html", {
         "order": order,
         "delivery": delivery
+    })
+@login_required
+def report_delivery_issue(request, order_id):
+
+    order = get_object_or_404(Order, id=order_id)
+
+    if order.client != request.user:
+        return render(request, "forbidden.html", status=403)
+
+    if not hasattr(order, "delivery"):
+        return render(request, "not_found.html", {
+            "message": "No delivery found."
+        }, status=404)
+
+    delivery = order.delivery
+
+    if request.method == "POST":
+        description = request.POST.get("description")
+
+        DeliveryIssue.objects.create(
+            delivery=delivery,
+            reported_by=request.user,
+            description=description
+        )
+
+        return redirect("track_delivery", order_id=order.id)
+
+    return render(request, "deliveries/report_issue.html", {
+        "order": order
     })
