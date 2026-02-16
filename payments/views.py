@@ -3,10 +3,11 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response    
 from rest_framework import status
 import requests
+from django.views.decorators.csrf import csrf_exempt
 import base64
 from datetime import datetime
 from django.conf import settings
-from .models import MpesaRequest, MpesaResponse
+from .models import MpesaRequest, MpesaResponse, Payment
 from .serializers import MpesaResponseSerializer, MpesaRequestSerializer
 # Create your views here.
 
@@ -69,3 +70,26 @@ def generate_password():
     data_to_encode = shortcode + passkey + timestamp
     encoded_string = base64.b64encode(data_to_encode.encode())
     return encoded_string.decode('utf-8')
+
+@csrf_exempt
+@api_view(['POST'])
+def mpesa_callback(request):
+    data = request.data
+    checkout_request_id = data['Body']['stkCallback']['CheckoutRequestID']
+    result_code = data['Body']['stkCallback']['ResultCode']
+
+    mpesa_response = MpesaResponse.objects.filter(checkout_request_id=checkout_request_id).first()
+    if mpesa_response:
+        mpesa_response.response_code = result_code
+        mpesa_response.response_description = data['Body']['stkCallback']['ResultDesc']
+        mpesa_response.save()
+        
+        # Update Payment / Order if success
+        if result_code == 0:
+            payment = Payment.objects.get(id=mpesa_response.request.payment_id)
+            payment.confirmed = True
+            payment.save()
+            payment.order.status = 'confirmed'
+            payment.order.save()
+
+    return Response({"status": "success"})
