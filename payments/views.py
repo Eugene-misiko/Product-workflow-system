@@ -9,6 +9,8 @@ import requests, base64
 from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from orders.models import Order
+from .forms import PaymentForm
+from django.contrib.auth.decorators import login_required
 #create your views here
 # Payment list (client sees own, admin sees all)
 def payments_list(request):
@@ -24,24 +26,34 @@ def payments_list(request):
 
 
 # Create a payment
+@login_required
 def payment_create(request, order_id):
-    from .forms import PaymentForm
+    """
+    Create a payment for a specific order and trigger MPESA STK Push.
+    - Client must own the order
+    - Payment is initially unconfirmed until STK Push succeeds
+    """
     order = get_object_or_404(Order, id=order_id)
 
+    # Access control
     if order.client != request.user:
         return render(request, "forbidden.html", status=403)
 
     if request.method == "POST":
         form = PaymentForm(request.POST)
         if form.is_valid():
+            # Save Payment instance first
             payment = form.save(commit=False)
             payment.order = order
-            payment.confirmed = False  # STK Push not confirmed yet
+            payment.confirmed = False  # STK Push pending
             payment.save()
 
-            # Create MPESA request linked to this payment
+            # Update order status to approved (optional: could wait until MPESA confirmation)
+            order.status = "approved"
+            order.save()
+
+            # Create linked MPESA request
             mpesa_request = MpesaRequest.objects.create(
-                payment=payment,
                 phone_number=form.cleaned_data['phone_number'],
                 amount=payment.amount,
                 account_reference=f"Order{order.id}",
@@ -50,6 +62,8 @@ def payment_create(request, order_id):
 
             # Trigger STK Push
             response_data = initialize_stk_push(mpesa_request)
+
+            # Record MPESA response
             MpesaResponse.objects.create(
                 request=mpesa_request,
                 merchant_request_id=response_data.get('MerchantRequestID', ''),
@@ -59,6 +73,7 @@ def payment_create(request, order_id):
                 customer_message=response_data.get('CustomerMessage', '')
             )
 
+            # Redirect client to payments list or order detail
             return redirect("payment_list_template")
     else:
         form = PaymentForm()
