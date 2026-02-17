@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block content %}
-    <h2>Create Category</h2>
-
+{% block content %}    
+<div class="bg-white m-3 p-10 shadow-md rounded-md text-center ml-10 mr-10">
+<fieldset>
+<legend class="font-bold text-black">Create Category</legend>
     <form method="POST">
         {% csrf_token %}
         
         {{ form.as_p }}
         
-        <button type="submit">Save</button>
+        <button type="submit">Submit</button>
     </form>
-
     <br>
-    <a href="{% url 'category_list' %}">Back to Category List</a>
+    <a href="">Back to Category List</a>
+</fieldset>
 {% endblock %}
-
+</div>
 
 
 

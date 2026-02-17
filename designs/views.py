@@ -48,7 +48,7 @@ def upload_design(request, order_id):
     """
     # Only clients can upload designs
     if request.user.role != "client":
-        return render(request "forbidden.html", status=403)
+        return render(request, "forbidden.html", status=403)
 
     if request.method == "POST":
         form = DesignUploadForm(request.POST, request.FILES)
