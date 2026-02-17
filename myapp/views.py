@@ -6,6 +6,7 @@ from accounts.models import User
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Subscriber
+from .forms import CategoryForm, ProductForm
 from django.contrib.auth.decorators import login_required
 # create your views here
 class CategoryViewSet(ModelViewSet):
@@ -48,6 +49,27 @@ def home(request):
     """
     products = Product.objects.filter(is_active=True)
     return render(request, 'base.html', {'products': products})
+
+@login_required
+def category_form(request):
+    if request.user.role != 'client':
+        return render(request, 'forbidden.html', status=403)
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            """Redirect to a success page"""
+            return redirect('category_list')
+        else
+            form = CategoryForm()
+    return render (redirect, 'order_form.html', {'form': form})        
+
+
+
+
+
+
 
 @login_required
 def subscribe(request):
