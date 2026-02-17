@@ -61,7 +61,7 @@ def category_form(request):
             form.save()
             """Redirect to a success page"""
             return redirect('category_list')
-        else
+        else:
             form = CategoryForm()
     return render (redirect, 'order_form.html', {'form': form})        
 
