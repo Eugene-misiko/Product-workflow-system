@@ -14,10 +14,22 @@
           <thead class="bg-gray-50">
             <tr>
               <!-- Added Tailwind classes for table headers (th) -->
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category code</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Color mode</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paper type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paper size</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number of pages</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spine size-mm</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Has spine</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Binding type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plate diameter-cm</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desing file</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
             </tr>
@@ -26,10 +38,22 @@
             {% for product in products %}
               <tr>
                 <!-- Added Tailwind classes for table cells (td) -->
-                <td class="px-6 py-4 whitespace-nowrap">{{ product.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.category_code }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ product.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ product.description }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ product.category.name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.quantity }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.category }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.color_mode }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.paper_type }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.paper_size }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.number_of_pages }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.spine_size_mm }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.has_spine }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.binding_type }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.plate_diameter_cm }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.design_file }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.size }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ product.material }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ product.price }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <!-- Example of styling the boolean value for better visual feedback -->

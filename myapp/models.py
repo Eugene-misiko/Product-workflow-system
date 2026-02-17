@@ -7,7 +7,7 @@ class Category(models.Model):
         ('plate', 'Plate'),
         ('hoodie', 'Hoodie'),
         ('nocat', 'No Category'),
-        ('calendar', 'Calendar')
+        ('calendar', 'Calendar'),
     ]
 
     name = models.CharField(max_length=100)
