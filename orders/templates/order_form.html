@@ -14,6 +14,15 @@
     <br>
     <a href="">Back to Category List</a>
 </fieldset>
+
+   <h2>Create New Product</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save Product</button>
+    </form>
+
+
 {% endblock %}
 </div>
 
