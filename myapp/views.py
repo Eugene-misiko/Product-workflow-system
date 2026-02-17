@@ -41,6 +41,8 @@ def product_list_template(request):
 
     products = Product.objects.all()
     return render(request, "product_list.html", {"products": products})
+
+
 @login_required
 def home(request):
     """

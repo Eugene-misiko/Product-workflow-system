@@ -5,7 +5,7 @@ from .models import User
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ['username', 'email', 'role', 'phone',]  
+        fields = ['username', 'email', 'role', 'phone','password1', 'password2']  
         widgets = {
             'role': forms.Select(attrs={
                 'class': 'border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500'}),
@@ -20,6 +20,4 @@ class CustomUserCreationForm(UserCreationForm):
                 'class': 'border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500'}),
             'password2': forms.PasswordInput(attrs={
                 'class': 'border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500'}),
-
-
         }

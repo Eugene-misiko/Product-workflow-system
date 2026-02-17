@@ -1,17 +1,24 @@
 from django.db import models
 from cloudinary.models import CloudinaryField
 class Category(models.Model):
-    """
-    Represents a product category
-    (e.g., banners, books, cards).
-    """
-    name = models.CharField(max_length=100,)
+    CATEGORY_TYPES = [
+        ('wedding_card', 'Wedding Card'),
+        ('book', 'Book'),
+        ('plate', 'Plate'),
+        ('hoodie', 'Hoodie'),
+        ('nocat', 'No Category'),
+        ('calendar', 'Calendar')
+    ]
+
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, choices=CATEGORY_TYPES, unique=True,)
+    description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+
     def __str__(self):
         return self.name
 class Product(models.Model):
     category_code = models.CharField(max_length=50)
-    # Basic Info
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True, null=True)
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
