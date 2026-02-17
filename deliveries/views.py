@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from .serializers import DeliverySerializer
 from django.utils import timezone
 # Create your views here.
-
 class DeliveryViewSet(ModelViewSet):
     """
     Delivery tracking.
