@@ -47,7 +47,7 @@ def product_list_template(request, category_slug=None):
     return render(request, "product_list.html", {
         "products": products, 
         "category": category, 
-        "categories": categories})#product_list.html
+        "categories": categories})
 #creating the product detail---2
 def product_detail(request, id, slug):
     product = get_object_or_404(Product, id=id, slug=slug, available=True)
