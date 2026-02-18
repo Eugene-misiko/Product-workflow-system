@@ -16,13 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from myapp.views import home
-
-
+from django.conf import settings
+from django.conf.urls.static import static
+from myapp.urls import product_list
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("", home, name="home"),
+    path("", product_list, name="product_list"),
     path('auth/', include('accounts.urls')),# accounts.urls 
     path('api/', include('myapp.urls')),   
     path('api/', include('orders.urls')),  
@@ -34,4 +34,4 @@ urlpatterns = [
     path('api/',include('reports.urls')),
     path('api/', include('chat.urls')),
     
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

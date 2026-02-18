@@ -28,7 +28,7 @@ def product_list(request, category_slug=None):
     """
     Admin-only: Display all products in a table.
     """
-    if not request.user.is_authenticated or request.user.role != "admin":
+    if not request.user.is_authenticated or request.user.role != "client":
         return render(request, "forbidden.html", status=403)
     products = Product.objects.filter(available=True)
     categories = Category.objects.all()
@@ -44,15 +44,8 @@ def product_detail(request, id, slug):
     product = get_object_or_404(Product, id=id, slug=slug, available=True)
     return render(request, 'detail.html', {"product":product})#I will change to detail.html
 
-#modified---3
-@login_required
-def home(request):
-    """
-    Root landing page for PrintFlow.
-    Acts as a dashboard entry point.
-    """
-    products = Product.objects.filter(available=True).order_by('-created_at')
-    return render(request, 'base.html', {'products': products})
+
+
 
 
 

@@ -9,8 +9,8 @@ router.register("myapp", ProductViewSet)
 urlpatterns = router.urls
 
 urlpatterns += [
-    path("view/products/<slug:category_slug>/", product_list, name="product_list_template"),
+    path("view/products/<slug:category_slug>/", product_list, name="product_list_by_category"),
     path('view/subscribe/', subscribe, name='subscribe'),
-    path('<product>/<int:id>/<slug>/', product_detail, name="product_detail")
+    path('product/<int:id>/<slug>/', product_detail, name="product_detail")
 ]
 
