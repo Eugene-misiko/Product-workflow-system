@@ -18,6 +18,8 @@
     <main class="flex-grow">
     {% block content %}
     {% endblock content%}
+    {% block scripts %}
+    {% endblock scripts %}
     </main>
 {% if user.role != "admin" %}
 <footer>

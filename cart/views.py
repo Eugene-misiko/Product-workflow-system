@@ -1,8 +1,8 @@
 from django.shortcuts import render, get_object_or_404
 from myapp.models import Product
 from .models import Cart, CartItems
-from django.views.decorators import require_POST
-
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 # Create your views here.
 @require_POST
 def cart_add(request, product_id):
@@ -14,7 +14,7 @@ def cart_add(request, product_id):
         except Cart.DoesNotExist:
             cart = Cart.objects.create()
     else:
-        cart = Cart.object.create() 
+        cart = Cart.objects.create() 
         request.session["cart_id"] = cart.id 
 
     product = get_object_or_404(Product, id=product_id) 
@@ -22,4 +22,18 @@ def cart_add(request, product_id):
 
     if not created:
         cart_item.quantity += 1
-    cart_item.save()   
+    cart_item.save()  
+
+    response_data = {
+        "success": True,
+        "message": f"Added {product.name} to cart"
+    } 
+
+    return JsonResponse(response_data)
+
+def cart_detail(request):
+    cart_id = request.session.get('cart_id')
+    cart = None
+    if cart_id:
+        cart = get_object_or_404(Cart, id=cart_id)
+    return render(request, "detail.html", {"cart": cart})   

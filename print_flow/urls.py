@@ -33,5 +33,6 @@ urlpatterns = [
     path('api/',include('notifications.urls')),
     path('api/',include('reports.urls')),
     path('api/', include('chat.urls')),
+    path('cart/',include('cart.urls')),
     
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
