@@ -2,26 +2,27 @@
 {% load static %}
 {% block content %}    
 <div class="bg-white m-3 p-10 shadow-md rounded-md text-center ml-10 mr-10">
-<fieldset>
-<legend class="font-bold text-black">Create Category</legend>
+
+
     <form method="POST">
         {% csrf_token %}
-        
+        <fieldset>
+            <legend class="font-bold text-black">Create Category</legend>
         {{ form.as_p }}
         
         <button type="submit">Submit</button>
+        </fieldset>
     </form>
     <br>
     <a href="">Back to Category List</a>
-</fieldset>
 
-   <h2>Create New Product</h2>
+
+   <h2 class="text-green-500 font-bold mt-5">Create New Product</h2>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Save Product</button>
+        <button type="submit" class="bg-blue-500 rounded-md py-2 px-4 hover:bg-blue-600 font-semibold mt-2">Save Product</button>
     </form>
-
 
 {% endblock %}
 </div>

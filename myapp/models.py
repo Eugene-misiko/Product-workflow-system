@@ -51,7 +51,7 @@ class Product(models.Model):
     number_of_pages = models.PositiveIntegerField(blank=True, null=True)
     has_spine = models.BooleanField(default=False)
     spine_size_mm = models.FloatField(blank=True, null=True)
-
+    is_active = models.BooleanField(default=True)
     # Binding type
     binding_type = models.CharField(
         max_length=50,

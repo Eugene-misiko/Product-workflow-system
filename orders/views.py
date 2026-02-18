@@ -91,8 +91,7 @@ def order_create(request):
             design_type = form.cleaned_data["design_type"]
 
             order = Order.objects.create(client=request.user, color_type=color_type,
-                                          design_type=design_type)
-
+                                         design_type=design_type)
             OrderItem.objects.create(
                 order=order,
                 product=product,
