@@ -3,7 +3,7 @@ from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
 from accounts.permissions import IsAdmin
 from accounts.models import User
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from .models import Subscriber
 from .forms import CategoryForm, ProductForm
@@ -31,16 +31,24 @@ def category_list_template(request):
 
     categories = Category.objects.all()
     return render(request, "category_list.html", {"categories": categories})
-
-def product_list_template(request):
+#modifying---1
+def product_list_template(request, category_slug):
+    category = None
     """
     Admin-only: Display all products in a table.
     """
     if not request.user.is_authenticated or request.user.role != "admin":
         return render(request, "forbidden.html", status=403)
 
-    products = Product.objects.all()
-    return render(request, "product_list.html", {"products": products})
+    products = Product.objects.filter(available=True)
+    categories = Category.objects.all()
+    if category_slug:
+        category = get_object_or_404(Category, slug=category_slug)
+        products = products.filter(category=category)
+    return render(request, "product_list.html", {
+        "products": products, 
+        "category": category, 
+        "categories": categories})
 
 
 @login_required
