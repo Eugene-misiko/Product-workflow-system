@@ -27,6 +27,8 @@ class Product(models.Model):
     def get_absolute_url(self):
         return reverse('products:product_detail', kwargs={'id':self.id, 'slug':self.slug})
 
+
+
 class Subscriber(models.Model):
     email = models.EmailField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
