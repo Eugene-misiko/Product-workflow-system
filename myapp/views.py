@@ -22,17 +22,8 @@ class ProductViewSet(ModelViewSet):
     permission_classes = [IsAdmin]
     
 #this is the template views for backend 
-def category_list_template(request):
-    """
-    Admin-only: Display all categories in a table.
-    """
-    if not request.user.is_authenticated or request.user.role != "admin":
-        return render(request, "forbidden.html", status=403)
-
-    categories = Category.objects.all()
-    return render(request, "category_list.html", {"categories": categories})
 #modifying---1
-def product_list_template(request, category_slug=None):
+def product_list(request, category_slug=None):
     category = None
     """
     Admin-only: Display all products in a table.
@@ -51,7 +42,7 @@ def product_list_template(request, category_slug=None):
 #creating the product detail---2
 def product_detail(request, id, slug):
     product = get_object_or_404(Product, id=id, slug=slug, available=True)
-    return render(request, 'category_list.html', {"product":product})#I will change to detail.html
+    return render(request, 'detail.html', {"product":product})#I will change to detail.html
 
 #modified---3
 @login_required
