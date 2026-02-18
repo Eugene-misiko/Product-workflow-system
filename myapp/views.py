@@ -32,14 +32,13 @@ def category_list_template(request):
     categories = Category.objects.all()
     return render(request, "category_list.html", {"categories": categories})
 #modifying---1
-def product_list_template(request, category_slug):
+def product_list_template(request, category_slug=None):
     category = None
     """
     Admin-only: Display all products in a table.
     """
     if not request.user.is_authenticated or request.user.role != "admin":
         return render(request, "forbidden.html", status=403)
-
     products = Product.objects.filter(available=True)
     categories = Category.objects.all()
     if category_slug:
@@ -48,17 +47,26 @@ def product_list_template(request, category_slug):
     return render(request, "product_list.html", {
         "products": products, 
         "category": category, 
-        "categories": categories})
+        "categories": categories})#product_list.html
+#creating the product detail---2
+def product_detail(request, id, slug):
+    product = get_object_or_404(Product, id=id, slug=slug, available=True)
+    return render(request, 'category_list.html', {"product":product})#I will change to detail.html
 
-
+#modified---3
 @login_required
 def home(request):
     """
     Root landing page for PrintFlow.
     Acts as a dashboard entry point.
     """
-    products = Product.objects.filter(is_active=True)
+    products = Product.objects.filter(available=True).order_by('-created_at')
     return render(request, 'base.html', {'products': products})
+
+
+
+
+
 
 @login_required
 def subscribe(request):
