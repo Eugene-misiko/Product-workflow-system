@@ -12,8 +12,12 @@ DESIGN_CHOICES = [
 PAPER_CHOICES = [
     ("matte", "Matte"),
     ("glossy", "Glossy"),
+    ('book_paper', 'Book Paper'),
 ]
-
+COVER_CHOICES =[
+    ("matte", "Matte"),
+    ("glossy", "Glossy"),
+]
 EDIT_CHOICES = [
     ("simple", "Simple editing"),
     ("full", "Full editing"),
@@ -26,6 +30,7 @@ class OrderCreateForm(forms.Form):
     color_mode = forms.CharField(max_length=50, required=False)
     design_type = forms.ChoiceField(choices=DESIGN_CHOICES, required=False)
     description = forms.CharField(widget=forms.Textarea, required=False)
+    cover_type = forms.ChoiceField(choices=COVER_CHOICES, required=False)
     paper_type = forms.ChoiceField(choices=PAPER_CHOICES, required=False)
     editing_type = forms.ChoiceField(choices=EDIT_CHOICES, required=False)
     paper_size = forms.CharField(max_length=50, required=False)

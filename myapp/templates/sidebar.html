@@ -3,13 +3,13 @@
     <div class="flex flex-col h-full">
         <div class="flex flex-col space-y-3 flex-grow">
                 {% if user.role == "admin" %}
-                    <a href="/api/view/admin/summary/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Dashboard</a>
-                    <a href="/auth/view/users/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Users</a>
-                    <a href="api/view/products/<slug:category_slug>/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Products</a>
+                    <a href="{% url 'admin_summary_template' %}" class="{% if request.resolver_match.url_name == 'admin_summary_template' %}text-blue-600 bg-gray-800 {%else%} text-cyan-500 {% endif %} hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Dashboard</a>
+                    <a href="{% url 'user_list_template' %}" class="{% if request.resolver_match.url_name == 'user_list_template' %}text-blue-600 bg-gray-800 {%else%} text-cyan-500 {% endif %} hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Users</a>
+                    <a href="/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Products</a>
                     <a href="/api/view/orders/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Orders</a>
-                    <a href="/api/view/design-requests/" class="text-white hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Design Requests</a>
-                    <a href="/api/view/deliveries/" class="text-white hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Deliveries</a>
-                    <a href="/api/view/payments/" class="text-white hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Payments</a>
+                    <a href="/api/view/design-requests/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Design Requests</a>
+                    <a href="/api/view/deliveries/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Deliveries</a>
+                    <a href="/api/view/payments/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Payments</a>
                 {% endif %}
 
                 {% if user.role == "designer" %}
@@ -22,9 +22,10 @@
                     <a href="/api/view/payments/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Payments</a>
                     <a href="" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Cart</a>
                 {% endif %}
-
+              
                 <a href="/api/view/notifications/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Notifications</a>
-                <div class="mt-auto pt-40"> 
+                </div>
+                <div class="mt-auto pb-40"> 
                     <a href="/auth/logout/" class="shadow-[0_0_5px_cyan,0_0_25px_cyan] 
                     hover:shadow-[0_0_5px_cyan,0_0_25px_cyan,0_0_50px_cyan,0_0_100px_cyan,0_0_200px_cyan]
                     transition-all duration-300 ease-in-out
@@ -32,7 +33,7 @@
                     ">Logout</a>
                 </div>
             
-        </div>
+       
     </div>
 </nav>
 
