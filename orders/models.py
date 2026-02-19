@@ -113,7 +113,34 @@ class DesignDetail(models.Model):
     description = models.TextField()
     paper_type = models.CharField(max_length=20, choices=PAPER_TYPE)
     editing_type = models.CharField(max_length=20, choices=EDITING_TYPE)
+class OrderItemSpecification(models.Model):
+    """
+    Stores dynamic product specifications depending on the product type.
+    Linked to OrderItem.
+    """
 
+    order_item = models.OneToOneField(OrderItem, on_delete=models.CASCADE)
+
+    # Book-related fields
+    number_of_pages = models.IntegerField(null=True, blank=True)
+    binding_type = models.CharField(max_length=50, null=True, blank=True)
+    has_spine = models.BooleanField(default=False)
+    spine_size_mm = models.FloatField(null=True, blank=True)
+
+    # Apparel-related fields
+    size = models.CharField(max_length=20, null=True, blank=True)
+    material = models.CharField(max_length=100, null=True, blank=True)
+
+    # Plate-related fields
+    plate_diameter_cm = models.FloatField(null=True, blank=True)
+
+    # General fields
+    paper_type = models.CharField(max_length=50, null=True, blank=True)
+    cover_type = models.CharField(max_length=50, null=True, blank=True)
+    paper_size = models.CharField(max_length=50, null=True, blank=True)
+
+    def __str__(self):
+        return f"Specifications for {self.order_item.product.name}"
 
 
 
