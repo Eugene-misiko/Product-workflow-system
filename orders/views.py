@@ -11,7 +11,7 @@ from notifications.utils import notify
 from audit.utils import audit_log
 from .forms import OrderCreateForm
 from accounts.models import User
-from myapp.models import Category
+from myapp.models import Category, OrderItemSpecification
 from myapp.models import Product
 from django.http import JsonResponse
 # Create your views here.
@@ -90,16 +90,34 @@ def order_create(request):
             color_type = form.cleaned_data.get("color_type")
             design_type = form.cleaned_data["design_type"]
 
-            order = Order.objects.create(client=request.user, color_type=color_type,
-                                         design_type=design_type)
-            OrderItem.objects.create(
+            order = Order.objects.create(
+                client=request.user,
+                color_type=color_type,
+                design_type=design_type
+                        )
+            
+            order_item = OrderItem.objects.create(
                 order=order,
                 product=product,
                 quantity=quantity,
                 price_at_order=product.price,
-                
+            )
+                # Save product-specific specifications
+            OrderItemSpecification.objects.create(
+                order_item=order_item,
+                number_of_pages=form.cleaned_data.get("number_of_pages"),
+                binding_type=form.cleaned_data.get("binding_type"),
+                has_spine=form.cleaned_data.get("has_spine"),
+                spine_size_mm=form.cleaned_data.get("spine_size_mm"),
+                size=form.cleaned_data.get("size"),
+                material=form.cleaned_data.get("material"),
+                plate_diameter_cm=form.cleaned_data.get("plate_diameter_cm"),
+                paper_type=form.cleaned_data.get("paper_type"),
+                cover_type=form.cleaned_data.get("cover_type"),
+                paper_size=form.cleaned_data.get("paper_size"),
             )
 
+            # Handle design logic
             if design_type == "not_designed":
                 DesignDetail.objects.create(
                     order=order,

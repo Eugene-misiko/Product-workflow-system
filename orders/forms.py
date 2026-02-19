@@ -34,11 +34,11 @@ class OrderCreateForm(forms.Form):
     paper_type = forms.ChoiceField(choices=PAPER_CHOICES, required=False)
     editing_type = forms.ChoiceField(choices=EDIT_CHOICES, required=False)
     paper_size = forms.CharField(max_length=50, required=False)
-    number_of_pages = forms.IntegerField(min_value=1, required=True)
-    has_spine = forms.BooleanField(initial=False)
-    spine_size_mm = forms.FloatField(required=True)
+    number_of_pages = forms.IntegerField(min_value=1, required=False)
+    has_spine = forms.BooleanField(initial=False, required=False)
+    spine_size_mm = forms.FloatField(required=False)
     binding_type = forms.ChoiceField(
-        required=True,
+        required=False,
         choices=[
             ('perfect', 'Perfect Binding'),
             ('spiral', 'Spiral Binding'),
@@ -47,7 +47,7 @@ class OrderCreateForm(forms.Form):
         ]
     )
     # Apparel specific
-    size = forms.CharField(max_length=20, required=True)
+    size = forms.CharField(max_length=20, required=False)
     material = forms.CharField(max_length=100, required=False)
     # Plate specific
     plate_diameter_cm = forms.FloatField(required=False)
