@@ -36,4 +36,5 @@ def cart_detail(request):
     cart = None
     if cart_id:
         cart = get_object_or_404(Cart, id=cart_id)
-    return render(request, "detail.html", {"cart": cart})   
+    product = Product.objects.all()
+    return render(request, "detail.html", {"cart": cart, 'product': product})   

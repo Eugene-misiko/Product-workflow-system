@@ -9,25 +9,32 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="flex flex-col min-h-screen">
-    <header>
+<body class="min-h-screen flex flex-col bg-white">
     {% include 'navbar.html' %}
-  </header>
-  
-     <!-- Main Content Area -->
-    <main class="flex-grow">
-    {% block content %}
-    {% endblock content%}
-    {% block scripts %}
-    {% endblock scripts %}
-    </main>
-{% if user.role != "admin" %}
-<footer>
-{% include 'footer.html' %}
-{% else %}
+    <div class="flex flex-1">
+        <!-- Sidebar -->
+        <aside class="text-white">
+            {% include 'sidebar.html' %}
+        </aside>
 
-{% endif %}
-</footer>
+        <!-- Main Content -->
+        <main class="flex-1 p-6 bg-gray-100">
+            {% block content %}
+            {% endblock content %}
+            {% block scripts %}
+            {% endblock scripts %}
+        </main>
+
+    </div>
+
+    <!-- Footer -->
+    {% if user.role != "admin" %}
+    <footer class="">
+        {% include 'footer.html' %}
+    </footer>
+    {% endif %}
+
 </body>
+
 </html>
 

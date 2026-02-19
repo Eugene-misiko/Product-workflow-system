@@ -6,11 +6,9 @@ from decimal import Decimal
 class Order(models.Model):
     """
     Represents a customer's order.
-
     An order belongs to one client and contains multiple OrderItems.
     The total price is calculated automatically from its items.
     """
-
     STATUS = [
         ("pending", "Pending"),
         ("approved", "Approved"),

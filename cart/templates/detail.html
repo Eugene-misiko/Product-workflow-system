@@ -5,7 +5,9 @@
 {% if cart %}
  <ul>
     {% for item in cart.items.all %}
-    <li>
+    <li>{% if item.product.image %}
+        <img src="{{item.product.url}}" alt={{item.product.name}}>
+        {% endif %}
         {{item.product.name}}
     </li>
 
