@@ -1,5 +1,6 @@
 <!-- Sidebar -->
-<nav class="bg-[#323232] shadow-md flex flex-col sticky left-0 h-[100%] z-50 w-[250px] text-white p-10 mt-10 rounded-xl ">
+ {% load static %}
+<nav class="bg-[#323232] backdrop-blur-md shadow-md flex flex-col sticky left-0 h-[100%] z-50 w-[250px] text-white p-10 mt-10 rounded-xl ">
     <div class="flex flex-col h-full">
         <div class="flex flex-col space-y-3 flex-grow">
                 {% if user.role == "admin" %}
@@ -22,7 +23,7 @@
                     <a href="/api/view/payments/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Payments</a>
                     <a href="" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Cart</a>
                 {% endif %}
-              
+
                 <a href="/api/view/notifications/" class="text-cyan-500 hover:text-blue-600 p-2 rounded-md text-sm font-medium hover:bg-gray-700">Notifications</a>
                 </div>
                 <div class="mt-auto pb-40"> 

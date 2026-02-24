@@ -10,7 +10,7 @@ from .permissions import IsAdmin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from .forms import CustomUserCreationForm
 #create your views here
 
@@ -21,7 +21,23 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
-
+class LoginView(APIView):
+    """
+    Login user
+    """
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "username": user.username
+            })
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+    
 class LogoutView(APIView):
     """
     Logout user by blacklisting the refresh token (for JWT).
@@ -31,7 +47,6 @@ class LogoutView(APIView):
         token = RefreshToken(refresh_token)
         token.blacklist()
         return Response({"message": "Logged out successfully"})
-
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """
     View or update authenticated user's profile.

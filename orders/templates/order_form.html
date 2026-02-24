@@ -1,46 +1,132 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block content %}    
+{% block title %}Create Order{% endblock %}
+
+{% block content %}
+
+<select name="{{ form.product.name }}" id="{{ form.product.id_for_label }}" class="mt-1 block w-full rounded-md border-gray-300 p-2">
+    <option value="">-- Choose a product --</option>
+    {% for product in products %}
+        <option value="{{ product.id }}" data-category="{{ product.category.name }}">
+            {{ product.name }}
+        </option>
+    {% endfor %}
+</select>
 <div class="max-w-xl mx-auto p-6 bg-white shadow-md rounded-lg">
     <h1 class="text-2xl font-semibold mb-4">Create Order</h1>
     <form method="post" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
 
-        {% for field in form %}
-            <div class="space-y-1">
-                {% if field.field.widget.input_type == "checkbox" %}
-                    <div class="flex items-center">
-                        {{ field }}
-                        <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900">
-                            {{ field.label }}
-                        </label>
-                    </div>
-                {% else %}
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ field.label }}
-                    </label>
-                    {{ field }}
-                {% endif %}
-                
-                {% if field.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ field.errors|first }}</p>
-                {% endif %}
-            </div>
-        {% endfor %}
+        <!-- Product dropdown -->
+        <div>
+            <label for="{{ form.product.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.product.label }}
+            </label>
+            {{ form.product }}
+            {% if form.product.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.product.errors|first }}</p>
+            {% endif %}
+        </div>
 
-        <button type="submit" class="w-full shadow-[0_0_5px_cyan,0_0_25px_cyan] 
-                    hover:shadow-[0_0_5px_cyan,0_0_25px_cyan,0_0_50px_cyan,0_0_100px_cyan,0_0_200px_cyan]
-                    transition-all duration-300 ease-in-out
-                    px-6 py-3 bg-gray-800 text-white font-semibold rounded-lg">
+        <!-- Quantity -->
+        <div>
+            <label for="{{ form.quantity.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.quantity.label }}
+            </label>
+            {{ form.quantity }}
+            {% if form.quantity.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.quantity.errors|first }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Color Type -->
+        <div>
+            <label for="{{ form.color_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.color_type.label }}
+            </label>
+            {{ form.color_type }}
+        </div>
+
+        <!-- Design Type -->
+        <div>
+            <label for="{{ form.design_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.design_type.label }}
+            </label>
+            {{ form.design_type }}
+        </div>
+
+        <!-- Description -->
+        <div id="description-field" class="hidden">
+            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ form.description.label }}
+            </label>
+            {{ form.description }}
+        </div>
+
+        <!-- Book / Paper Fields -->
+        <div id="book-fields" class="hidden space-y-2">
+            {{ form.number_of_pages.label_tag }} {{ form.number_of_pages }}
+            {{ form.binding_type.label_tag }} {{ form.binding_type }}
+            {{ form.has_spine.label_tag }} {{ form.has_spine }}
+            {{ form.spine_size_mm.label_tag }} {{ form.spine_size_mm }}
+            {{ form.paper_type.label_tag }} {{ form.paper_type }}
+            {{ form.cover_type.label_tag }} {{ form.cover_type }}
+            {{ form.paper_size.label_tag }} {{ form.paper_size }}
+        </div>
+
+        <!-- Apparel Fields -->
+        <div id="apparel-fields" class="hidden space-y-2">
+            {{ form.size.label_tag }} {{ form.size }}
+            {{ form.material.label_tag }} {{ form.material }}
+        </div>
+
+        <!-- Plate / Banner Fields -->
+        <div id="plate-fields" class="hidden space-y-2">
+            {{ form.plate_diameter_cm.label_tag }} {{ form.plate_diameter_cm }}
+            {{ form.design_file.label_tag }} {{ form.design_file }}
+        </div>
+
+        <button type="submit" class="w-full px-6 py-3 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-900">
             Submit Order
         </button>
     </form>
 </div>
+
+<!-- JS to show/hide fields based on product selection -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const productSelect = document.querySelector("#id_product");
+    const descriptionField = document.querySelector("#description-field");
+    const bookFields = document.querySelector("#book-fields");
+    const apparelFields = document.querySelector("#apparel-fields");
+    const plateFields = document.querySelector("#plate-fields");
+
+    function updateFields() {
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const category = selectedOption.dataset.category;  // add data-category in dropdown options
+
+        // Hide all first
+        descriptionField.classList.add("hidden");
+        bookFields.classList.add("hidden");
+        apparelFields.classList.add("hidden");
+        plateFields.classList.add("hidden");
+
+        if (!category) return;
+
+        if (category === "Book") {
+            bookFields.classList.remove("hidden");
+            descriptionField.classList.remove("hidden");
+        } else if (category === "Apparel") {
+            apparelFields.classList.remove("hidden");
+        } else if (category === "Plate" || category === "Banner") {
+            plateFields.classList.remove("hidden");
+            descriptionField.classList.remove("hidden");
+        }
+    }
+
+    productSelect.addEventListener("change", updateFields);
+    updateFields(); // initial call in case a product is preselected
+});
+</script>
 {% endblock %}
-
-
-
-
-
-

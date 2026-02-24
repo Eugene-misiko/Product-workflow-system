@@ -1,6 +1,8 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import RegisterView, LogoutView, UserProfileView, UserListView, AssignRoleView,user_list_template, user_profile_template,post_login_redirect, logout,register
+from .views import (RegisterView, LogoutView,LoginView, 
+                    UserProfileView, UserListView, AssignRoleView,user_list_template, 
+                    user_profile_template,post_login_redirect, logout,register)
 
 urlpatterns = [
     # Registration
@@ -8,7 +10,8 @@ urlpatterns = [
 
     # JWT login/logout (for API)
     path("logout/", logout, name="logout"),
-    path("login/",auth_views.LoginView.as_view(template_name="login.html",redirect_authenticated_user=True),name="login",),    
+    path("login/",auth_views.LoginView.as_view(template_name="login.html",redirect_authenticated_user=True),name="login",),
+    path("/login/", LoginView.as_view(), name='login'),
     # Password management
     path("password_change/", auth_views.PasswordChangeView.as_view(template_name="password_change.html",success_url="/auth/password_change/done/"), name="password_change"),
     path("password_change/done/", auth_views.PasswordChangeDoneView.as_view(template_name="password_change_done.html", ), name="password_change_done"),

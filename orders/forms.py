@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Order,OrderItem,Product
+from .models import Order,OrderItem,Product,OrderItemSpecification
 from myapp.models import Category
 #modified 
 
@@ -14,58 +14,81 @@ PAPER_CHOICES = [
     ("glossy", "Glossy"),
     ('book_paper', 'Book Paper'),
 ]
-COVER_CHOICES =[
+
+COVER_CHOICES = [
     ("matte", "Matte"),
     ("glossy", "Glossy"),
 ]
+
 EDIT_CHOICES = [
     ("simple", "Simple editing"),
     ("full", "Full editing"),
 ]
+
+BINDING_CHOICES = [
+    ('perfect', 'Perfect Binding'),
+    ('spiral', 'Spiral Binding'),
+    ('hardcover', 'Hardcover'),
+    ('stapled', 'Stapled'),
+]
+
 class OrderCreateForm(forms.Form):
-    """ Form used by client to create an order, styled with Tailwind CSS. """
-    name = forms.CharField(max_length=150)
-    category_code = forms.CharField(required=True, initial=1)
+    product = forms.ModelChoiceField(
+        queryset=Product.objects.none(),
+        empty_label="-- Choose a product --",
+        required=True
+    )
     quantity = forms.IntegerField(min_value=1, required=True)
-    color_mode = forms.CharField(max_length=50, required=False)
-    design_type = forms.ChoiceField(choices=DESIGN_CHOICES, required=False)
+    color_type = forms.CharField(max_length=50, required=False)
+    design_type = forms.ChoiceField(
+        choices=[("designed", "I have my design"), ("not_designed", "I want it designed")],
+        required=False
+    )
     description = forms.CharField(widget=forms.Textarea, required=False)
-    cover_type = forms.ChoiceField(choices=COVER_CHOICES, required=False)
-    paper_type = forms.ChoiceField(choices=PAPER_CHOICES, required=False)
-    editing_type = forms.ChoiceField(choices=EDIT_CHOICES, required=False)
-    paper_size = forms.CharField(max_length=50, required=False)
+
+    # Book / paper fields
     number_of_pages = forms.IntegerField(min_value=1, required=False)
-    has_spine = forms.BooleanField(initial=False, required=False)
-    spine_size_mm = forms.FloatField(required=False)
     binding_type = forms.ChoiceField(
-        required=False,
         choices=[
             ('perfect', 'Perfect Binding'),
             ('spiral', 'Spiral Binding'),
             ('hardcover', 'Hardcover'),
-            ('stapled', 'Stapled'),
-        ]
+            ('stapled', 'Stapled')
+        ],
+        required=False
     )
-    # Apparel specific
+    has_spine = forms.BooleanField(required=False)
+    spine_size_mm = forms.FloatField(required=False)
+    paper_type = forms.ChoiceField(
+        choices=[("matte", "Matte"), ("glossy", "Glossy"), ('book_paper', 'Book Paper')],
+        required=False
+    )
+    cover_type = forms.ChoiceField(
+        choices=[("matte", "Matte"), ("glossy", "Glossy")],
+        required=False
+    )
+    paper_size = forms.CharField(max_length=50, required=False)
+
+    # Apparel fields
     size = forms.CharField(max_length=20, required=False)
     material = forms.CharField(max_length=100, required=False)
-    # Plate specific
+
+    # Plate / banner
     plate_diameter_cm = forms.FloatField(required=False)
-    design_file = forms.FileField(required=True)
+    design_file = forms.FileField(required=False)
 
     def __init__(self, *args, **kwargs):
+        products_queryset = kwargs.pop('products_queryset', None)
         super().__init__(*args, **kwargs)
-        input_classes = "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-        checkbox_classes = "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+        if products_queryset:
+            self.fields['product'].queryset = products_queryset
 
-        for field_name, field in self.fields.items():
-            if isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs['class'] = checkbox_classes
-            elif isinstance(field.widget, forms.FileInput):
-                field.widget.attrs['class'] = "mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
-            else:
-                field.widget.attrs['class'] = input_classes
-    
+            # Add data-category attribute to each option
+            for product in products_queryset:
+                self.fields['product'].widget.choices.queryset = products_queryset
+            self.fields['product'].widget.attrs.update({
+                "class": "mt-1 block w-full rounded-md border-gray-300 p-2"
+            })
 class Item(forms.ModelForm):
     """
     creating Item form

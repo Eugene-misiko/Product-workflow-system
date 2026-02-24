@@ -83,6 +83,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",        # React
     "https://your-app-name.com",    # Your production frontend
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    
+]
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -99,7 +103,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
-    )
+    ),
 }
 
 ROOT_URLCONF = 'print_flow.urls'

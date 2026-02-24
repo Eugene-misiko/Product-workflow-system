@@ -44,17 +44,6 @@ def product_detail(request, id, slug):
     product = get_object_or_404(Product, id=id, slug=slug, available=True)
     return render(request, 'detail.html', {"product":product})#I will change to detail.html
 
-@login_required
-def subscribe(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        if Subscriber.objects.filter(email=email).exists():
-            messages.error(request, 'You are already subscribed.')
-        else:
-            Subscriber.objects.create(email=email)
-            messages.success(request, 'Thank you for subscribing!')
-
-        return redirect('subscribe')  
-    return render(request, 'footer.html')  
+  
 
 

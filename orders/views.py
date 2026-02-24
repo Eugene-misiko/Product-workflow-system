@@ -2,7 +2,7 @@ from django.contrib import messages
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Order, OrderItem, DesignDetail
+from .models import Order, OrderItem, DesignDetail, OrderItemSpecification
 from .serializers import OrderSerializer, OrderItemSerializer
 from .permissions import CanAccessOrder
 from django.shortcuts import render,redirect, get_object_or_404
@@ -11,7 +11,7 @@ from notifications.utils import notify
 from audit.utils import audit_log
 from .forms import OrderCreateForm
 from accounts.models import User
-from myapp.models import Category, OrderItemSpecification
+from myapp.models import Category
 from myapp.models import Product
 from django.http import JsonResponse
 # Create your views here.
@@ -57,84 +57,69 @@ class OrderViewSet(ModelViewSet):
 @login_required
 def order_create(request):
     """
-    Create a new order with one product item.
-
-    Workflow:
-    - User selects category
-    - User selects product
-    - User enters quantity
-    - User selects color
-    - User selects design type (designed/not designed)
-    - Order and OrderItem created
-    - If not designed, create DesignDetail
-    - If designed, redirect to upload_design page
+    Create a new order for a client with dynamic fields based on product type.
     """
     if request.user.role != "client":
         return render(request, "forbidden.html", status=403)
 
-    form = OrderCreateForm(request.POST or None)
+    # All available products
+    products = Product.objects.filter(available=True)
 
-    # If category selected → filter products
-    if request.method == "POST":
-        category_id = request.POST.get("category")
-        if category_id:
-            form.fields["product"].queryset = Product.objects.filter(
-                category_id=category_id,
-                is_active=True
-            )
+    # Initialize form with queryset
+    form = OrderCreateForm(request.POST or None, request.FILES or None, products_queryset=products)
 
-        # If full form submitted
-        if form.is_valid() and form.cleaned_data.get("product"):
-            product = form.cleaned_data["product"]
-            quantity = form.cleaned_data["quantity"]
-            color_type = form.cleaned_data.get("color_type")
-            design_type = form.cleaned_data["design_type"]
+    if request.method == "POST" and form.is_valid():
+        product = form.cleaned_data['product']
 
-            order = Order.objects.create(
-                client=request.user,
-                color_type=color_type,
-                design_type=design_type
-                        )
-            
-            order_item = OrderItem.objects.create(
+        # Create order
+        order = Order.objects.create(
+            client=request.user,
+            color_type=form.cleaned_data.get('color_type'),
+            design_type=form.cleaned_data.get('design_type')
+        )
+
+        # Create order item
+        order_item = OrderItem.objects.create(
+            order=order,
+            product=product,
+            quantity=form.cleaned_data.get('quantity'),
+            price_at_order=product.price
+        )
+
+        # Create order item specifications (safe defaults)
+        OrderItemSpecification.objects.create(
+            order_item=order_item,
+            number_of_pages=form.cleaned_data.get('number_of_pages') or 0,
+            binding_type=form.cleaned_data.get('binding_type') or "",
+            has_spine=form.cleaned_data.get('has_spine') or False,
+            spine_size_mm=form.cleaned_data.get('spine_size_mm') or 0,
+            size=form.cleaned_data.get('size') or "",
+            material=form.cleaned_data.get('material') or "",
+            plate_diameter_cm=form.cleaned_data.get('plate_diameter_cm') or 0,
+            paper_type=form.cleaned_data.get('paper_type') or "",
+            cover_type=form.cleaned_data.get('cover_type') or "",
+            paper_size=form.cleaned_data.get('paper_size') or "",
+        )
+
+        # Handle design details if "not_designed"
+        if form.cleaned_data.get('design_type') == "not_designed":
+            DesignDetail.objects.create(
                 order=order,
-                product=product,
-                quantity=quantity,
-                price_at_order=product.price,
+                description=form.cleaned_data.get('description') or "",
+                paper_type=form.cleaned_data.get('paper_type') or "",
+                editing_type=form.cleaned_data.get('editing_type') or "",
             )
-                # Save product-specific specifications
-            OrderItemSpecification.objects.create(
-                order_item=order_item,
-                number_of_pages=form.cleaned_data.get("number_of_pages"),
-                binding_type=form.cleaned_data.get("binding_type"),
-                has_spine=form.cleaned_data.get("has_spine"),
-                spine_size_mm=form.cleaned_data.get("spine_size_mm"),
-                size=form.cleaned_data.get("size"),
-                material=form.cleaned_data.get("material"),
-                plate_diameter_cm=form.cleaned_data.get("plate_diameter_cm"),
-                paper_type=form.cleaned_data.get("paper_type"),
-                cover_type=form.cleaned_data.get("cover_type"),
-                paper_size=form.cleaned_data.get("paper_size"),
-            )
+            order.status = "in_design"
+            order.save()
+        elif form.cleaned_data.get('design_type') == "designed":
+            return redirect("upload_design", order_id=order.id)
 
-            # Handle design logic
-            if design_type == "not_designed":
-                DesignDetail.objects.create(
-                    order=order,
-                    description=form.cleaned_data["description"],
-                    paper_type=form.cleaned_data["paper_type"],
-                    editing_type=form.cleaned_data["editing_type"],
-                    
-                )
-                order.status = "in_design"
-                order.save()
+        return redirect("order_detail", order_id=order.id)
 
-            elif design_type == "designed":
-                return redirect("upload_design", order_id=order.id)
-
-            return redirect("order_detail", order_id=order.id)
-
-    return render(request, "order_form.html", {"form": form})
+    return render(request, "order_form.html", {
+        "form": form,
+        "products": products
+    })
 
 @login_required
 def products_by_category(request, category_id):
@@ -165,7 +150,7 @@ def orders_list(request):
 
 
 @login_required
-def order_detail_template(request, order_id):
+def order_detail(request, order_id):
     """
     Display a single order and its items.
     """
