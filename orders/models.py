@@ -2,6 +2,8 @@ from django.db import models
 from myapp.models import Product
 from django.conf import settings
 from decimal import Decimal
+from accounts.models import User
+from django.core.validators import MinValueValidator
 
 class Order(models.Model):
     """
@@ -72,6 +74,75 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - {self.client.username}"
+    
+    
+DESIGN_CHOICES = [
+    ("designed", "I have my design"),
+    ("not_designed", "I want it designed"),
+]
+
+PAPER_CHOICES = [
+    ("matte", "Matte"),
+    ("glossy", "Glossy"),
+    ('book_paper', 'Book Paper'),
+]
+
+COVER_CHOICES = [
+    ("matte", "Matte"),
+    ("glossy", "Glossy"),
+]
+
+EDIT_CHOICES = [
+    ("simple", "Simple editing"),
+    ("full", "Full editing"),
+]
+
+BINDING_CHOICES = [
+    ('perfect', 'Perfect Binding'),
+    ('spiral', 'Spiral Binding'),
+    ('hardcover', 'Hardcover'),
+    ('stapled', 'Stapled'),
+]
+class OrderCreateForm(models.Model):
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    product = models.CharField(max_length=100)
+    quantity = models.IntegerField(validators=[MinValueValidator(1)], blank=False)
+    color_type = models.CharField(max_length=50, blank=True)
+    design_type = models.CharField(max_length=20,
+        choices=DESIGN_CHOICES,
+        blank=True,
+    )
+    description = models.TextField(blank=True)
+
+    # Book / paper fields
+    number_of_pages = models.IntegerField(
+        validators=[MinValueValidator(1)],
+        blank=True
+    )
+    binding_type = models.CharField(max_length=20,
+        choices=BINDING_CHOICES,
+        blank=True
+    )
+    has_spine = models.BooleanField(blank=True)
+    spine_size_mm = models.FloatField(blank=True)
+    paper_type = models.CharField(max_length=20,
+        choices=PAPER_CHOICES,
+        blank=True
+    )
+    cover_type = models.CharField(max_length=20,
+        choices=COVER_CHOICES,
+        blank=True
+    )
+    paper_size = models.CharField(max_length=50, blank=True)
+
+    # Apparel fields
+    size = models.CharField(max_length=20, blank=True)
+    material = models.CharField(max_length=100, blank=True)
+
+    # Plate / banner
+    plate_diameter_cm = models.FloatField(blank=True)
+    design_file = models.FileField(upload_to='designes/',blank=True) 
+
 class OrderItem(models.Model):
     """
     Represents a single product inside an order.
@@ -81,7 +152,7 @@ class OrderItem(models.Model):
     """
 
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    product = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
     price_at_order = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -113,34 +184,8 @@ class DesignDetail(models.Model):
     description = models.TextField()
     paper_type = models.CharField(max_length=20, choices=PAPER_TYPE)
     editing_type = models.CharField(max_length=20, choices=EDITING_TYPE)
-class OrderItemSpecification(models.Model):
-    """
-    Stores dynamic product specifications depending on the product type.
-    Linked to OrderItem.
-    """
 
-    order_item = models.OneToOneField(OrderItem, on_delete=models.CASCADE)
 
-    # Book-related fields
-    number_of_pages = models.IntegerField(null=True, blank=True)
-    binding_type = models.CharField(max_length=50, null=True, blank=True)
-    has_spine = models.BooleanField(default=False)
-    spine_size_mm = models.FloatField(null=True, blank=True)
-
-    # Apparel-related fields
-    size = models.CharField(max_length=20, null=True, blank=True)
-    material = models.CharField(max_length=100, null=True, blank=True)
-
-    # Plate-related fields
-    plate_diameter_cm = models.FloatField(null=True, blank=True)
-
-    # General fields
-    paper_type = models.CharField(max_length=50, null=True, blank=True)
-    cover_type = models.CharField(max_length=50, null=True, blank=True)
-    paper_size = models.CharField(max_length=50, null=True, blank=True)
-
-    def __str__(self):
-        return f"Specifications for {self.order_item.product.name}"
 
 
 

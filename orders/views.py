@@ -1,17 +1,17 @@
 from django.contrib import messages
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Order, OrderItem, DesignDetail, OrderItemSpecification
+from .models import Order, OrderItem, DesignDetail,OrderCreateForm
 from .serializers import OrderSerializer, OrderItemSerializer
 from .permissions import CanAccessOrder
 from django.shortcuts import render,redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from notifications.utils import notify
 from audit.utils import audit_log
-from .forms import OrderCreateForm
+from .forms import OrderCreationForm
 from accounts.models import User
-from myapp.models import Category
 from myapp.models import Product
 from django.http import JsonResponse
 # Create your views here.
@@ -22,7 +22,7 @@ class OrderViewSet(ModelViewSet):
     """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [CanAccessOrder]
+    permission_classes = [CanAccessOrder, IsAuthenticated]
 
     def get_queryset(self):
         """
@@ -66,7 +66,7 @@ def order_create(request):
     products = Product.objects.filter(available=True)
 
     # Initialize form with queryset
-    form = OrderCreateForm(request.POST or None, request.FILES or None, products_queryset=products)
+    form = OrderCreationForm(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and form.is_valid():
         product = form.cleaned_data['product']
@@ -79,26 +79,11 @@ def order_create(request):
         )
 
         # Create order item
-        order_item = OrderItem.objects.create(
+        order_item = OrderItem.objects.get(#create
             order=order,
             product=product,
             quantity=form.cleaned_data.get('quantity'),
-            price_at_order=product.price
-        )
-
-        # Create order item specifications (safe defaults)
-        OrderItemSpecification.objects.create(
-            order_item=order_item,
-            number_of_pages=form.cleaned_data.get('number_of_pages') or 0,
-            binding_type=form.cleaned_data.get('binding_type') or "",
-            has_spine=form.cleaned_data.get('has_spine') or False,
-            spine_size_mm=form.cleaned_data.get('spine_size_mm') or 0,
-            size=form.cleaned_data.get('size') or "",
-            material=form.cleaned_data.get('material') or "",
-            plate_diameter_cm=form.cleaned_data.get('plate_diameter_cm') or 0,
-            paper_type=form.cleaned_data.get('paper_type') or "",
-            cover_type=form.cleaned_data.get('cover_type') or "",
-            paper_size=form.cleaned_data.get('paper_size') or "",
+            price_at_order=product,
         )
 
         # Handle design details if "not_designed"
@@ -116,10 +101,7 @@ def order_create(request):
 
         return redirect("order_detail", order_id=order.id)
 
-    return render(request, "order_form.html", {
-        "form": form,
-        "products": products
-    })
+    return render(request, "order_form.html", {"form": form,"products": products})
 
 @login_required
 def products_by_category(request, category_id):
@@ -144,6 +126,8 @@ def orders_list(request):
     else:
         # Client sees only their own orders
         orders = Order.objects.filter(client=user).order_by('-created_at')
+    
+    
 
    
     return render(request, "order_list.html", {"orders": orders})
@@ -365,6 +349,6 @@ def delete_order(request, order_id):
 
         messages.success(request, "Order deleted successfully.")
         return redirect("orders_list")
-
+    
     return render(request, "delete_order.html", {"order": order})
-
+    

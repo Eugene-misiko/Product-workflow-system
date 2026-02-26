@@ -1,27 +1,15 @@
 <script src="https://cdn.tailwindcss.com"></script>
-<footer class="bg-[#323232] mt-12">
+<footer class="bg-[#323232]">
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
             <!-- Product Categories Section -->
             <div>
                 <h3 class="text-sm font-semibold text-white tracking-wider uppercase">Products</h3>
-          
                 <ul class="mt-4 space-y-4">
-                    {% if categories %}
-             
-                    {% for category in categories %}
-                            <li>
-                                <a href="" class="text-gray-400 hover:text-white transition duration-300">
-                                    {{ category.name }}
-                                </a>
-                            </li>
-                        {% endfor %}
-                    {% else %}
                         <li><a class="text-gray-400 hover:text-white transition duration-300">Books</a></li>
                         <li><a class="text-gray-400 hover:text-white transition duration-300">Burners</a></li>
                         <li><a class="text-gray-400 hover:text-white transition duration-300">Cards</a></li>
                         <li><a class="text-gray-400 hover:text-white transition duration-300">Envelopes</a></li>
-                    {% endif %}
                 </ul>
             </div>
 

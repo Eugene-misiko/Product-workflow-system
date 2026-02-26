@@ -5,6 +5,7 @@ from orders.models import Order
 from django.contrib.auth.decorators import login_required
 from .serializers import DeliverySerializer
 from django.utils import timezone
+from rest_framework.permissions import AllowAny
 # Create your views here.
 class DeliveryViewSet(ModelViewSet):
     """
@@ -12,6 +13,7 @@ class DeliveryViewSet(ModelViewSet):
     """
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer
+    permission_classes =[AllowAny]
 # adding delivery template for visualisation 
 
 def delivery_list_template(request):

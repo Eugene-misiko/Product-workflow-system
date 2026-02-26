@@ -12,44 +12,35 @@
     <tr class="hover:bg-gray-50">
         <td class="px-6 py-4">
             <div class="font-semibold">{{ item.product.name }}</div>
-
-            {% if item.orderitemspecification %}
                 <div class="text-sm text-gray-600 mt-2 space-y-1">
-                    
-                    {% if item.orderitemspecification.number_of_pages %}
-                        <div><strong>Pages:</strong> {{ item.orderitemspecification.number_of_pages }}</div>
+                        <div><strong>Pages:</strong> {{ item.number_of_pages }}</div>
+                        <div><strong>Binding:</strong> {{ item.binding_type }}</div>
+                    {% if item.size %}
+                        <div><strong>Size:</strong> {{ item.size }}</div>
                     {% endif %}
 
-                    {% if item.orderitemspecification.binding_type %}
-                        <div><strong>Binding:</strong> {{ item.orderitemspecification.binding_type }}</div>
+                    {% if item.material %}
+                        <div><strong>Material:</strong> {{ item.material }}</div>
                     {% endif %}
 
-                    {% if item.orderitemspecification.size %}
-                        <div><strong>Size:</strong> {{ item.orderitemspecification.size }}</div>
+                    {% if item.plate_diameter_cm %}
+                        <div><strong>Plate Diameter:</strong> {{ item.plate_diameter_cm }} cm</div>
                     {% endif %}
 
-                    {% if item.orderitemspecification.material %}
-                        <div><strong>Material:</strong> {{ item.orderitemspecification.material }}</div>
+                    {% if item.paper_type %}
+                        <div><strong>Paper Type:</strong> {{ item.paper_type }}</div>
                     {% endif %}
 
-                    {% if item.orderitemspecification.plate_diameter_cm %}
-                        <div><strong>Plate Diameter:</strong> {{ item.orderitemspecification.plate_diameter_cm }} cm</div>
+                    {% if item.cover_type %}
+                        <div><strong>Cover Type:</strong> {{ item.cover_type }}</div>
                     {% endif %}
 
-                    {% if item.orderitemspecification.paper_type %}
-                        <div><strong>Paper Type:</strong> {{ item.orderitemspecification.paper_type }}</div>
-                    {% endif %}
-
-                    {% if item.orderitemspecification.cover_type %}
-                        <div><strong>Cover Type:</strong> {{ item.orderitemspecification.cover_type }}</div>
-                    {% endif %}
-
-                    {% if item.orderitemspecification.paper_size %}
-                        <div><strong>Paper Size:</strong> {{ item.orderitemspecification.paper_size }}</div>
+                    {% if item.paper_size %}
+                        <div><strong>Paper Size:</strong> {{ item.paper_size }}</div>
                     {% endif %}
 
                 </div>
-            {% endif %}
+            
         </td>
 
         <td class="px-6 py-4 whitespace-nowrap">
@@ -68,10 +59,6 @@
     </tr>
     {% endfor %}
 </tbody>
-
-
-
-
 <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
     <h1 class="text-3xl font-bold mb-4 text-gray-800">
         Order {{ order.id }} Details

@@ -16,7 +16,7 @@ from .forms import CustomUserCreationForm
 
 class RegisterView(generics.CreateAPIView):
     """
-    Client registration endpoint for creating new users.
+    Registration endpoint for creating new users with selectable roles.
     """
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
@@ -25,6 +25,7 @@ class LoginView(APIView):
     """
     Login user
     """
+    permission_classes = [AllowAny]
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")

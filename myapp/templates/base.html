@@ -9,16 +9,18 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen flex flex-col bg-white">
-    {% include 'navbar.html' %}
+<body class="min-h-screen flex flex-col bg-white space-y-20">
+    <div class="space-y-10">
+    {% include 'navbar.html' %} 
     <div class="flex flex-1">
+       
         <!-- Sidebar -->
         <aside class="text-white">
             {% include 'sidebar.html' %}
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 p-6 bg-gray-100">
+        <main class="flex-1 p-6">
             {% block content %}
             {% endblock content %}
             {% block scripts %}
@@ -33,7 +35,7 @@
         {% include 'footer.html' %}
     </footer>
     {% endif %}
-
+</div>
 </body>
 
 </html>

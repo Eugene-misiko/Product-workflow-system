@@ -1,31 +1,21 @@
 {% extends "base.html" %}
 {% load static %}
-
+{% load widget_tweaks %}
 {% block title %}Create Order{% endblock %}
 
 {% block content %}
-
-<select name="{{ form.product.name }}" id="{{ form.product.id_for_label }}" class="mt-1 block w-full rounded-md border-gray-300 p-2">
-    <option value="">-- Choose a product --</option>
-    {% for product in products %}
-        <option value="{{ product.id }}" data-category="{{ product.category.name }}">
-            {{ product.name }}
-        </option>
-    {% endfor %}
-</select>
-<div class="max-w-xl mx-auto p-6 bg-white shadow-md rounded-lg">
-    <h1 class="text-2xl font-semibold mb-4">Create Order</h1>
+<div class="w-100 mx-auto p-6 bg-white shadow-md rounded-lg">
+    <h1 class="text-2xl font-semibold mb-4 text-gray-800">Create Order</h1>
     <form method="post" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
-
-        <!-- Product dropdown -->
         <div>
+            
             <label for="{{ form.product.id_for_label }}" class="block text-sm font-medium text-gray-700">
                 {{ form.product.label }}
             </label>
-            {{ form.product }}
+            {{ form.product|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
             {% if form.product.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ form.product.errors|first }}</p>
+                <p class="mt-1 text-sm text-red-700">{{ form.product.errors|first }}</p>
             {% endif %}
         </div>
 
@@ -34,7 +24,7 @@
             <label for="{{ form.quantity.id_for_label }}" class="block text-sm font-medium text-gray-700">
                 {{ form.quantity.label }}
             </label>
-            {{ form.quantity }}
+            {{ form.quantity|add_class:"mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm" }}
             {% if form.quantity.errors %}
                 <p class="mt-1 text-sm text-red-600">{{ form.quantity.errors|first }}</p>
             {% endif %}
@@ -45,7 +35,7 @@
             <label for="{{ form.color_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
                 {{ form.color_type.label }}
             </label>
-            {{ form.color_type }}
+            {{ form.color_type|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
         </div>
 
         <!-- Design Type -->
@@ -53,80 +43,85 @@
             <label for="{{ form.design_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
                 {{ form.design_type.label }}
             </label>
-            {{ form.design_type }}
+            {{ form.design_type|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
         </div>
 
         <!-- Description -->
-        <div id="description-field" class="hidden">
+        <div id="description-field">
             <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
                 {{ form.description.label }}
             </label>
-            {{ form.description }}
+            {{ form.description|add_class:"mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm" }}
         </div>
 
         <!-- Book / Paper Fields -->
-        <div id="book-fields" class="hidden space-y-2">
-            {{ form.number_of_pages.label_tag }} {{ form.number_of_pages }}
-            {{ form.binding_type.label_tag }} {{ form.binding_type }}
-            {{ form.has_spine.label_tag }} {{ form.has_spine }}
-            {{ form.spine_size_mm.label_tag }} {{ form.spine_size_mm }}
-            {{ form.paper_type.label_tag }} {{ form.paper_type }}
-            {{ form.cover_type.label_tag }} {{ form.cover_type }}
-            {{ form.paper_size.label_tag }} {{ form.paper_size }}
+        <div id="book-fields" class="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <h2 class="text-lg font-semibold text-gray-700 mb-2">Book Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    {{ form.number_of_pages.label_tag }}
+                    {{ form.number_of_pages|add_class:"mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm" }}
+                </div>
+                <div>
+                    {{ form.binding_type.label_tag }}
+                    {{ form.binding_type|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
+                </div>
+                <!-- Checkbox fields need slightly different styling -->
+                <div class="flex items-center">
+                    {{ form.has_spine|add_class:"focus:ring-cyan-500 h-4 w-4 text-cyan-600 border-gray-300 rounded" }}
+                    <label for="{{ form.has_spine.id_for_label }}" class="ml-2 block text-sm text-gray-700">
+                        {{ form.has_spine.label }}
+                    </label>
+                </div>
+                <div>
+                    {{ form.spine_size_mm.label_tag }}
+                    {{ form.spine_size_mm|add_class:"mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm" }}
+                </div>
+                <div>
+                    {{ form.paper_type.label_tag }}
+                    {{ form.paper_type|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
+                </div>
+                <div>
+                    {{ form.cover_type.label_tag }}
+                    {{ form.cover_type|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
+                </div>
+                <div>
+                    {{ form.paper_size.label_tag }}
+                    {{ form.paper_size|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
+                </div>
+            </div>
         </div>
 
         <!-- Apparel Fields -->
-        <div id="apparel-fields" class="hidden space-y-2">
-            {{ form.size.label_tag }} {{ form.size }}
-            {{ form.material.label_tag }} {{ form.material }}
+        <div id="apparel-fields" class="space-y-4 p-4 bg-gray-50 rounded-lg">
+             <h2 class="text-lg font-semibold text-gray-700 mb-2">Apparel Details</h2>
+            <div>
+                {{ form.size.label_tag }}
+                {{ form.size|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
+            </div>
+            <div>
+                {{ form.material.label_tag }}
+                {{ form.material|add_class:"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md shadow-sm" }}
+            </div>
         </div>
 
         <!-- Plate / Banner Fields -->
-        <div id="plate-fields" class="hidden space-y-2">
-            {{ form.plate_diameter_cm.label_tag }} {{ form.plate_diameter_cm }}
-            {{ form.design_file.label_tag }} {{ form.design_file }}
+        <div id="plate-fields" class="space-y-4 p-4 bg-gray-50 rounded-lg">
+             <h2 class="text-lg font-semibold text-gray-700 mb-2">Plate/Banner Details</h2>
+            <div>
+                {{ form.plate_diameter_cm.label_tag }}
+                {{ form.plate_diameter_cm|add_class:"mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm" }}
+            </div>
+            <div>
+                
+                {{ form.design_file|add_class:"mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-600 hover:file:bg-cyan-100" }}
+            </div>
         </div>
 
-        <button type="submit" class="w-full px-6 py-3 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-900">
+        <button type="submit" class="w-full px-6 py-3 bg-cyan-600 text-white font-semibold rounded-lg shadow-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2">
             Submit Order
         </button>
     </form>
 </div>
 
-<!-- JS to show/hide fields based on product selection -->
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const productSelect = document.querySelector("#id_product");
-    const descriptionField = document.querySelector("#description-field");
-    const bookFields = document.querySelector("#book-fields");
-    const apparelFields = document.querySelector("#apparel-fields");
-    const plateFields = document.querySelector("#plate-fields");
-
-    function updateFields() {
-        const selectedOption = productSelect.options[productSelect.selectedIndex];
-        const category = selectedOption.dataset.category;  // add data-category in dropdown options
-
-        // Hide all first
-        descriptionField.classList.add("hidden");
-        bookFields.classList.add("hidden");
-        apparelFields.classList.add("hidden");
-        plateFields.classList.add("hidden");
-
-        if (!category) return;
-
-        if (category === "Book") {
-            bookFields.classList.remove("hidden");
-            descriptionField.classList.remove("hidden");
-        } else if (category === "Apparel") {
-            apparelFields.classList.remove("hidden");
-        } else if (category === "Plate" || category === "Banner") {
-            plateFields.classList.remove("hidden");
-            descriptionField.classList.remove("hidden");
-        }
-    }
-
-    productSelect.addEventListener("change", updateFields);
-    updateFields(); // initial call in case a product is preselected
-});
-</script>
 {% endblock %}

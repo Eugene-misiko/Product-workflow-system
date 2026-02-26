@@ -5,6 +5,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 {% endblock %}
 {% include 'navbar.html' %}
+{% load widget_tweaks %}
 {% block content %}
 <div class="relative h-screen bg-cover bg-center flex items-center justify-center
      bg-fixed bg-no-repeat bg-cover bg-[url('{% static "image/chlgnImg.jpg" %}')]">
@@ -22,7 +23,7 @@
                         {% if field.name == "username" or field.name == "email" or field.name == "role" or field.name == "phone" %}
                             <div>
                                 {{ field.label_tag }}
-                                {{ field }}
+                                {{ field|add_class:"border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" }}
                                 {% if field.errors %}
                                     <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
                                 {% endif %}
@@ -34,7 +35,7 @@
                     {% if field.name != "username" and field.name != "email" and field.name != "role" and field.name != "phone" %}
                         <div>
                             {{ field.label_tag }}
-                            {{ field }}
+                            {{ field|add_class:"border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" }}
                             {% if field.errors %}
                                 <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
                             {% endif %}
