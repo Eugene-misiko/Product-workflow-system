@@ -1,6 +1,7 @@
 from django.db import models
 from cloudinary.models import CloudinaryField
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 class Category(models.Model):
     name = models.CharField(max_length=250)
     slug = models.SlugField(unique=True)
@@ -32,81 +33,70 @@ class Subscriber(models.Model):
     def __str__(self):
         return self.email
     
-
-from django.contrib.auth import get_user_model
-
 User = get_user_model()
 
-# Base Product model
-class New_Product(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    quantity_available = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        abstract = True
+class ItemOrder(models.Model):
 
-# Card model
-class Card(New_Product):
-    card_type = models.CharField(max_length=100)  
-    size = models.CharField(max_length=50)
-    quantity = models.PositiveIntegerField(default=1)
+    PRODUCT_CHOICES = [
+        ('card', 'Card'),
+        ('banner', 'Banner'),
+        ('clothes', 'Clothes'),
+        ('book', 'Book'),
+        ('flyer', 'Flyer'),
+        ('pen', 'Pen'),
+        ('envelope', 'Envelope'),
+    ]
 
-# Banner model
-class Banner(New_Product):
-    width = models.FloatField()
-    height = models.FloatField()
-    material = models.CharField(max_length=100) \
-
-# Clothes model
-class Clothes(New_Product):
-    size = models.CharField(max_length=10)
-    color = models.CharField(max_length=50)
-    material = models.CharField(max_length=100)
-
-# Book model
-class Book(New_Product):
-    book_type = models.CharField(max_length=100)  
-    cover_type = models.CharField(max_length=50)  
-    lamination = models.CharField(max_length=50)  
-    binding = models.CharField(max_length=50)     
-
-# Flyer model
-class Flyer(New_Product):
-    size = models.CharField(max_length=50)
-    material = models.CharField(max_length=100)
-    quantity = models.PositiveIntegerField(default=1)
-
-# Pen model
-class Pen(New_Product):
-    color = models.CharField(max_length=50)
-    pen_type = models.CharField(max_length=50)  
-
-# Envelope model
-class Envelope(New_Product):
-    size = models.CharField(max_length=50)
-    color = models.CharField(max_length=50)
-    material = models.CharField(max_length=100)
-
-# Item_Order model
-class Item_order(models.Model):
-    STATUS_CHOICES = (
+    STATUS_CHOICES = [
         ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('printing', 'Printing'),
         ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
+        ('rejected', 'Rejected'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='orders'
     )
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_orders')
-    product_type = models.CharField(max_length=50)  
-    product_id = models.PositiveIntegerField()  
-    quantity = models.PositiveIntegerField(default=1)
+    product_type = models.CharField(max_length=20, choices=PRODUCT_CHOICES)
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+
+    quantity = models.PositiveIntegerField()
+
+    # Card / Flyer / Envelope
+    size = models.CharField(max_length=50, blank=True, null=True)
+
+    # Banner
+    width = models.FloatField(blank=True, null=True)
+    height = models.FloatField(blank=True, null=True)
+    material = models.CharField(max_length=100, blank=True, null=True)
+
+    # Book
+    cover_type = models.CharField(max_length=50, blank=True, null=True)
+    lamination = models.CharField(max_length=50, blank=True, null=True)
+    binding = models.CharField(max_length=50, blank=True, null=True)
+
+    # Clothes
+    color = models.CharField(max_length=50, blank=True, null=True)
+
+    # Pen
+    pen_type = models.CharField(max_length=50, blank=True, null=True)
+
+    # Upload design
+    design_file = models.ImageField(upload_to='designs/', blank=True, null=True)
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.product_type} - {self.quantity}"    
+        return f"{self.user.username} - {self.product_type}"
 
 
     

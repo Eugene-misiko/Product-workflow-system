@@ -2,12 +2,15 @@ from rest_framework.viewsets import ModelViewSet
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
 from accounts.permissions import IsAdmin
-from accounts.models import User
+from accounts.models import User 
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
-from .models import Subscriber
+from .models import Subscriber ,Item_order
 from .forms import CategoryForm, ProductForm
 from django.contrib.auth.decorators import login_required
+from rest_framework import viewsets, permissions
+from .serializers import DynamicOrderSerializer
+from .permissions import IsAdminOrOwner
 # create your views here
 class CategoryViewSet(ModelViewSet):
     """Admin manages categories"""
@@ -45,5 +48,13 @@ def product_detail(request, id, slug):
     return render(request, 'detail.html', {"product":product})#I will change to detail.html
 
   
-
+#The combination products
+class DynamicOrderViewSet(viewsets.ModelViewSet):
+    serializer_class = DynamicOrderSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrOwner]
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return Item_order.objects.all()
+        return Item_order.objects.filter(user=user)
 
