@@ -90,7 +90,7 @@ class Envelope(New_Product):
     color = models.CharField(max_length=50)
     material = models.CharField(max_length=100)
 
-# Order model
+# Item_Order model
 class Item_order(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
