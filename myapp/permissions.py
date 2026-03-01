@@ -1,4 +1,3 @@
-# permissions.py
 from rest_framework import permissions
 
 class IsAdminOrOwner(permissions.BasePermission):
@@ -14,3 +13,11 @@ class IsAdminOrOwner(permissions.BasePermission):
             return True
         # Otherwise, only allow if the object belongs to the user
         return obj.user == request.user
+class IsAdmin(permissions.BasePermission):
+    """
+    Allows access only to users with admin role.
+    """
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == "admin"    
+    
