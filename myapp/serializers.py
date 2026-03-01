@@ -6,11 +6,15 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class ProductSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Product
         fields = "__all__"
 
 class ItemOrderSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)    
+
     class Meta:
         model = ItemOrder
         fields = '__all__'

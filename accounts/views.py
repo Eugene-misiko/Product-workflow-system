@@ -11,32 +11,39 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, authenticate
+from django.shortcuts import get_object_or_404
 from .forms import CustomUserCreationForm
 #create your views here
 
 class RegisterView(generics.CreateAPIView):
     """
-    Registration endpoint for creating new users with selectable roles.
+    Public registration endpoint.
+    All new users are automatically assigned the CLIENT role.
     """
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 class LoginView(APIView):
-    """
-    Login user
-    """
     permission_classes = [AllowAny]
+
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
         user = authenticate(username=username, password=password)
+
         if user is not None:
             refresh = RefreshToken.for_user(user)
+
             return Response({
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
-                "username": user.username
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "role": user.role,   
+                }
             })
+
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
     
 class LogoutView(APIView):
@@ -70,8 +77,9 @@ class AssignRoleView(APIView):
     Admin-only endpoint to assign a role to a user.
     """
     permission_classes = [IsAdmin]
-
+    
     def put(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
         role = request.data.get("role")
         if role not in ["client", "admin", "designer"]:
             return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)

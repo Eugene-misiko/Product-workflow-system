@@ -19,7 +19,6 @@ class User(AbstractUser):
         max_length=20,
         choices=ROLE_CHOICES,
         default=CLIENT,
-        help_text="Defines the role of the user in the system"
     )
 
     phone = models.CharField(

@@ -3,31 +3,34 @@ from .models import User
 
 class RegisterSerializer(serializers.ModelSerializer):
     """
-    Serializer for registering new users with selectable roles.
+    Secure serializer for registering new users.
+    All new users are automatically assigned the CLIENT role.
     """
 
     password = serializers.CharField(write_only=True)
-    role = serializers.ChoiceField(
-        choices=[User.CLIENT, User.DESIGNER, User.ADMIN],
-        default=User.CLIENT
-    )
 
     class Meta:
         model = User
-        fields = ("username", "email", "phone", "password", "role")
+        fields = ("username", "email", "phone", "password")
+        extra_kwargs = {
+            "password": {"write_only": True}
+        }
 
     def create(self, validated_data):
         """
-        Create a new user with the specified role.
+        Create a new user and force role to CLIENT.
         """
-        role = validated_data.pop("role", User.CLIENT)
         user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
             phone=validated_data.get("phone"),
             password=validated_data["password"],
-            role=role
         )
+
+       
+        user.role = User.CLIENT
+        user.save()
+
         return user
 
 
