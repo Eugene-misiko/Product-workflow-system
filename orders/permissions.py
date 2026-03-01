@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-class CanAccessOrder(BasePermission):
+class IsAdminOrOwner(BasePermission):
     """
     Client can access own orders.
     Admin can access all orders.
