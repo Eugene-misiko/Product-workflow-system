@@ -33,7 +33,6 @@ urlpatterns = [
     path("register_view/", register, name="register_view"),
 
     # redict according to the roles
-    
     path("redirect/", post_login_redirect, name="post_login_redirect"),
     
 ]
