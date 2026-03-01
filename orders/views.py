@@ -1,5 +1,7 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import Order
 from .serializers import OrderSerializer
 from accounts.permissions import IsAdmin
@@ -11,16 +13,68 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # Admin sees everything
         if user.role == "admin":
             return Order.objects.all()
 
-        # Designer sees assigned orders
         if user.role == "designer":
             return Order.objects.filter(assigned_designer=user)
 
-        # Client sees only own orders
         return Order.objects.filter(user=user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    
+
+    @action(detail=True, methods=["put"])
+    def approve(self, request, pk=None):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can approve"}, status=403)
+
+        order = self.get_object()
+        order.status = "approved"
+        order.rejection_reason = ""
+        order.save()
+
+        return Response({"message": "Order approved successfully"})
+
+    @action(detail=True, methods=["put"])
+    def reject(self, request, pk=None):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can reject"}, status=403)
+
+        reason = request.data.get("reason")
+        if not reason:
+            return Response({"error": "Rejection reason required"}, status=400)
+
+        order = self.get_object()
+        order.status = "rejected"
+        order.rejection_reason = reason
+        order.save()
+
+        return Response({"message": "Order rejected successfully"})
+
+    @action(detail=True, methods=["put"])
+    def assign(self, request, pk=None):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can assign designers"}, status=403)
+
+        designer_id = request.data.get("designer_id")
+
+        if not designer_id:
+            return Response({"error": "Designer ID required"}, status=400)
+
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        try:
+            designer = User.objects.get(id=designer_id, role="designer")
+        except User.DoesNotExist:
+            return Response({"error": "Designer not found"}, status=404)
+
+        order = self.get_object()
+        order.assigned_designer = designer
+        order.status = "in_design"
+        order.save()
+
+        return Response({"message": "Designer assigned successfully"})
