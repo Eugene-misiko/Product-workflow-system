@@ -1,34 +1,24 @@
-from rest_framework import generics
+
+
+from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from .models import Product
 from .serializers import ProductSerializer
 from .permissions import IsAdmin
 
-class ProductListView(generics.ListCreateAPIView):
+
+class ProductViewSet(viewsets.ModelViewSet):
     """
-    List all active products.
-    Admin can create new products.
-    """
-
-    queryset = Product.objects.filter(is_active=True)
-    serializer_class = ProductSerializer
-
-    def get_permissions(self):
-        if self.request.method == "POST":
-            return [IsAdmin()]
-        return [AllowAny()]
-
-
-class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Retrieve a product.
-    Admin can update or delete.
+    ViewSet for managing products.
+    - Anyone can view products
+    - Only admin can create, update, delete
     """
 
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
     def get_permissions(self):
-        if self.request.method in ["PUT", "PATCH", "DELETE"]:
+        if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsAdmin()]
         return [AllowAny()]
+
