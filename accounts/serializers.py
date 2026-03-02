@@ -1,8 +1,6 @@
 from rest_framework import serializers
-from django.contrib.auth.password_validation import validate_password
 from .models import User
-
-
+from django.contrib.auth.password_validation import validate_password
 class RegisterSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(
@@ -42,3 +40,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for viewing or updating user profile.
+    """
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "email", "phone", "role")
+        read_only_fields = ("role",)
+
+

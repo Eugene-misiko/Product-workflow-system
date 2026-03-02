@@ -5,10 +5,12 @@ from accounts.models import User
 from cloudinary.models import CloudinaryField
 class Order(models.Model):
     STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("approved", "Approved"),
-        ("rejected", "Rejected"),
-        ("in_design", "In Design"),
+        ("pending", "Pending"),                  
+        ("assigned", "Assigned To Designer"),    
+        ("design_rejected", "Rejected By Designer"),
+        ("design_completed", "Design Completed"),
+        ("print_rejected", "Rejected By Printer"),
+        ("approved", "Approved For Printing"),
         ("in_print", "In Print"),
         ("completed", "Completed"),
     ]

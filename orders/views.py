@@ -20,16 +20,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         if user.role == "admin":
             return Order.objects.all()
 
-        if user.role == "client":
-            return Order.objects.filter(user=user)
-
         if user.role == "designer":
             return Order.objects.filter(assigned_designer=user)
 
         if user.role == "printer":
-            return Order.objects.filter(status="in_print")
+            return Order.objects.filter(status="in_design")
 
-        return Order.objects.none()
+        return Order.objects.filter(user=user)
 
     #  Client creates order
     def perform_create(self, serializer):
@@ -90,18 +87,50 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Order moved to printing stage"})
+      
+        # designer reject order
+    @action(detail=True, methods=["put"])
+    def design_reject(self, request, pk=None):
+        if request.user.role != "designer":
+            return Response({"error": "Only designer can reject design"}, status=403)
 
+        reason = request.data.get("reason")
+        if not reason:
+            return Response({"error": "Reason required"}, status=400)
+
+        order = self.get_object()
+
+        if order.assigned_designer != request.user:
+            return Response({"error": "Not your assigned order"}, status=403)
+
+        order.status = "design_rejected"
+        order.rejection_reason = reason
+        order.save()
+
+        return Response({"message": "Order rejected by designer"})
+    @action(detail=True, methods=["put"])
+    # designer completes the design
+    def design_complete(self, request, pk=None):
+        if request.user.role != "designer":
+            return Response({"error": "Only designer can complete design"}, status=403)
+
+        order = self.get_object()
+
+        if order.assigned_designer != request.user:
+            return Response({"error": "Not your assigned order"}, status=403)
+
+        order.status = "design_completed"
+        order.save()
+
+        return Response({"message": "Design marked as completed"})       
     # Printer approves order
     @action(detail=True, methods=["put"])
     def approve(self, request, pk=None):
         if request.user.role != "printer":
-            return Response(
-                {"error": "Only printer can approve"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Only printer can approve orders"}, status=403)
 
         order = self.get_object()
-        order.status = "completed"
+        order.status = "approved"
         order.rejection_reason = ""
         order.save()
 
@@ -109,22 +138,16 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     #  Printer rejects order
     @action(detail=True, methods=["put"])
-    def reject(self, request, pk=None):
+    def print_reject(self, request, pk=None):
         if request.user.role != "printer":
-            return Response(
-                {"error": "Only printer can reject"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Only printer can reject printing"}, status=403)
 
         reason = request.data.get("reason")
         if not reason:
-            return Response(
-                {"error": "Rejection reason required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Reason required"}, status=400)
 
         order = self.get_object()
-        order.status = "rejected"
+        order.status = "print_rejected"
         order.rejection_reason = reason
         order.save()
 
