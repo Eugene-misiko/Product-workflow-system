@@ -8,11 +8,13 @@ class User(AbstractUser):
     CLIENT = "client"
     ADMIN = "admin"
     DESIGNER = "designer"
+    PRINTER = "printer"
 
     ROLE_CHOICES = [
         (CLIENT, "Client"),
         (ADMIN, "Admin"),
         (DESIGNER, "Designer"),
+        (PRINTER, "Printer"),
     ]
 
     role = models.CharField(
