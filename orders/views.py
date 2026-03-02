@@ -91,7 +91,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Order moved to printing stage"})
 
-    # 🖨 Printer approves order
+    # Printer approves order
     @action(detail=True, methods=["put"])
     def approve(self, request, pk=None):
         if request.user.role != "printer":

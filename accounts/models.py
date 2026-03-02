@@ -1,10 +1,13 @@
-from django.contrib.auth.models import AbstractUser, UserManager
+from django.contrib.auth.models import AbstractUser
 from django.db import models
-from cloudinary.models import CloudinaryField
+from .managers import UserManager
+
+
 class User(AbstractUser):
     """
     Custom User model with role-based access control.
     """
+
     CLIENT = "client"
     ADMIN = "admin"
     DESIGNER = "designer"
@@ -17,6 +20,9 @@ class User(AbstractUser):
         (PRINTER, "Printer"),
     ]
 
+    # Make email unique
+    email = models.EmailField(unique=True)
+
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
@@ -26,12 +32,10 @@ class User(AbstractUser):
     phone = models.CharField(
         max_length=20,
         blank=True,
-        help_text="User phone number"
     )
 
+    # use custom manager
     objects = UserManager()
 
     def __str__(self):
-        return f"{self.username} {self.role}"
-
-
+        return f"{self.username} ({self.role})"
