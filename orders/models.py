@@ -1,7 +1,8 @@
 from django.db import models
 from django.conf import settings
 from myapp.models import Product
-
+from accounts.models import User
+from cloudinary.models import CloudinaryField
 class Order(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
@@ -13,7 +14,7 @@ class Order(models.Model):
     ]
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name="orders"
     )
@@ -26,13 +27,9 @@ class Order(models.Model):
 
     quantity = models.PositiveIntegerField(default=1)
 
-    wants_design = models.BooleanField(default=False)
+    needs_design = models.BooleanField(default=False)
 
-    design_file = models.FileField(
-        upload_to="orders/designs/",
-        blank=True,
-        null=True
-    )
+    design_file = CloudinaryField("design", blank=True, null=True)
 
     description = models.TextField(blank=True)
 
@@ -45,7 +42,7 @@ class Order(models.Model):
     rejection_reason = models.TextField(blank=True)
 
     assigned_designer = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

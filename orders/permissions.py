@@ -1,11 +1,21 @@
 from rest_framework.permissions import BasePermission
+from rest_framework import permissions
 
-class IsAdminOrOwner(BasePermission):
-    """
-    Client can access own orders.
-    Admin can access all orders.
-    """
-    def has_object_permission(self, request, view, obj):
-        if request.user.role == "admin":
-            return True
-        return obj.client == request.user
+class IsAdminUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == "admin"
+
+
+class IsClient(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == "client"
+
+
+class IsDesigner(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == "designer"
+
+
+class IsPrinter(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == "printer"

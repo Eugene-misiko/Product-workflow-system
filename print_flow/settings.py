@@ -222,7 +222,7 @@ LOGIN_URL = "/auth/login/"
 LOGOUT_REDIRECT_URL = "/auth/login/"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "mediafiles"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 MPESA_SHORTCODE = config("MPESA_SHORTCODE")
 MPESA_PASSKEY = config("MPESA_PASSKEY")

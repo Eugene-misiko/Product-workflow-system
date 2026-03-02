@@ -2,14 +2,15 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Order
 from .serializers import OrderSerializer
 from accounts.permissions import IsAdmin
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
-
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
     def get_queryset(self):
         user = self.request.user
 
@@ -25,7 +26,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     
-
+    """
+    Here admin only can approve the order not any other user(design or client)
+    """
     @action(detail=True, methods=["put"])
     def approve(self, request, pk=None):
         if request.user.role != "admin":
@@ -37,7 +40,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Order approved successfully"})
-
+    """
+    Admin only can reject the order not any user
+    """
     @action(detail=True, methods=["put"])
     def reject(self, request, pk=None):
         if request.user.role != "admin":
@@ -53,7 +58,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Order rejected successfully"})
-
+    """
+    Admin can assign orders/admin can control orders,
+    """
     @action(detail=True, methods=["put"])
     def assign(self, request, pk=None):
         if request.user.role != "admin":
