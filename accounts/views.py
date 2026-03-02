@@ -73,18 +73,18 @@ class UserListView(generics.ListAPIView):
     permission_classes = [IsAdmin]
 
 class AssignRoleView(APIView):
-    """
-    Admin-only endpoint to assign a role to a user.
-    """
     permission_classes = [IsAdmin]
-    
+
     def put(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         role = request.data.get("role")
-        if role not in ["client", "admin", "designer"]:
-            return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.get(id=user_id)
+        if role not in ["client", "admin", "designer", "printer"]:
+            return Response(
+                {"error": "Invalid role"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         user.role = role
         user.save()
 
