@@ -4,7 +4,17 @@ from .models import Order
 class OrderSerializer(serializers.ModelSerializer):
 
     product_name = serializers.CharField(source="product.name", read_only=True)
-    design_file = serializers.ImageField(read_only=True)
+    product_price = serializers.DecimalField(
+        source="product.price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+    product_image = serializers.ImageField(source="product.image", read_only=True)
+
+    total_price = serializers.SerializerMethodField()
+    design_file = serializers.SerializerMethodField()
+
     class Meta:
         model = Order
         fields = [
@@ -12,22 +22,23 @@ class OrderSerializer(serializers.ModelSerializer):
             "user",
             "product",
             "product_name",
+            "product_price",
+            "product_image",
             "quantity",
-            "needs_design",        
+            "needs_design",
             "design_file",
-            "description",         
+            "description",
             "status",
-            "assigned_designer",
             "rejection_reason",
+            "total_price",
             "created_at",
         ]
-        read_only_fields = (
-            "user",
-            "status",
-            "rejection_reason",
-            "assigned_designer",
-        )
+        read_only_fields = ("user", "status", "rejection_reason")
+
+    def get_total_price(self, obj):
+        return obj.product.price * obj.quantity
+
     def get_design_file(self, obj):
         if obj.design_file:
             return obj.design_file.url
-        return None        
+        return None

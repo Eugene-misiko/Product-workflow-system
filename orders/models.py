@@ -3,15 +3,17 @@ from django.conf import settings
 from myapp.models import Product
 from accounts.models import User
 from cloudinary.models import CloudinaryField
+
+
 class Order(models.Model):
+
     STATUS_CHOICES = [
-        ("pending", "Pending"),                  
-        ("assigned", "Assigned To Designer"),    
-        ("design_rejected", "Rejected By Designer"),
+        ("pending_design", "Pending Design"),
         ("design_completed", "Design Completed"),
-        ("print_rejected", "Rejected By Printer"),
+        ("design_rejected", "Rejected By Designer"),
         ("approved", "Approved For Printing"),
-        ("in_print", "In Print"),
+        ("printing", "Printing"),
+        ("print_rejected", "Rejected By Printer"),
         ("completed", "Completed"),
     ]
 
@@ -36,20 +38,12 @@ class Order(models.Model):
     description = models.TextField(blank=True)
 
     status = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=STATUS_CHOICES,
-        default="pending"
+        default="pending_design"
     )
 
     rejection_reason = models.TextField(blank=True)
-
-    assigned_designer = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="assigned_orders"
-    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

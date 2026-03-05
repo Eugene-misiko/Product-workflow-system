@@ -1,16 +1,16 @@
-from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import UserManager as DjangoUserManager
 
 
-class UserManager(BaseUserManager):
+class UserManager(DjangoUserManager):
 
-    def create_user(self, username, email, password=None, **extra_fields):
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        if not username:
+            raise ValueError("Username is required")
+
         if not email:
             raise ValueError("Email is required")
 
         email = self.normalize_email(email)
-
-        if self.model.objects.filter(email=email).exists():
-            raise ValueError("Email already taken")
 
         user = self.model(
             username=username,
@@ -23,7 +23,7 @@ class UserManager(BaseUserManager):
 
         return user
 
-    def create_superuser(self, username, email, password, **extra_fields):
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
