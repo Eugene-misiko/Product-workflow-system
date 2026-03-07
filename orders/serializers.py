@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import Order,Invoice,OrderItem
+from .models import Order,Invoice
 
 class OrderSerializer(serializers.ModelSerializer):
-
+    
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_price = serializers.DecimalField(
         source="product.price",
@@ -42,21 +42,23 @@ class OrderSerializer(serializers.ModelSerializer):
         if obj.design_file:
             return obj.design_file.url
         return None
-
-class OrderItemSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = OrderItem
-        fields = "__all__"
-
+    
 class InvoiceSerializer(serializers.ModelSerializer):
-
-    items = OrderItemSerializer(
-        source="order.items",
-        many=True,
-        read_only=True
-    )
-
+    product_name = serializers.CharField(source="order.product.name",read_only=True)
+    quantity = serializers.IntegerField(source="order.quantity",read_only=True)
+    unit_price = serializers.DecimalField(source="order.product.price",max_digits=10,decimal_places=2,read_only=True)
     class Meta:
         model = Invoice
-        fields = "__all__"    
+        fields = [
+            "id",
+            "invoice_number",
+            "product_name",
+            "quantity",
+            "unit_price",
+            "total_amount",
+            "deposit_amount",
+            "balance_due",
+            "status",
+            "created_at",
+        ]    
+

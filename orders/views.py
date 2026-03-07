@@ -4,7 +4,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Order,Invoice
-from .serializers import OrderSerializer, InvoiceSerializer
+from .serializers import OrderSerializer
 from .utils import generate_invoice_pdf
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -169,14 +169,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Printing completed"})
-@api_view(["GET"])
-def get_invoice(request, pk):
 
-    invoice = Invoice.objects.get(id=pk)
 
-    serializer = InvoiceSerializer(invoice)
-
-    return Response(serializer.data)    
 @api_view(["GET"])
 def download_invoice(request, pk):
 
