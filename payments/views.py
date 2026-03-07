@@ -4,11 +4,13 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import MpesaRequest, MpesaResponse
+from .models import MpesaRequest, MpesaResponse, Invoice,Receipt
 from .serializers import MpesaRequestSerializer, MpesaResponseSerializer
 from django.shortcuts import render
-from .models import Invoice
 from .utils import generate_invoice_pdf
+from .utils import generate_receipt_pdf
+ 
+
 def get_mpesa_url(endpoint):
     """Helper to switch between Sandbox and Production URLs"""
     base = "https://api.safaricom.co.ke" if settings.MPESA_ENVIRONMENT == 'production' else "https://sandbox.safaricom.co.ke"
@@ -155,3 +157,9 @@ def download_invoice(request, order_id):
     invoice = Invoice.objects.get(order_id=order_id)
 
     return generate_invoice_pdf(invoice)
+
+def download_receipt(request, receipt_id):
+
+    receipt = Receipt.objects.get(id=receipt_id)
+
+    return generate_receipt_pdf(receipt)
