@@ -1,7 +1,6 @@
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse
 
-
 def generate_invoice_pdf(invoice):
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
