@@ -1,14 +1,17 @@
 from django.db import models
+from orders.models import Order
+from accounts.models import User
 
 class MpesaRequest(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="payments")
+    order = models.ForeignKey(Order,on_delete=models.CASCADE, related_name="payments")
     phone_number = models.CharField(max_length=15)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     account_reference = models.CharField(max_length=50)
     transaction_desc = models.CharField(max_length=255)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    
+    created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
-        return f"{self.phone_number} - {self.amount}"
+        return f"{self.user.username} - Order {self.order.id}"
 
 class MpesaResponse(models.Model):
     # Changed to OneToOne for better data integrity
