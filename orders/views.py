@@ -1,17 +1,16 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Order
-from .serializers import OrderSerializer
+from .models import Order,Invoice
+from .serializers import OrderSerializer, InvoiceSerializer
 
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-
     # ROLE BASED VISIBILITY
     def get_queryset(self):
         user = self.request.user
@@ -170,4 +169,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Printing completed"})
+@api_view(["GET"])
+def get_invoice(request, pk):
+
+    invoice = Invoice.objects.get(id=pk)
+
+    serializer = InvoiceSerializer(invoice)
+
+    return Response(serializer.data)    
+
     
