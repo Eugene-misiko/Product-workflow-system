@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from .models import MpesaRequest, MpesaResponse
 from .serializers import MpesaRequestSerializer, MpesaResponseSerializer
 from django.shortcuts import render
-
+from .models import Invoice
+from .utils import generate_invoice_pdf
 def get_mpesa_url(endpoint):
     """Helper to switch between Sandbox and Production URLs"""
     base = "https://api.safaricom.co.ke" if settings.MPESA_ENVIRONMENT == 'production' else "https://sandbox.safaricom.co.ke"
@@ -149,3 +150,8 @@ def mpesa_callback(request):
 
     # Safaricom expects a success response to stop retrying the callback
     return Response({"ResultCode": 0, "ResultDesc": "Success"}, status=status.HTTP_200_OK)
+def download_invoice(request, order_id):
+
+    invoice = Invoice.objects.get(order_id=order_id)
+
+    return generate_invoice_pdf(invoice)
