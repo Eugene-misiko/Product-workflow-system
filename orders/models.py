@@ -3,7 +3,7 @@ from django.conf import settings
 from myapp.models import Product
 from accounts.models import User
 from cloudinary.models import CloudinaryField
-
+from payments.models import Invoice
 
 class Order(models.Model):
 
@@ -48,3 +48,14 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - {self.user.username}"
+    
+def save(self, *args, **kwargs):
+    super().save(*args, **kwargs)
+    if not hasattr(self, "invoice"):
+        total = self.product.price * self.quantity
+        deposit = total * 0.7
+        Invoice.objects.create(
+            user=self.user,
+            order=self,
+            total_amount=total,
+            deposit_amount=deposit)    
