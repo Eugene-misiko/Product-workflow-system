@@ -84,7 +84,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = self.get_object()
 
         if order.status != "design_completed":
-            return Response({"error": "Order not ready for printing"}, status=400)
+            return Response({"error": "Design not completed"}, status=400)
 
         order.status = "approved"
         order.save()

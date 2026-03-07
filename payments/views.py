@@ -37,7 +37,7 @@ def stk_push(request):
 
 def initialize_stk_push(mpesa_request):
     access_token = get_access_token()
-    api_url = get_mpesa_url('mpesa/stkpush/v1/processrequest')
+    api_url = get_mpesa_url('mpesa/stkpush/v1/processrequest')#https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest
     
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     password = generate_password(timestamp)

@@ -13,7 +13,6 @@ class Order(models.Model):
         ("design_rejected", "Rejected By Designer"),
         ("approved", "Approved For Printing"),
         ("printing", "Printing"),
-        ("print_rejected", "Rejected By Printer"),
         ("completed", "Completed"),
     ]
 
