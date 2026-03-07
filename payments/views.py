@@ -4,7 +4,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import MpesaRequest, MpesaResponse, Invoice,Receipt
+from .models import MpesaRequest, MpesaResponse,Receipt
 from .serializers import MpesaRequestSerializer, MpesaResponseSerializer
 from django.shortcuts import render
 import logging
@@ -137,11 +137,6 @@ def mpesa_callback(request):
         {"ResultCode": 0, "ResultDesc": "Success"},
         status=status.HTTP_200_OK
     )
-def download_invoice(request, order_id):
-
-    invoice = Invoice.objects.get(order_id=order_id)
-
-    return generate_invoice_pdf(invoice)
 
 def download_receipt(request, receipt_id):
 
