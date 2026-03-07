@@ -103,9 +103,13 @@ def mpesa_callback(request):
         mpesa_response.response_description = result_desc
 
         if result_code == 0:
-
             mpesa_response.is_successful = True
-
+            invoice = mpesa_response.request.invoice
+            if invoice.status == "pending":
+                invoice.status = "partial"
+            else:
+                invoice.status = "paid"
+            invoice.save()        
             metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
 
             for item in metadata:
