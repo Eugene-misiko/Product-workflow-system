@@ -8,7 +8,6 @@ from .models import MpesaRequest, MpesaResponse,Receipt
 from .serializers import MpesaRequestSerializer, MpesaResponseSerializer
 from django.shortcuts import render
 import logging
-from .utils import generate_invoice_pdf
 from .utils import generate_receipt_pdf
  
 logger = logging.getLogger(__name__)
