@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Order
+from .models import Order,Invoice,OrderItem
 
 class OrderSerializer(serializers.ModelSerializer):
 
@@ -42,3 +42,21 @@ class OrderSerializer(serializers.ModelSerializer):
         if obj.design_file:
             return obj.design_file.url
         return None
+
+class OrderItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrderItem
+        fields = "__all__"
+
+class InvoiceSerializer(serializers.ModelSerializer):
+
+    items = OrderItemSerializer(
+        source="order.items",
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = Invoice
+        fields = "__all__"    
