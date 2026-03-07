@@ -6,7 +6,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Order,Invoice
 from .serializers import OrderSerializer
 from .utils import generate_invoice_pdf
-
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from django.http import HttpResponse
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
@@ -171,11 +173,49 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response({"message": "Printing completed"})
 
 
-@api_view(["GET"])
 def download_invoice(request, pk):
 
-    invoice = Invoice.objects.get(id=pk)
+    invoice = Invoice.objects.select_related("order__product").get(pk=pk)
 
-    return generate_invoice_pdf(invoice)
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="invoice_{invoice.id}.pdf"'
+
+    p = canvas.Canvas(response, pagesize=letter)
+
+    y = 750
+
+    p.setFont("Helvetica-Bold", 18)
+    p.drawString(200, y, "PRINTING COMPANY INVOICE")
+
+    y -= 40
+    p.setFont("Helvetica", 12)
+
+    p.drawString(50, y, f"Invoice Number: {invoice.invoice_number}")
+    y -= 20
+
+    p.drawString(50, y, f"Product: {invoice.order.product.name}")
+    y -= 20
+
+    p.drawString(50, y, f"Quantity: {invoice.order.quantity}")
+    y -= 20
+
+    p.drawString(50, y, f"Unit Price: {invoice.order.product.price}")
+    y -= 20
+
+    p.drawString(50, y, f"Total Amount: {invoice.total_amount}")
+    y -= 20
+
+    p.drawString(50, y, f"Deposit Required: {invoice.deposit_amount}")
+    y -= 20
+
+    p.drawString(50, y, f"Balance Due: {invoice.balance_due}")
+    y -= 40
+
+    p.drawString(50, y, f"Status: {invoice.status}")
+
+    p.showPage()
+    p.save()
+
+    return response
 
     

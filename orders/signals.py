@@ -11,7 +11,7 @@ def create_invoice(sender, instance, created, **kwargs):
 
     if created:
 
-        total = instance.total_price
+        total = instance.product.price * instance.quantity
 
         deposit = total * Decimal("0.70")
 
