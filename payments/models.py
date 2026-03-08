@@ -31,6 +31,7 @@ class MpesaResponse(models.Model):
 class Receipt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    invoice = models.ForeignKey("orders.Invoice", on_delete=models.CASCADE, related_name="receipts")
     receipt_number = models.UUIDField(default=uuid.uuid4, editable=False)
     mpesa_receipt = models.CharField(max_length=100)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
@@ -38,5 +39,7 @@ class Receipt(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Invoice {self.receipt_number}"  
+        return f"Receipt {self.receipt_number}" 
+    
+     
       

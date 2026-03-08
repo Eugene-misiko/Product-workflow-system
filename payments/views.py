@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from .models import MpesaRequest, MpesaResponse,Receipt
 from .serializers import MpesaRequestSerializer, MpesaResponseSerializer
 from django.shortcuts import render
+from orders.models import Invoice
 import logging
 from .utils import generate_receipt_pdf
  
@@ -52,34 +53,54 @@ def initialize_stk_push(mpesa_request):
     return response.json()
 @api_view(["POST"])
 def stk_push(request):
-    """
-    Initiates STK Push
-    """
-    serializer = MpesaRequestSerializer(data=request.data)
-    if serializer.is_valid():
-        mpesa_request = serializer.save()
-        response_data = initialize_stk_push(mpesa_request)
-        if "MerchantRequestID" not in response_data:
-            return Response(
-                {
-                    "error": "Failed to connect to Safaricom",
-                    "details": response_data
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        mpesa_response = MpesaResponse.objects.create(
-            request=mpesa_request,
-            merchant_request_id=response_data.get("MerchantRequestID"),
-            checkout_request_id=response_data.get("CheckoutRequestID"),
-            response_code=response_data.get("ResponseCode"),
-            response_description=response_data.get("ResponseDescription"),
-            customer_message=response_data.get("CustomerMessage"),
-        )
+
+    invoice_id = request.data.get("invoice_id")
+    phone_number = request.data.get("phone_number")
+
+    try:
+        invoice = Invoice.objects.get(id=invoice_id)
+    except Invoice.DoesNotExist:
+        return Response({"error": "Invoice not found"}, status=404)
+
+    order = invoice.order
+    user = order.user
+
+    # amount logic (deposit first)
+    if invoice.status == "pending":
+        amount = invoice.deposit_amount
+    else:
+        amount = invoice.balance_due
+
+    mpesa_request = MpesaRequest.objects.create(
+        user=user,
+        order=order,
+        invoice=invoice,
+        phone_number=phone_number,
+        amount=amount,
+        account_reference=f"Order {order.id}",
+        transaction_desc="Printing Order Payment"
+    )
+
+    response_data = initialize_stk_push(mpesa_request)
+
+    if "MerchantRequestID" not in response_data:
         return Response(
-            MpesaResponseSerializer(mpesa_response).data,
-            status=status.HTTP_201_CREATED
+            {"error": "Failed to connect to Safaricom", "details": response_data},
+            status=status.HTTP_400_BAD_REQUEST
         )
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    mpesa_response = MpesaResponse.objects.create(
+        request=mpesa_request,
+        merchant_request_id=response_data.get("MerchantRequestID"),
+        checkout_request_id=response_data.get("CheckoutRequestID"),
+        response_code=response_data.get("ResponseCode"),
+        response_description=response_data.get("ResponseDescription"),
+    )
+
+    return Response(
+        MpesaResponseSerializer(mpesa_response).data,
+        status=status.HTTP_201_CREATED
+    )
 @api_view(["POST"])
 def mpesa_callback(request):
     """
