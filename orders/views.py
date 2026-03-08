@@ -9,10 +9,22 @@ from .utils import generate_invoice_pdf
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse
+
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if not serializer.is_valid():
+            print("ORDER VALIDATION ERROR:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)    
     # ROLE BASED VISIBILITY
     def get_queryset(self):
         user = self.request.user
@@ -171,6 +183,28 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Printing completed"})
+@api_view(["GET"])
+def get_invoice(request, pk):
+    try:
+        invoice = Invoice.objects.select_related("order__product").get(pk=pk)
+
+        data = {
+            "id": invoice.id,
+            "invoice_number": invoice.invoice_number,
+            "product_name": invoice.order.product.name,
+            "quantity": invoice.order.quantity,
+            "unit_price": invoice.order.product.price,
+            "total_amount": invoice.total_amount,
+            "deposit_amount": invoice.deposit_amount,
+            "balance_due": invoice.balance_due,
+            "status": invoice.status,
+        }
+
+        return Response(data)
+
+    except Invoice.DoesNotExist:
+        return Response({"error": "Invoice not found"}, status=404)
+
 
 
 def download_invoice(request, pk):

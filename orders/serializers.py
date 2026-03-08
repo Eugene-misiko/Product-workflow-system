@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Order,Invoice
 
 class OrderSerializer(serializers.ModelSerializer):
-    
+    invoice_id = serializers.SerializerMethodField()
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_price = serializers.DecimalField(
         source="product.price",
@@ -32,6 +32,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "rejection_reason",
             "total_price",
             "created_at",
+            "invoice_id",
         ]
         read_only_fields = ("user", "status", "rejection_reason")
 
@@ -41,6 +42,10 @@ class OrderSerializer(serializers.ModelSerializer):
     def get_design_file(self, obj):
         if obj.design_file:
             return obj.design_file.url
+        return None
+    def get_invoice_id(self, obj):
+        if hasattr(obj, "invoice"):
+            return obj.invoice.id
         return None
     
 class InvoiceSerializer(serializers.ModelSerializer):

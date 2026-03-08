@@ -5,6 +5,6 @@ router = DefaultRouter()
 router.register(r'orders', OrderViewSet, basename='orders')
 
 urlpatterns = [
-    path("invoice", download_invoice),
+    path("invoice/<int:pk>/download/", download_invoice),
 ]
 urlpatterns += router.urls
