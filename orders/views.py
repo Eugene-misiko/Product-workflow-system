@@ -219,7 +219,7 @@ def download_invoice(request, pk):
     y = 750
 
     p.setFont("Helvetica-Bold", 18)
-    p.drawString(200, y, "PRINTING COMPANY INVOICE")
+    p.drawString(200, y, "ZENITH ZEST COMPANY INVOICE")
 
     y -= 40
     p.setFont("Helvetica", 12)

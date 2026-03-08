@@ -104,19 +104,39 @@ def mpesa_callback(request):
         if result_code == 0:
             mpesa_response.is_successful = True
             invoice = mpesa_response.request.invoice
+            order = mpesa_response.request.order
+            user = mpesa_response.request.user
             if invoice.status == "pending":
                 invoice.status = "partial"
+                payment_type = "deposit"
             else:
                 invoice.status = "paid"
+                payment_type = "full"
             invoice.save()        
             metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
 
+            amount_paid = None
+            mpesa_code = None
             for item in metadata:
                 name = item.get("Name")
                 value = item.get("Value")
 
                 if name == "MpesaReceiptNumber":
+                    mpesa_code = value
                     mpesa_response.receipt_number = value
+                if name == "Amount":
+                    amount_paid = value
+            mpesa_response.amount_paid = amount_paid 
+            mpesa_response.save()
+
+            #create Receipt
+            Receipt.objects.create(
+                user=user,
+                order=order,
+                mpesa_receipt=mpesa_code,
+                amount_paid=amount_paid,
+                payment_type=payment_type
+            )       
 
             logger.info(f"Payment Successful: {checkout_request_id}")
 
