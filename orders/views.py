@@ -9,6 +9,11 @@ from .utils import generate_invoice_pdf
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse
+from reportlab.lib.colors import HexColor, black,grey
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from datetime import datetime   
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
@@ -214,41 +219,104 @@ def download_invoice(request, pk):
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="invoice_{invoice.id}.pdf"'
 
-    p = canvas.Canvas(response, pagesize=letter)
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=letter,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40,
+    )
+    styles = getSampleStyleSheet()
+    elements = []
+    # HEADER (LOGO + COMPANY)
+    #logo = Image("media/logo.png", width=70, height=70)
+    company_info = [
+        Paragraph("<b>ZENITH ZEST LIMITED</b>", styles["Title"]),
+        Paragraph("P.O Box 10257-00400, Nairobi Kenya", styles["Normal"]),
+        Paragraph("Tel: 0707 458 198, 0700 300 051", styles["Normal"]),
+        Paragraph("Email: info@zenithzest.com", styles["Normal"]),
+        Paragraph("Website: www.zenithzest.com", styles["Normal"]),
+    ]
+    header = Table([[ company_info]])#removed logo
+    header.setStyle(TableStyle([
+        ("VALIGN",(0,0),(-1,-1),"TOP")
+    ]))
+    elements.append(header)
+    elements.append(Spacer(1,10))
+    # ORANGE LINE
+    line = Table([[""]], colWidths=[520], rowHeights=[4])
+    line.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,-1),HexColor("#f97316"))
+    ]))
+    elements.append(line)
+    elements.append(Spacer(1,20))
+    # INVOICE INFO
+    invoice_info = [
+        ["", Paragraph("<b>INVOICE</b>", styles["Heading2"])],
+        ["", f"Invoice No: {invoice.invoice_number}"],
+        ["", f"Date: {datetime.today().strftime('%d %B %Y')}"]
+    ]
 
-    y = 750
+    info_table = Table(invoice_info, colWidths=[350,170])
+    elements.append(info_table)
+    elements.append(Spacer(1,20))
 
-    p.setFont("Helvetica-Bold", 18)
-    p.drawString(200, y, "ZENITH ZEST COMPANY INVOICE")
-
-    y -= 40
-    p.setFont("Helvetica", 12)
-
-    p.drawString(50, y, f"Invoice Number: {invoice.invoice_number}")
-    y -= 20
-
-    p.drawString(50, y, f"Product: {invoice.order.product.name}")
-    y -= 20
-
-    p.drawString(50, y, f"Quantity: {invoice.order.quantity}")
-    y -= 20
-
-    p.drawString(50, y, f"Unit Price: {invoice.order.product.price}")
-    y -= 20
-
-    p.drawString(50, y, f"Total Amount: {invoice.total_amount}")
-    y -= 20
-
-    p.drawString(50, y, f"Deposit Required: {invoice.deposit_amount}")
-    y -= 20
-
-    p.drawString(50, y, f"Balance Due: {invoice.balance_due}")
-    y -= 40
-
-    p.drawString(50, y, f"Status: {invoice.status}")
-
-    p.showPage()
-    p.save()
+    # CUSTOMER
+    elements.append(Paragraph("<b>TO: AM SOLUTIONS</b>", styles["Normal"]))
+    elements.append(Spacer(1,20))
+    # PRODUCTS TABLE
+    product = invoice.order.product
+    items = [
+        ["Description", "Quantity", "Price (Ksh)", "Amount (Ksh)"],
+        [
+            product.name,
+            invoice.order.quantity,
+            product.price,
+            invoice.total_amount
+        ],
+    ]
+    item_table = Table(items, colWidths=[260,80,90,90])
+    item_table.setStyle(TableStyle([
+        ("GRID",(0,0),(-1,-1),0.5,HexColor("#999999")),
+        ("BACKGROUND",(0,0),(-1,0),HexColor("#eeeeee")),
+        ("ALIGN",(1,1),(-1,-1),"CENTER")
+    ]))
+    elements.append(item_table)
+    elements.append(Spacer(1,25))
+    # TOTALS BOX
+    totals = [
+        ["Sub-Total", invoice.total_amount],
+        ["VAT", "0"],
+        ["Total", invoice.total_amount]
+    ]
+    totals_table = Table(totals, colWidths=[120,100])
+    totals_table.setStyle(TableStyle([
+        ("GRID",(0,0),(-1,-1),0.7,HexColor("#999999")),
+        ("ALIGN",(1,0),(-1,-1),"RIGHT"),
+        ("FONTNAME",(0,2),(-1,2),"Helvetica-Bold")
+    ]))
+    totals_wrapper = Table([[ "", totals_table ]], colWidths=[320,200])
+    elements.append(totals_wrapper)
+    elements.append(Spacer(1,40))
+    # PAYMENT DETAILS
+    elements.append(Paragraph("<b>Payment Details</b>", styles["Normal"]))
+    elements.append(Paragraph("COOPERATIVE BANK - MOI AVENUE BRANCH", styles["Normal"]))
+    elements.append(Paragraph("ZENITH ZEST LIMITED", styles["Normal"]))
+    elements.append(Paragraph("ACCOUNT NO: 011924368500", styles["Normal"]))
+    elements.append(Paragraph("PIN: P052013652J", styles["Normal"]))
+    elements.append(Paragraph("TEL: 0707458198", styles["Normal"]))
+    elements.append(Spacer(1,40))
+    # FOOTER LINE
+    footer_line = Table([[""]], colWidths=[520], rowHeights=[5])
+    footer_line.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,-1),HexColor("#f97316"))
+    ]))
+    elements.append(footer_line)
+    elements.append(Spacer(1,10))
+    footer_text = "Printing • Branding • Stationery • Office Equipments • Customized Notebooks"
+    elements.append(Paragraph(footer_text, styles["Normal"]))
+    doc.build(elements)
 
     return response
 

@@ -33,9 +33,12 @@ def initialize_stk_push(mpesa_request):
     api_url = get_mpesa_url("mpesa/stkpush/v1/processrequest")
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     password = generate_password(timestamp)
+
     headers = {
-        "Authorization": f"Bearer {access_token}"
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
     }
+
     payload = {
         "BusinessShortCode": settings.MPESA_EXPRESS_SHORTCODE,
         "Password": password,
@@ -49,10 +52,26 @@ def initialize_stk_push(mpesa_request):
         "AccountReference": mpesa_request.account_reference or "Printing Payment",
         "TransactionDesc": mpesa_request.transaction_desc or "Printing Order Payment"
     }
+
+    print("===== MPESA REQUEST =====")
+    print("URL:", api_url)
+    print("HEADERS:", headers)
+    print("PAYLOAD:", payload)
+
     response = requests.post(api_url, json=payload, headers=headers)
-    return response.json()
+
+    print("===== MPESA RESPONSE =====")
+    print("STATUS CODE:", response.status_code)
+    print("RAW RESPONSE:", response.text)
+
+    try:
+        return response.json()
+    except Exception as e:
+        print("JSON ERROR:", str(e))
+        return {"error": "Invalid response from Safaricom", "raw": response.text}
 @api_view(["POST"])
 def stk_push(request):
+   
 
     invoice_id = request.data.get("invoice_id")
     phone_number = request.data.get("phone_number")
