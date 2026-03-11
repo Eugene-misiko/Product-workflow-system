@@ -6,10 +6,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializers import RegisterSerializer, UserProfileSerializer
 from .permissions import IsAdmin
-from django.contrib.auth import  authenticate
+from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 
-#create your views here
+# create your views here
 class RegisterView(generics.CreateAPIView):
     """
     Public registration endpoint.
@@ -18,15 +18,21 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+
+
 class LoginView(APIView):
+
     permission_classes = [AllowAny]
 
     def post(self, request):
+
         first_name = request.data.get("first_name")
         password = request.data.get("password")
-        user = authenticate(username=first_name, password=password)
+
+        user = authenticate(first_name=first_name, password=password)
 
         if user is not None:
+
             refresh = RefreshToken.for_user(user)
 
             return Response({
@@ -34,22 +40,29 @@ class LoginView(APIView):
                 "access": str(refresh.access_token),
                 "user": {
                     "id": user.id,
-                    "first_name": user.username,
-                    "role": user.role,   
+                    "first_name": user.first_name,
+                    "role": user.role,
                 }
             })
 
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-    
+        return Response(
+            {"error": "Invalid credentials"},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+
 class LogoutView(APIView):
     """
     Logout user by blacklisting the refresh token (for JWT).
     """
+
     def post(self, request):
+
         refresh_token = request.data.get("refresh")
         token = RefreshToken(refresh_token)
         token.blacklist()
         return Response({"message": "Logged out successfully"})
+
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """
     View or update authenticated user's profile.
@@ -69,7 +82,6 @@ class UserListView(generics.ListAPIView):
 
 class AssignRoleView(APIView):
     permission_classes = [IsAdmin]
-
     def put(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         role = request.data.get("role")
@@ -82,4 +94,3 @@ class AssignRoleView(APIView):
         user.role = role
         user.save()
         return Response({"message": "Role updated successfully"})
-
