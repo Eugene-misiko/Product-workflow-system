@@ -9,7 +9,7 @@ from .utils import generate_invoice_pdf
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse
-from reportlab.lib.colors import HexColor, black,grey
+from reportlab.lib.colors import HexColor
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -75,7 +75,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Design completed successfully"})
-
     # DESIGNER REJECTS
     @action(detail=True, methods=["put"])
     def design_reject(self, request, pk=None):

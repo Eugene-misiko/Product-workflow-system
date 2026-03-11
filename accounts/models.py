@@ -7,6 +7,7 @@ class User(AbstractUser):
     """
     Custom User model with role-based access control.
     """
+    username = None
 
     CLIENT = "client"
     ADMIN = "admin"
@@ -33,10 +34,12 @@ class User(AbstractUser):
         max_length=20,
         blank=True,
     )
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    USERNAME_FIELD = "first_name"
+    REQUIRED_FIELDS = ["email"]
     # use custom manager
     objects = UserManager()
 
     def __str__(self):
-        return f"{self.username} ({self.role})"
+        return f"{self.first_name} - {self.role}"
