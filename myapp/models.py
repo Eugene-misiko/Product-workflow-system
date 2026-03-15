@@ -26,6 +26,10 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+class ProductField(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="fields")
+    field_name = models.CharField(max_length=100)
+    field_type = models.CharField(max_length=50)        
 
 
     
