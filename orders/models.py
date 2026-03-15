@@ -61,6 +61,17 @@ class Invoice(models.Model):
     
 
     def __str__(self):
-        return self.invoice_number  
+        return self.invoice_number 
+class OrderItemField(models.Model):
+
+    order_item = models.ForeignKey(
+        OrderItem,
+        on_delete=models.CASCADE,
+        related_name="field_values"
+    )
+
+    field = models.ForeignKey(ProductField, on_delete=models.CASCADE)
+
+    value = models.CharField(max_length=255)         
 
         
