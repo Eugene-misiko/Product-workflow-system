@@ -16,17 +16,45 @@ class Order(models.Model):
         ("completed", "Completed"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="orders"
+    )
+
+    order_number = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True
+    )
+    total_price = models.DecimalField(max_digits=10,decimal_places=2,blank=True,null=True)
     needs_design = models.BooleanField(default=False)
-    design_file = CloudinaryField("design", blank=True, null=True)
+    design_file = CloudinaryField(
+        "design",
+        blank=True,
+        null=True
+    )
     description = models.TextField(blank=True)
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="pending_design")
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default="pending_design"
+    )
     rejection_reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    def save(self, *args, **kwargs):
+        # Generate order number automatically
+        if not self.order_number:
+            last_order = Order.objects.order_by("-id").first()
+            if last_order and last_order.order_number:
+                last_number = int(last_order.order_number.split("-")[1])
+                new_number = last_number + 1
+            else:
+                new_number = 1
+            self.order_number = f"ORD-{new_number:03d}"
+        super().save(*args, **kwargs)
     def __str__(self):
-        return f"Order #{self.id} - {self.user.username}"
+        return f"{self.order_number}"
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
@@ -69,18 +97,6 @@ class OrderItemField(models.Model):
     value = models.CharField(max_length=255)    
 
 
-class OrderFieldValue(models.Model):
-    order = models.ForeignKey(
-        Order,
-        on_delete=models.CASCADE,
-        related_name="field_values"
-    )
-    field = models.ForeignKey(
-        "myapp.ProductField",
-        on_delete=models.CASCADE
-    )
-    value = models.CharField(max_length=255)
-    def __str__(self):
-        return f"{self.field.name}: {self.value}"
+
 
         

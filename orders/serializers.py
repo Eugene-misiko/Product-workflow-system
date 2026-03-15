@@ -8,6 +8,7 @@ class OrderFieldValueSerializer(serializers.ModelSerializer):
         fields = ["field_name", "value"]
 
 class OrderSerializer(serializers.ModelSerializer):
+    order_number = serializers.CharField(read_only=True)
     invoice_id = serializers.SerializerMethodField()
     product_name = serializers.CharField(source="product.name",read_only=True)
     product_price = serializers.DecimalField(source="product.price",max_digits=10,decimal_places=2,read_only=True)
@@ -35,6 +36,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "fields",
             "created_at",
             "invoice_id",
+            "order_number",
         ]
         read_only_fields = ("user","status","rejection_reason")
     def get_total_price(self, obj):
