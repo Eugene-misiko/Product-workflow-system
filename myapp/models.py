@@ -9,22 +9,18 @@ class Category(models.Model):
         return self.name
 
 class Product(models.Model):
-    CATEGORY_CHOICES = [
-        ("banner", "Banner"),
-        ("clothes", "Clothes"),
-        ("books", "Books"),
-        ("cards", "Cards"),
-        ("cups", "Cups"),
-        ("pens", "Pens"),
-        ("flyers", "Flyers"),
-        ("others", "Others"),
-    ]
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name="products"
+    )
 
     name = models.CharField(max_length=200)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+
     image = CloudinaryField("image", blank=True, null=True)
+
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
