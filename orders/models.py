@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from myapp.models import Product
+from myapp.models import Product, ProductField
 from accounts.models import User
 from cloudinary.models import CloudinaryField
 from decimal import Decimal
@@ -63,15 +63,24 @@ class Invoice(models.Model):
     def __str__(self):
         return self.invoice_number 
 class OrderItemField(models.Model):
+    order_item = models.ForeignKey(OrderItem,on_delete=models.CASCADE,
+        related_name="field_values")
+    field = models.ForeignKey(ProductField, on_delete=models.CASCADE)
+    value = models.CharField(max_length=255)    
 
-    order_item = models.ForeignKey(
-        OrderItem,
+
+class OrderFieldValue(models.Model):
+    order = models.ForeignKey(
+        Order,
         on_delete=models.CASCADE,
         related_name="field_values"
     )
-
-    field = models.ForeignKey(ProductField, on_delete=models.CASCADE)
-
-    value = models.CharField(max_length=255)         
+    field = models.ForeignKey(
+        "myapp.ProductField",
+        on_delete=models.CASCADE
+    )
+    value = models.CharField(max_length=255)
+    def __str__(self):
+        return f"{self.field.name}: {self.value}"
 
         
