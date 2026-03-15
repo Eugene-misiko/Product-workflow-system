@@ -42,7 +42,9 @@ class OrderItem(models.Model):
         self.unit_price = self.product.price
         self.subtotal = self.unit_price * self.quantity
         super().save(*args, **kwargs)    
-           
+        order = self.order
+        order.total_price = sum(item.subtotal for item in order.items.all())
+        order.save()           
 class Invoice(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
