@@ -24,12 +24,26 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-            print("ORDER VALIDATION ERROR:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        order = serializer.save(user=request.user)
+        # SET INITIAL STATUS
+        if order.needs_design:
+            order.status = "pending_design"
+        else:
+            order.status = "design_completed"
+        order.save()
 
-        self.perform_create(serializer)
+        # SAVE PRODUCT FIELD VALUES
+        field_values = request.data.get("field_values", [])
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)    
+        for field in field_values:
+            OrderFieldValue.objects.create(
+                order=order,
+                field_id=field.get("field"),
+                value=field.get("value")
+            )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED) 
     # ROLE BASED VISIBILITY
     def get_queryset(self):
         user = self.request.user
