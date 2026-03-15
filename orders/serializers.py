@@ -1,20 +1,21 @@
 from rest_framework import serializers
-from .models import Order,Invoice
+from .models import Order, Invoice, OrderFieldValue
+
+class OrderFieldValueSerializer(serializers.ModelSerializer):
+    field_name = serializers.CharField(source="field.name", read_only=True)
+    class Meta:
+        model = OrderFieldValue
+        fields = ["field_name", "value"]
 
 class OrderSerializer(serializers.ModelSerializer):
     invoice_id = serializers.SerializerMethodField()
-    product_name = serializers.CharField(source="product.name", read_only=True)
-    product_price = serializers.DecimalField(
-        source="product.price",
-        max_digits=10,
-        decimal_places=2,
-        read_only=True
-    )
+    product_name = serializers.CharField(source="product.name",read_only=True)
+    product_price = serializers.DecimalField(source="product.price",max_digits=10,decimal_places=2,read_only=True)
     product_image = serializers.ImageField(source="product.image", read_only=True)
-
     total_price = serializers.SerializerMethodField()
     design_file = serializers.SerializerMethodField()
-
+    # Dynamic product specifications
+    fields = OrderFieldValueSerializer(source="field_values",many=True,read_only=True)
     class Meta:
         model = Order
         fields = [
@@ -31,14 +32,13 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "rejection_reason",
             "total_price",
+            "fields",
             "created_at",
             "invoice_id",
         ]
-        read_only_fields = ("user", "status", "rejection_reason")
-
+        read_only_fields = ("user","status","rejection_reason")
     def get_total_price(self, obj):
         return obj.product.price * obj.quantity
-
     def get_design_file(self, obj):
         if obj.design_file:
             return obj.design_file.url
@@ -47,11 +47,18 @@ class OrderSerializer(serializers.ModelSerializer):
         if hasattr(obj, "invoice"):
             return obj.invoice.id
         return None
-    
+
 class InvoiceSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source="order.product.name",read_only=True)
+    product_name = serializers.CharField(
+        source="order.product.name",
+        read_only=True)
     quantity = serializers.IntegerField(source="order.quantity",read_only=True)
-    unit_price = serializers.DecimalField(source="order.product.price",max_digits=10,decimal_places=2,read_only=True)
+    unit_price = serializers.DecimalField(
+        source="order.product.price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True)
+
     class Meta:
         model = Invoice
         fields = [
@@ -65,5 +72,4 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "balance_due",
             "status",
             "created_at",
-        ]    
-
+        ]

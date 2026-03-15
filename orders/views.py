@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Order,Invoice
+from .models import Order,Invoice,OrderFieldValue
 from .serializers import OrderSerializer
 from .utils import generate_invoice_pdf
 from reportlab.lib.pagesizes import letter
@@ -148,7 +148,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         if order.status != "approved":
             return Response({"error": "Order not approved yet"}, status=400)
 
-        order.status = "in_print"
+        order.status = "printing"
         order.save()
 
         return Response({"message": "Printing started"})
@@ -162,7 +162,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         order = self.get_object()
 
-        if order.status != "in_print":
+        if order.status != "printing":
             return Response({"error": "Order not in printing stage"}, status=400)
 
         order.status = "completed"
