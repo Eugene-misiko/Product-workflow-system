@@ -1,6 +1,13 @@
 from django.db import models
 from cloudinary.models import CloudinaryField
 
+
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
 class Product(models.Model):
     CATEGORY_CHOICES = [
         ("banner", "Banner"),

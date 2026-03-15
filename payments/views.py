@@ -24,9 +24,10 @@ def get_access_token():
         url,
         auth=(settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET)
     )
+    print("TOKEN RESPONSE:", response.text)
     return response.json().get("access_token")
 def generate_password(timestamp):
-    data = settings.MPESA_EXPRESS_SHORTCODE + settings.MPESA_PASSKEY + timestamp
+    data = f"{settings.MPESA_EXPRESS_SHORTCODE}{settings.MPESA_PASSKEY}{timestamp}"
     return base64.b64encode(data.encode()).decode("utf-8")
 def initialize_stk_push(mpesa_request):
     access_token = get_access_token()

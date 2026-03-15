@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'audit',  
     'widget_tweaks',
     'tailwind',
+    'django_daraja',
     'theme',
     'chat',
     'cart',
