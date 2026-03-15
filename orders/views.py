@@ -1,9 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Order,Invoice,OrderFieldValue
+from .models import Order,Invoice, OrderItem
 from .serializers import OrderSerializer
 from .utils import generate_invoice_pdf
 from reportlab.lib.pagesizes import letter
@@ -13,8 +13,32 @@ from reportlab.lib.colors import HexColor
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
-from datetime import datetime   
+from datetime import datetime  
 
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def dashboard_summary(request):
+    user = request.user
+    data = {
+        "total_orders": Order.objects.count(),
+        "pending_design": Order.objects.filter(
+            status="pending_design"
+        ).count(),
+        "design_completed": Order.objects.filter(
+            status="design_completed"
+        ).count(),
+        "printing": Order.objects.filter(
+            status="printing"
+        ).count(),
+        "completed": Order.objects.filter(
+            status="completed"
+        ).count(),
+        "my_orders": Order.objects.filter(
+            user=user
+        ).count(),
+    }
+    return Response(data)
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
@@ -22,28 +46,31 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Create order
         order = serializer.save(user=request.user)
-        # SET INITIAL STATUS
+
+        # Set initial status
         if order.needs_design:
             order.status = "pending_design"
         else:
             order.status = "design_completed"
         order.save()
+        # Create order items
+        items = request.data.get("items", [])
 
-        # SAVE PRODUCT FIELD VALUES
-        field_values = request.data.get("field_values", [])
+        for item in items:
+            product_id = item.get("product")
+            quantity = item.get("quantity")
 
-        for field in field_values:
-            OrderFieldValue.objects.create(
-                order=order,
-                field_id=field.get("field"),
-                value=field.get("value")
-            )
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED) 
+            if product_id and quantity:
+                OrderItem.objects.create(
+                    order=order,
+                    product_id=product_id,
+                    quantity=quantity
+                )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     # ROLE BASED VISIBILITY
     def get_queryset(self):
         user = self.request.user
@@ -201,17 +228,20 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
 
         return Response({"message": "Printing completed"})
+
 @api_view(["GET"])
 def get_invoice(request, pk):
     try:
-        invoice = Invoice.objects.select_related("order__product").get(pk=pk)
+        invoice = Invoice.objects.select_related("order").get(pk=pk)
+
+        item = invoice.order.items.first()
 
         data = {
             "id": invoice.id,
             "invoice_number": invoice.invoice_number,
-            "product_name": invoice.order.product.name,
-            "quantity": invoice.order.quantity,
-            "unit_price": invoice.order.product.price,
+            "product_name": item.product.name,
+            "quantity": item.quantity,
+            "unit_price": item.product.price,
             "total_amount": invoice.total_amount,
             "deposit_amount": invoice.deposit_amount,
             "balance_due": invoice.balance_due,
@@ -227,7 +257,9 @@ def get_invoice(request, pk):
 
 def download_invoice(request, pk):
 
-    invoice = Invoice.objects.select_related("order__product").get(pk=pk)
+    invoice = Invoice.objects.select_related("order").get(pk=pk)
+    item = invoice.order.items.first()
+    product = item.product
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="invoice_{invoice.id}.pdf"'
@@ -284,7 +316,7 @@ def download_invoice(request, pk):
         ["Description", "Quantity", "Price (Ksh)", "Amount (Ksh)"],
         [
             product.name,
-            invoice.order.quantity,
+            item.quantity,
             product.price,
             invoice.total_amount
         ],
