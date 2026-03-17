@@ -20,6 +20,7 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name="orders"
     )
+    
     order_number = models.CharField(max_length=20,unique=True,blank=True)
     total_price = models.DecimalField(max_digits=10,decimal_places=2,blank=True,null=True)
     needs_design = models.BooleanField(default=False)

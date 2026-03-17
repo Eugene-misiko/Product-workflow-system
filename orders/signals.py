@@ -1,26 +1,29 @@
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from decimal import Decimal
-import uuid
+# from django.db.models.signals import post_save
+# from django.dispatch import receiver
+# from decimal import Decimal
+# import uuid
+# from .models import Order, Invoice
 
-from .models import Order, Invoice
 
+# @receiver(post_save, sender=Order)
+# def create_invoice(sender, instance, created, **kwargs):
 
-@receiver(post_save, sender=Order)
-def create_invoice(sender, instance, created, **kwargs):
+#     if created:
+#         items = instance.items.all()
 
-    if created:
+#         total = sum(
+#             item.product.price * item.quantity
+#             for item in items
+#         )
 
-        total = instance.product.price * instance.quantity
+#         total = Decimal(total)
 
-        deposit = total * Decimal("0.70")
-
-        balance = total - deposit
-
-        Invoice.objects.create(
-            order=instance,
-            invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
-            total_amount=total,
-            deposit_amount=deposit,
-            balance_due=balance,
-        )
+#         deposit = total * Decimal("0.70")
+#         balance = total - deposit
+#         Invoice.objects.create(
+#             order=instance,
+#             invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+#             total_amount=total,
+#             deposit_amount=deposit,
+#             balance_due=balance,
+#         )

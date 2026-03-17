@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Product, Category, ProductField
 
 class ProductSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    image = serializers.ImageField(required=False, allow_null=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:

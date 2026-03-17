@@ -39,13 +39,18 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return user
 
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for viewing or updating user profile.
     """
+    avatar = serializers.ImageField(required=False)
 
     class Meta:
         model = User
-        fields = ("id", "first_name", "email", "phone", "role")
+        fields = ("id", "first_name", "email", "phone", "role", "avatar", "last_name")
         read_only_fields = ("role",)

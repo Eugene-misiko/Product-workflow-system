@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from .managers import UserManager
+from cloudinary.models import CloudinaryField
 
 
 class User(AbstractUser):
@@ -29,15 +30,15 @@ class User(AbstractUser):
         choices=ROLE_CHOICES,
         default=CLIENT,
     )
-
+    avatar = CloudinaryField("avatar",folder="avatars", blank=True, null=True)
     phone = models.CharField(
         max_length=20,
         blank=True,
     )
-    first_name = models.CharField(max_length=150, unique=True)
+    first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
-    USERNAME_FIELD = "first_name"
-    REQUIRED_FIELDS = ["email"]
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["first_name"]
     # use custom manager
     objects = UserManager()
 

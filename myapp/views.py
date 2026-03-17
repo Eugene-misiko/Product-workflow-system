@@ -4,7 +4,7 @@ from .models import Product, Category, ProductField
 from .serializers import ProductSerializer, CategorySerializer,ProductFieldSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action
-
+from .permissions import IsAdmin
 
 class ProductViewSet(viewsets.ModelViewSet):
     """
