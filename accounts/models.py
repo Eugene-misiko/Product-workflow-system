@@ -1,46 +1,62 @@
+"""
+User Model - Custom User with Role-Based Access Control
+Supports: Admin, Designer, Printer, Client
+Includes Invitation System
+"""
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from .managers import UserManager
-from cloudinary.models import CloudinaryField
+from django.utils import timezone
+from django.core.exceptions import ValidationError
+import secrets
+import string
 
 
 class User(AbstractUser):
     """
     Custom User model with role-based access control.
+    Admin is created via management command (single admin per company).
+    Other users are invited by admin.
     """
-    username = None
-
-    CLIENT = "client"
-    ADMIN = "admin"
-    DESIGNER = "designer"
-    PRINTER = "printer"
-
+    username = None  # Remove username field
+    # Roles
+    ADMIN = 'admin'
+    DESIGNER = 'designer'
+    PRINTER = 'printer'
+    CLIENT = 'client'
     ROLE_CHOICES = [
-        (CLIENT, "Client"),
-        (ADMIN, "Admin"),
-        (DESIGNER, "Designer"),
-        (PRINTER, "Printer"),
+        (ADMIN, 'Admin'),
+        (DESIGNER, 'Designer'),
+        (PRINTER, 'Printer'),
+        (CLIENT, 'Client'),
     ]
-
-    # Make email unique
+    # Core Fields
     email = models.EmailField(unique=True)
-
-    role = models.CharField(
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default=CLIENT,
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=CLIENT)
+    # Company (for multi-tenant)
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.CASCADE,
+        related_name='users',
+        null=True,
+        blank=True
     )
-    avatar = CloudinaryField("avatar",folder="avatars", blank=True, null=True)
-    phone = models.CharField(
-        max_length=20,
-        blank=True,
-    )
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["first_name"]
-    # use custom manager
-    objects = UserManager()
-
+    
+    # Profile Information
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True)
+    # Email Verification
+    email_verified = models.BooleanField(default=False)
+    email_verified_at = models.DateTimeField(null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Settings
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name']
+    class Meta:
+        ordering = ['-created_at']
     def __str__(self):
-        return f"{self.first_name} - {self.role}"
+        return f"{self.get_full_name()} ({self.role})"

@@ -151,7 +151,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
     """
-    This si the invoice
+    This is the invoice
     """
 class InvoiceSerializer(serializers.ModelSerializer):
 

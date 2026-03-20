@@ -180,7 +180,6 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Printing started"})
 
-
     # PRINTER MARKS COMPLETED
     @action(detail=True, methods=["put"])
     def mark_completed(self, request, pk=None):
@@ -234,14 +233,20 @@ def get_invoice(request, pk):
     try:
         invoice = Invoice.objects.select_related("order").get(pk=pk)
 
-        item = invoice.order.items.first()
+        items = invoice.order.items.all()
 
         data = {
             "id": invoice.id,
             "invoice_number": invoice.invoice_number,
-            "product_name": item.product.name,
-            "quantity": item.quantity,
-            "unit_price": item.product.price,
+            "items": [
+                {
+                    "product_name": item.product.name,
+                    "quantity": item.quantity,
+                    "unit_price": item.product.price,
+                    "subtotal": item.subtotal,
+                }
+                for item in items
+            ],
             "total_amount": invoice.total_amount,
             "deposit_amount": invoice.deposit_amount,
             "balance_due": invoice.balance_due,
@@ -258,8 +263,6 @@ def get_invoice(request, pk):
 def download_invoice(request, pk):
 
     invoice = Invoice.objects.select_related("order").get(pk=pk)
-    item = invoice.order.items.first()
-    product = item.product
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="invoice_{invoice.id}.pdf"'
@@ -311,16 +314,16 @@ def download_invoice(request, pk):
     elements.append(Paragraph("<b>TO: AM SOLUTIONS</b>", styles["Normal"]))
     elements.append(Spacer(1,20))
     # PRODUCTS TABLE
-    product = invoice.order.product
-    items = [
-        ["Description", "Quantity", "Price (Ksh)", "Amount (Ksh)"],
-        [
-            product.name,
+    order_items = invoice.order.items.all()
+    items = [["Description", "Quantity", "Price (Ksh)", "Amount (Ksh)"]]
+    for item in order_items:
+        items.append([
+            item.product.name,
             item.quantity,
-            product.price,
-            invoice.total_amount
-        ],
-    ]
+            item.product.price,
+            item.subtotal
+        ])
+
     item_table = Table(items, colWidths=[260,80,90,90])
     item_table.setStyle(TableStyle([
         ("GRID",(0,0),(-1,-1),0.5,HexColor("#999999")),

@@ -66,7 +66,6 @@ INSTALLED_APPS = [
     'tailwind',
     'django_daraja',
     'theme',
-    'chat',
     'cart',
     
 ]
@@ -81,21 +80,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",        # React
-    "http://127.0.0:5173",    # Your production frontend
-]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    'http://127.0.0.1:5173',
 
-]
+FRONTEND_URL = config("FRONTEND_URL")
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS").split(",")
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS").split(",")
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
+    'UPDATE_LAST_LOGIN': False,
 }
 
 
@@ -110,11 +105,8 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ),
 }
-from datetime import timedelta
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-}
+
+
 ROOT_URLCONF = 'print_flow.urls'
 
 TEMPLATES = [
@@ -155,7 +147,7 @@ DATABASES = {
     }
 }
 # configuring email backend
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 
 # configuring email host
 EMAIL_HOST = config('EMAIL_HOST')
@@ -229,7 +221,6 @@ LOGOUT_REDIRECT_URL = "/auth/login/"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
 
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL') 
 MPESA_PASSKEY = config('MPESA_PASSKEY')
