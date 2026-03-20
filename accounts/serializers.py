@@ -212,3 +212,22 @@ class InvitationSerializer(serializers.ModelSerializer):
             'created_at', 'expires_at', 'accepted_at'
         ]
         read_only_fields = ['id', 'token', 'invited_by', 'company', 'status', 'created_at', 'expires_at', 'accepted_at']
+
+class CreateInvitationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating invitations
+    """
+    class Meta:
+        model = Invitation
+        fields = ['email', 'role', 'message']
+    
+    def validate_role(self, value):
+        if value == User.ADMIN:
+            raise serializers.ValidationError("Cannot invite admin users.")
+        return value
+    
+    def create(self, validated_data):
+        request = self.context['request']
+        validated_data['invited_by'] = request.user
+        validated_data['company'] = request.user.company
+        return super().create(validated_data)
