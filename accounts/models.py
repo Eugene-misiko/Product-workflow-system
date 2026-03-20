@@ -225,4 +225,33 @@ class PasswordResetToken(models.Model):
     
     def mark_used(self):
         self.used = True
-        self.save()              
+        self.save()
+        
+class UserProfile(models.Model):
+    """
+    Extended profile information for users
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    
+    # Additional Info
+    bio = models.TextField(blank=True)
+    company_name = models.CharField(max_length=200, blank=True)
+    company_address = models.TextField(blank=True)
+    
+    # Statistics
+    total_orders = models.PositiveIntegerField(default=0)
+    completed_jobs = models.PositiveIntegerField(default=0)
+    total_spent = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # Preferences
+    notification_preferences = models.JSONField(default=dict)
+    
+    # Social
+    website = models.URLField(blank=True)
+    linkedin = models.URLField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.get_full_name()}'s Profile"                      
