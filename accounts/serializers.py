@@ -193,3 +193,22 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.save()
         reset_token.mark_used()
         return user
+
+class InvitationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for invitations
+    """
+    invited_by_name = serializers.CharField(source='invited_by.get_full_name', read_only=True)
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+    
+    class Meta:
+        model = Invitation
+        fields = [
+            'id', 'token', 'email', 'role', 'role_display',
+            'invited_by', 'invited_by_name',
+            'company', 'company_name',
+            'message', 'status',
+            'created_at', 'expires_at', 'accepted_at'
+        ]
+        read_only_fields = ['id', 'token', 'invited_by', 'company', 'status', 'created_at', 'expires_at', 'accepted_at']
