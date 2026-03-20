@@ -1,20 +1,19 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import (RegisterView,LogoutView,LoginView,UserProfileView,UserListView,AssignRoleView,
-                    ChangePasswordView,PasswordResetRequestView, PasswordResetConfirmView)
+from rest_framework_simplejwt.views import TokenRefreshView
+from .views import (
+    RegisterView, LoginView, LogoutView, ProfileView,
+    ChangePasswordView, PasswordResetRequestView, PasswordResetConfirmView,
+    InvitationListView, InvitationDetailView, CancelInvitationView,
+    UserListView, UserDetailView, DeactivateUserView,
+)
 urlpatterns = [
-    # Registration
-    path("register/", RegisterView.as_view(), name="register"),
-    # JWT login/logout
-    path("login/", LoginView.as_view(), name="login_view"),
-    path("logout/", LogoutView.as_view(), name="logout"),
-    # Profile
-    path("profile/", UserProfileView.as_view(), name="profile"),
-    # Admin
-    path("users/", UserListView.as_view(), name="users"),
-    path("users/<int:user_id>/role/", AssignRoleView.as_view(), name="users_id"),
-    #
-    path("reset_confirm/", PasswordResetConfirmView.as_view(), name="reset_confirm"),
-    path("request_reset/", PasswordResetRequestView.as_view(), name="rerequest_reset"),
-    path("change_password/", ChangePasswordView.as_view(), name="change_password"),
+    path('auth/register/', RegisterView.as_view(), name='register'),
+    path('auth/login/', LoginView.as_view(), name='login'),
+    path('auth/logout/', LogoutView.as_view(), name='logout'),
+    path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/profile/', ProfileView.as_view(), name='profile'),
+    path('auth/change-password/', ChangePasswordView.as_view(), name='change_password'),
+    path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
+    path('auth/password-reset/confirm/', PasswordResetConfirmView.as_view(), )
 ]

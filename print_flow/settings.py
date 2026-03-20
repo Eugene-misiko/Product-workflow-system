@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'orders',
     'payments',
     'notifications',
+    'companies',
     'cloudinary',
     'cloudinary_storage',  
     'widget_tweaks',
