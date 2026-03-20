@@ -198,7 +198,7 @@ class Invitation(models.Model):
         """Cancel the invitation"""
         self.status = self.STATUS_CANCELLED
         self.save()
-        
+
 class PasswordResetToken(models.Model):
     """
     Token for password reset functionality
@@ -218,4 +218,11 @@ class PasswordResetToken(models.Model):
             self.token = ''.join(secrets.choice(alphabet) for _ in range(64))
         if not self.expires_at:
             self.expires_at = timezone.now() + timezone.timedelta(hours=24)
-        super().save(*args, **kwargs)        
+        super().save(*args, **kwargs)  
+    @property
+    def is_valid(self):
+        return not self.used and timezone.now() < self.expires_at
+    
+    def mark_used(self):
+        self.used = True
+        self.save()              
