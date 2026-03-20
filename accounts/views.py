@@ -82,7 +82,7 @@ class LoginView(APIView):
                 'access': str(refresh.access_token),
             }
         })
-        
+
 class LogoutView(APIView):
     """
     Logout view - blacklists the refresh token
@@ -97,4 +97,18 @@ class LogoutView(APIView):
                 token.blacklist()
             return Response({'message': 'Successfully logged out.'})
         except Exception:
-            return Response({'message': 'Successfully logged out.'})        
+            return Response({'message': 'Successfully logged out.'})  
+
+class ProfileView(generics.RetrieveUpdateAPIView):
+    """
+    Get or update current user profile
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+    
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return UserDetailSerializer
+        return UserUpdateSerializer
