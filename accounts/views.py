@@ -379,3 +379,72 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
             }, status=status.HTTP_403_FORBIDDEN)
         
         return super().update(request, *args, **kwargs)
+
+
+class DeactivateUserView(APIView):
+    """
+    Deactivate User View.
+    Deactivate a user account (admin only).
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        if not request.user.is_company_admin:
+            return Response({
+                'error': 'Only company admin can deactivate users.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        user = get_object_or_404(
+            User,
+            pk=pk,
+            company=request.user.company
+        )
+        
+        if user.is_company_admin:
+            return Response({
+                'error': 'Cannot deactivate admin account.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        user.is_active = False
+        user.save()
+        
+        return Response({'message': f'User {user.email} has been deactivated.'})
+
+class ChangeUserRoleView(APIView):
+    """
+    Change User Role View.
+    Change a user's role (admin only).
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        if not request.user.is_company_admin:
+            return Response({
+                'error': 'Only company admin can change user roles.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        user = get_object_or_404(
+            User,
+            pk=pk,
+            company=request.user.company
+        )
+        
+        new_role = request.data.get('role')
+        
+        if new_role not in [User.DESIGNER, User.PRINTER, User.CLIENT]:
+            return Response({
+                'error': 'Invalid role. Choose designer, printer, or client.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if user.is_company_admin:
+            return Response({
+                'error': 'Cannot change admin role.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        user.role = new_role
+        user.save()
+        
+        return Response({
+            'message': f'User role changed to {user.get_role_display()}',
+            'user': UserSerializer(user).data
+        })        
