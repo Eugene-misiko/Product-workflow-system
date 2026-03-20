@@ -60,3 +60,41 @@ class User(AbstractUser):
         ordering = ['-created_at']
     def __str__(self):
         return f"{self.get_full_name()} ({self.role})"
+    
+    def clean(self):
+        super().clean()
+        # Prevent creating multiple admins
+        if self.role == self.ADMIN:
+            existing_admin = User.objects.filter(
+                role=self.ADMIN,
+                company=self.company
+            ).exclude(pk=self.pk).first()
+            
+            if existing_admin:
+                raise ValidationError(
+                    "Each company can only have one admin account."
+                )
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    @property
+    def full_name(self):
+        return self.get_full_name()
+    
+    @property
+    def is_admin(self):
+        return self.role == self.ADMIN
+    
+    @property
+    def is_designer(self):
+        return self.role == self.DESIGNER
+    
+    @property
+    def is_printer(self):
+        return self.role == self.PRINTER
+    
+    @property
+    def is_client(self):
+        return self.role == self.CLIENT        
