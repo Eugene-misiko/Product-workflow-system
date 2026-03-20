@@ -270,4 +270,26 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
             }, status=status.HTTP_403_FORBIDDEN)
         
         return super().update(request, *args, **kwargs)    
+class DeactivateUserView(APIView):
+    """
+    Deactivate a user account (Admin only)
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        user = get_object_or_404(
+            User,
+            pk=pk,
+            company=request.user.company
+        )
+        
+        if user.role == User.ADMIN:
+            return Response({
+                'error': 'Cannot deactivate admin account.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        user.is_active = False
+        user.save()
+        
+        return Response({'message': f'User {user.email} has been deactivated.'})        
 
