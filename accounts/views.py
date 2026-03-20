@@ -127,3 +127,32 @@ class ChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': 'Password changed successfully.'})
+
+class PasswordResetRequestView(APIView):
+    """
+    Request password reset email
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.validated_data['email']
+        
+        # Create reset token
+        reset_token = PasswordResetToken.objects.create(user=user)
+        
+        # Send email
+        reset_url = f"{settings.FRONTEND_URL}/reset-password/{reset_token.token}"
+        send_mail(
+            subject='Password Reset - PrintFlow',
+            message=f'Click the following link to reset your password: {reset_url}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+        
+        return Response({
+            'message': 'Password reset email sent. Please check your inbox.'
+        })
