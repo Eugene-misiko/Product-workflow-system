@@ -244,3 +244,30 @@ class UserListView(generics.ListAPIView):
     def get_queryset(self):
         return User.objects.filter(company=self.request.user.company)
 
+class UserDetailView(generics.RetrieveUpdateAPIView):
+    """
+    Get or update a user (Admin only)
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        return User.objects.filter(company=self.request.user.company)
+    
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        
+        # Only admin can change roles
+        if 'role' in request.data and request.user.role != User.ADMIN:
+            return Response({
+                'error': 'Only admin can change user roles.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Cannot change admin role
+        if user.role == User.ADMIN and 'role' in request.data:
+            return Response({
+                'error': 'Cannot change admin role.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        return super().update(request, *args, **kwargs)    
+
