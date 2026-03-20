@@ -38,7 +38,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'website', 'linkedin',
             'notification_preferences'
         ]        
-        
+
 class UserDetailSerializer(serializers.ModelSerializer):
     """
     Detailed user serializer with profile
@@ -57,3 +57,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'profile'
         ]
         read_only_fields = ['id', 'email', 'role', 'company', 'email_verified', 'created_at']
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating user profile
+    """
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'phone', 'address', 'avatar']
