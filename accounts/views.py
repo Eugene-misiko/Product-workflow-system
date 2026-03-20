@@ -204,4 +204,12 @@ class InvitationListView(generics.ListCreateAPIView):
             recipient_list=[invitation.email],
             fail_silently=True,
         )
+class InvitationDetailView(generics.RetrieveAPIView):
+    """
+    Get invitation details (for registration page)
+    """
+    permission_classes = [AllowAny]
+    queryset = Invitation.objects.all()
+    serializer_class = InvitationSerializer
+    lookup_field = 'token'        
 
