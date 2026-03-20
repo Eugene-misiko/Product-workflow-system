@@ -269,7 +269,8 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
                 'error': 'Cannot change admin role.'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        return super().update(request, *args, **kwargs)    
+        return super().update(request, *args, **kwargs)
+            
 class DeactivateUserView(APIView):
     """
     Deactivate a user account (Admin only)

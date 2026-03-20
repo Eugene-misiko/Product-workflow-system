@@ -53,21 +53,14 @@ INSTALLED_APPS = [
     'accounts',
     'corsheaders',
     'orders',
-    'designs',
     'payments',
-    'documents',
-    'deliveries',
     'notifications',
-    'reports',
     'cloudinary',
     'cloudinary_storage',  
-    'audit',  
     'widget_tweaks',
     'tailwind',
     'django_daraja',
     'theme',
-    'cart',
-    
 ]
 TAILWIND_APP_NAME = 'theme'
 MIDDLEWARE = [
@@ -80,11 +73,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
 FRONTEND_URL = config("FRONTEND_URL")
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS").split(",")
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS").split(",")
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -92,8 +83,6 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': False,
 }
-
-
 #restframework-for accounts
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -106,9 +95,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-
 ROOT_URLCONF = 'print_flow.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -125,7 +112,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'print_flow.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -148,14 +134,12 @@ DATABASES = {
 }
 # configuring email backend
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-
 # configuring email host
 EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_PORT = config('EMAIL_PORT')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-
 # configuring cloudinary
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
@@ -170,10 +154,8 @@ CLOUDINARY_STORAGE = {
     },
 }
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -190,7 +172,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
@@ -202,7 +183,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
@@ -211,17 +191,13 @@ STATIC_ROOT = BASE_DIR/'staticfiles'
 #authentication for users
 AUTH_USER_MODEL = "accounts.User"
 
-
-
  # configuring login redirect
 LOGIN_REDIRECT_URL = "/auth/redirect/"
 LOGIN_URL = "/auth/login/"
 #configuring logout redirect
 LOGOUT_REDIRECT_URL = "/auth/login/"
-
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL') 
 MPESA_PASSKEY = config('MPESA_PASSKEY')
 MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY')
