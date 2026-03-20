@@ -46,3 +46,39 @@ class RegisterView(generics.CreateAPIView):
             },
             'message': 'Registration successful!'
         }, status=status.HTTP_201_CREATED)
+
+class LoginView(APIView):
+    """
+    Login view - returns JWT tokens
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+        
+        user = authenticate(email=email, password=password)
+        
+        if user is None:
+            return Response({
+                'error': 'Invalid email or password.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if not user.is_active:
+            return Response({
+                'error': 'This account has been deactivated.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            'user': UserSerializer(user).data,
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+        })
