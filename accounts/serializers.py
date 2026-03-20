@@ -164,3 +164,32 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             return user
         except User.DoesNotExist:
             raise serializers.ValidationError("No user found with this email address.")
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    Serializer for confirming password reset
+    """
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+    new_password_confirm = serializers.CharField(write_only=True)
+    
+    def validate_token(self, value):
+        try:
+            reset_token = PasswordResetToken.objects.get(token=value)
+            if not reset_token.is_valid:
+                raise serializers.ValidationError("This reset token has expired or been used.")
+            return reset_token
+        except PasswordResetToken.DoesNotExist:
+            raise serializers.ValidationError("Invalid reset token.")
+    
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({"new_password": "Passwords do not match."})
+        return attrs
+    
+    def save(self):
+        reset_token = self.validated_data['token']
+        user = reset_token.user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        reset_token.mark_used()
+        return user
