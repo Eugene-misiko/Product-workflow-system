@@ -123,3 +123,92 @@ class Company(models.Model):
         return self.orders.count()
 
 
+class CompanySettings(models.Model):
+    """
+    Detailed settings for each company.
+    
+    These settings control:
+    - Working hours
+    - Notification preferences
+    - Payment methods
+    - Delivery options
+    - Social media links
+    """
+    
+    company = models.OneToOneField(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='settings'
+    )
+    
+    # Working Hours
+    working_days = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of working days e.g. ["monday", "tuesday", ...]'
+    )
+    opening_time = models.TimeField(null=True, blank=True)
+    closing_time = models.TimeField(null=True, blank=True)
+    timezone = models.CharField(max_length=50, default='Africa/Nairobi')
+    
+    # Notification Settings
+    email_notifications = models.BooleanField(default=True)
+    sms_notifications = models.BooleanField(default=False)
+    
+    # Payment Settings
+    accept_mpesa = models.BooleanField(default=True)
+    accept_cash = models.BooleanField(default=True)
+    accept_card = models.BooleanField(default=False)
+    accept_bank_transfer = models.BooleanField(default=True)
+    
+    # M-Pesa Settings (Each company can have their own)
+    mpesa_shortcode = models.CharField(max_length=10, blank=True)
+    mpesa_passkey = models.CharField(max_length=100, blank=True)
+    mpesa_consumer_key = models.CharField(max_length=100, blank=True)
+    mpesa_consumer_secret = models.CharField(max_length=100, blank=True)
+    
+    # Delivery Settings
+    offer_pickup = models.BooleanField(default=True)
+    offer_delivery = models.BooleanField(default=True)
+    delivery_fee = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    free_delivery_threshold = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Free delivery for orders above this amount'
+    )
+    
+    # Social Media
+    facebook = models.URLField(blank=True)
+    instagram = models.URLField(blank=True)
+    twitter = models.URLField(blank=True)
+    whatsapp_number = models.CharField(max_length=20, blank=True)
+    
+    # Terms and Policies
+    terms_conditions = models.TextField(blank=True)
+    privacy_policy = models.TextField(blank=True)
+    
+    # Email Templates
+    invoice_email_template = models.TextField(
+        blank=True,
+        help_text='Custom email template for invoices'
+    )
+    receipt_email_template = models.TextField(
+        blank=True,
+        help_text='Custom email template for receipts'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = 'Company Settings'
+    
+    def __str__(self):
+        return f"{self.company.name} Settings"
+
+
