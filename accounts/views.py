@@ -306,3 +306,76 @@ class CompanyRegistrationView(generics.CreateAPIView):
             },
             'message': f'Company "{company.name}" registered successfully! You are now the admin.'
         }, status=status.HTTP_201_CREATED)
+
+
+# USER MANAGEMENT VIEWS
+
+
+class UserListView(generics.ListAPIView):
+    """
+    List Users View.
+    
+    List all users in the company.
+    Company admin can see all users.
+    Designers/Printers can see staff.
+    Clients can only see themselves.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Platform admin sees all
+        if user.is_platform_admin:
+            return User.objects.all()
+        
+        # Company users see their company's users
+        if user.company:
+            queryset = User.objects.filter(company=user.company)
+            
+            # Filter by role
+            role = self.request.query_params.get('role')
+            if role:
+                queryset = queryset.filter(role=role)
+            
+            return queryset
+        
+        return User.objects.none()
+
+
+class UserDetailView(generics.RetrieveUpdateAPIView):
+    """
+    User Detail View.
+    
+    Get or update a user's details.
+    Only admin can update other users.
+    Users can update their own profile.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_platform_admin:
+            return User.objects.all()
+        if user.company:
+            return User.objects.filter(company=user.company)
+        return User.objects.none()
+    
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        
+        # Only admin can change roles
+        if 'role' in request.data and not request.user.is_company_admin:
+            return Response({
+                'error': 'Only company admin can change user roles.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Cannot change admin role
+        if user.is_company_admin and 'role' in request.data:
+            return Response({
+                'error': 'Cannot change admin role.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        return super().update(request, *args, **kwargs)
