@@ -166,4 +166,35 @@ class Invitation(models.Model):
         if not self.expires_at:
             # Invitation expires in 7 days
             self.expires_at = timezone.now() + timezone.timedelta(days=7)
-        super().save(*args, **kwargs)             
+        super().save(*args, **kwargs) 
+        
+    @staticmethod
+    def generate_token():
+        """Generate a secure random token"""
+        alphabet = string.ascii_letters + string.digits
+        return ''.join(secrets.choice(alphabet) for _ in range(64))
+    
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+    
+    @property
+    def is_valid(self):
+        return self.status == self.STATUS_PENDING and not self.is_expired
+    
+    def accept(self, user):
+        """Mark invitation as accepted"""
+        self.status = self.STATUS_ACCEPTED
+        self.accepted_by = user
+        self.accepted_at = timezone.now()
+        self.save()
+    
+    def expire(self):
+        """Mark invitation as expired"""
+        self.status = self.STATUS_EXPIRED
+        self.save()
+    
+    def cancel(self):
+        """Cancel the invitation"""
+        self.status = self.STATUS_CANCELLED
+        self.save()
