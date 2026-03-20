@@ -497,3 +497,44 @@ class InvitationListView(generics.ListCreateAPIView):
             recipient_list=[invitation.email],
             fail_silently=True,
         )        
+
+class InvitationDetailView(generics.RetrieveAPIView):
+    """
+    Get Invitation Details View.
+    
+    Get invitation details using token (for registration page).
+    No authentication required.
+    """
+    permission_classes = [AllowAny]
+    queryset = Invitation.objects.all()
+    serializer_class = InvitationSerializer
+    lookup_field = 'token'
+
+
+class CancelInvitationView(APIView):
+    """
+    Cancel Invitation View.
+    
+    Cancel a pending invitation.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        invitation = get_object_or_404(
+            Invitation,
+            pk=pk,
+            company=request.user.company
+        )
+        
+        if not request.user.is_company_admin:
+            return Response({
+                'error': 'Only company admin can cancel invitations.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        if invitation.status != Invitation.STATUS_PENDING:
+            return Response({
+                'error': 'Can only cancel pending invitations.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        invitation.cancel()
+        return Response({'message': 'Invitation cancelled.'})
