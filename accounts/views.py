@@ -112,3 +112,18 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         if self.request.method == 'GET':
             return UserDetailSerializer
         return UserUpdateSerializer
+
+class ChangePasswordView(APIView):
+    """
+    Change password for authenticated user
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'message': 'Password changed successfully.'})
