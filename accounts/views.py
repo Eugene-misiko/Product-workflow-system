@@ -156,3 +156,15 @@ class PasswordResetRequestView(APIView):
         return Response({
             'message': 'Password reset email sent. Please check your inbox.'
         })
+
+class PasswordResetConfirmView(APIView):
+    """
+    Confirm password reset with token
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'message': 'Password reset successful. You can now login.'})        
