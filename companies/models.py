@@ -56,3 +56,39 @@ class Company(models.Model):
     def admin_user(self):
         """Get the admin user for this company"""
         return self.users.filter(role='admin').first()
+class CompanySettings(models.Model):
+    """
+    Detailed settings for each company
+    """
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='company_settings')
+    
+    # Working Hours
+    working_days = models.JSONField(default=list)  # ['monday', 'tuesday', ...]
+    opening_time = models.TimeField(null=True, blank=True)
+    closing_time = models.TimeField(null=True, blank=True)
+    
+    # Notification Settings
+    email_notifications = models.BooleanField(default=True)
+    sms_notifications = models.BooleanField(default=False)
+    
+    # Payment Settings
+    accept_cash = models.BooleanField(default=True)
+    accept_card = models.BooleanField(default=True)
+    accept_mobile_money = models.BooleanField(default=False)
+    
+    # Delivery Settings
+    offer_pickup = models.BooleanField(default=True)
+    offer_delivery = models.BooleanField(default=True)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Social Media
+    facebook = models.URLField(blank=True)
+    instagram = models.URLField(blank=True)
+    twitter = models.URLField(blank=True)
+    linkedin = models.URLField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.company.name} Settings"        
