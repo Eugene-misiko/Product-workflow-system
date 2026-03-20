@@ -211,5 +211,25 @@ class InvitationDetailView(generics.RetrieveAPIView):
     permission_classes = [AllowAny]
     queryset = Invitation.objects.all()
     serializer_class = InvitationSerializer
-    lookup_field = 'token'        
+    lookup_field = 'token'    
+class CancelInvitationView(APIView):
+    """
+    Cancel a pending invitation
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        invitation = get_object_or_404(
+            Invitation,
+            pk=pk,
+            company=request.user.company
+        )
+        
+        if invitation.status != Invitation.STATUS_PENDING:
+            return Response({
+                'error': 'Can only cancel pending invitations.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        invitation.cancel()
+        return Response({'message': 'Invitation cancelled.'})        
 
