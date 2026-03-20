@@ -231,5 +231,16 @@ class CancelInvitationView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         invitation.cancel()
-        return Response({'message': 'Invitation cancelled.'})        
+        return Response({'message': 'Invitation cancelled.'})
+
+# User Management Views (Admin only)
+class UserListView(generics.ListAPIView):
+    """
+    List all users in the company (Admin only)
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        return User.objects.filter(company=self.request.user.company)
 
