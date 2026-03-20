@@ -448,3 +448,52 @@ class ChangeUserRoleView(APIView):
             'message': f'User role changed to {user.get_role_display()}',
             'user': UserSerializer(user).data
         })        
+
+# =====================
+# INVITATION VIEWS
+# =====================
+
+class InvitationListView(generics.ListCreateAPIView):
+    """
+    List and Create Invitations View.
+    
+    Company admin can:
+    - List all invitations for their company
+    - Create new invitations for designers, printers, clients
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Invitation.objects.filter(
+            company=self.request.user.company
+        ).order_by('-created_at')
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateInvitationSerializer
+        return InvitationSerializer
+    
+    def perform_create(self, serializer):
+        if not self.request.user.is_company_admin:
+            return Response({
+                'error': 'Only company admin can send invitations.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        invitation = serializer.save(
+            invited_by=self.request.user,
+            company=self.request.user.company
+        )
+        
+        # Send invitation email
+        invite_url = f"{settings.FRONTEND_URL}/register/{invitation.token}"
+        send_mail(
+            subject=f'Invitation to join {invitation.company.name}',
+            message=f'''
+            You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message}
+            Click the following link to register: {invite_url}
+            This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+            ''',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            fail_silently=True,
+        )        
