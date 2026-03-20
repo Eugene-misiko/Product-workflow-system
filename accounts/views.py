@@ -575,3 +575,43 @@ class ResendInvitationView(APIView):
         )
         
         return Response({'message': 'Invitation resent successfully'})
+
+# COMPANY INVITATION VIEWS (Platform Admin)
+
+
+class CompanyInvitationListView(generics.ListCreateAPIView):
+    """
+    Company Invitation List View.
+    Platform admin can invite new companies to join.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = CompanyInvitationSerializer
+    
+    def get_queryset(self):
+        # Only platform admin can see
+        if self.request.user.is_platform_admin:
+            return CompanyInvitation.objects.all()
+        return CompanyInvitation.objects.none()
+    
+    def perform_create(self, serializer):
+        if not self.request.user.is_platform_admin:
+            return Response({
+                'error': 'Only platform admin can send company invitations.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        invitation = serializer.save(invited_by=self.request.user)
+        
+        # Send email
+        invite_url = f"{settings.FRONTEND_URL}/register-company/{invitation.token}"
+        send_mail(
+            subject='Invitation to Join PrintFlow',
+            message=f'''
+           You have been invited to join PrintFlow as a printing company.
+           Company Name: {invitation.company_name}
+           Click the following link to register: {invite_url}
+           This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+            ''',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            fail_silently=True,
+        )
