@@ -6,7 +6,6 @@ from django.http import HttpRequest
 from django.db import models
 from typing import Optional
 
-
 class CompanyMiddleware:
     """
     Middleware to identify the current company for multi-tenant support.
@@ -52,7 +51,7 @@ class CompanyMiddleware:
         parts = host.split('.')
         
         if len(parts) >= 2:
-            # e.g., company.printflow.com
+            #  company.printflow.com
             subdomain = parts[0]
             if subdomain not in ['www', 'api', 'admin']:
                 try:
