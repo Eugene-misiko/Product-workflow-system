@@ -118,3 +118,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         UserProfile.objects.get_or_create(user=user)
         
         return user        
+class LoginSerializer(serializers.Serializer):
+    """
+    Serializer for user login
+    """
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)        
