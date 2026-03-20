@@ -167,7 +167,7 @@ class Invitation(models.Model):
             # Invitation expires in 7 days
             self.expires_at = timezone.now() + timezone.timedelta(days=7)
         super().save(*args, **kwargs) 
-        
+
     @staticmethod
     def generate_token():
         """Generate a secure random token"""
@@ -198,3 +198,24 @@ class Invitation(models.Model):
         """Cancel the invitation"""
         self.status = self.STATUS_CANCELLED
         self.save()
+        
+class PasswordResetToken(models.Model):
+    """
+    Token for password reset functionality
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_tokens')
+    token = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def save(self, *args, **kwargs):
+        if not self.token:
+            alphabet = string.ascii_letters + string.digits
+            self.token = ''.join(secrets.choice(alphabet) for _ in range(64))
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timezone.timedelta(hours=24)
+        super().save(*args, **kwargs)        
