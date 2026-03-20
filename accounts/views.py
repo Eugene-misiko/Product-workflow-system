@@ -167,4 +167,41 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'message': 'Password reset successful. You can now login.'})        
+        return Response({'message': 'Password reset successful. You can now login.'})
+
+# Invitation Views
+class InvitationListView(generics.ListCreateAPIView):
+    """
+    List and create invitations (Admin only)
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Invitation.objects.filter(company=self.request.user.company)
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateInvitationSerializer
+        return InvitationSerializer
+    
+    def perform_create(self, serializer):
+        invitation = serializer.save()
+        
+        # Send invitation email
+        invite_url = f"{settings.FRONTEND_URL}/register/{invitation.token}"
+        send_mail(
+            subject=f'Invitation to join {invitation.company.name}',
+            message=f'''
+            You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}.
+            
+            {invitation.message}
+            
+            Click the following link to register: {invite_url}
+            
+            This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+            ''',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            fail_silently=True,
+        )
+
