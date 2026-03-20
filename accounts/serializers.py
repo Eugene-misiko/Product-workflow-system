@@ -26,3 +26,15 @@ class UserSerializer(serializers.ModelSerializer):
             'email_verified', 'created_at'
         ]
         read_only_fields = ['id', 'email', 'role', 'company', 'email_verified', 'created_at']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Extended user profile serializer
+    """
+    class Meta:
+        model = UserProfile
+        fields = [
+            'bio', 'company_name', 'company_address',
+            'website', 'linkedin',
+            'notification_preferences'
+        ]        
