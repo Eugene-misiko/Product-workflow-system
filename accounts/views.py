@@ -615,3 +615,13 @@ class CompanyInvitationListView(generics.ListCreateAPIView):
             recipient_list=[invitation.email],
             fail_silently=True,
         )
+class CompanyInvitationDetailView(generics.RetrieveAPIView):
+    """
+    Company Invitation Detail View.
+    
+    Get company invitation details using token.
+    """
+    permission_classes = [AllowAny]
+    queryset = CompanyInvitation.objects.all()
+    serializer_class = CompanyInvitationSerializer
+    lookup_field = 'token'
