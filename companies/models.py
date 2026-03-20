@@ -212,3 +212,53 @@ class CompanySettings(models.Model):
         return f"{self.company.name} Settings"
 
 
+class CompanyInvitation(models.Model):
+    """
+    Invitation for new company registration.
+    
+    Platform superuser can invite new companies to join.
+    When accepted, the invitee becomes the company admin.
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_EXPIRED = 'expired'
+    STATUS_CANCELLED = 'cancelled'
+    
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_ACCEPTED, 'Accepted'),
+        (STATUS_EXPIRED, 'Expired'),
+        (STATUS_CANCELLED, 'Cancelled'),
+    ]
+    
+    token = models.CharField(max_length=64, unique=True)
+    email = models.EmailField()
+    company_name = models.CharField(max_length=200)
+    
+    # Who sent the invitation (platform superuser)
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='company_invitations_sent'
+    )
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    
+    # Company created after accepting
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invitation'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Company Invitation: {self.company_name}"
