@@ -538,3 +538,40 @@ class CancelInvitationView(APIView):
         
         invitation.cancel()
         return Response({'message': 'Invitation cancelled.'})
+
+class ResendInvitationView(APIView):
+    """
+    Resend Invitation View.
+    
+    Resend an expired or pending invitation.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        invitation = get_object_or_404(
+            Invitation,
+            pk=pk,
+            company=request.user.company
+        )
+        
+        if not request.user.is_company_admin:
+            return Response({
+                'error': 'Only company admin can resend invitations.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Reset expiration
+        invitation.expires_at = timezone.now() + timezone.timedelta(days=7)
+        invitation.status = Invitation.STATUS_PENDING
+        invitation.save()
+        
+        # Send email again
+        invite_url = f"{settings.FRONTEND_URL}/register/{invitation.token}"
+        send_mail(
+            subject=f'Invitation to join {invitation.company.name}',
+            message=f'Click the following link to register: {invite_url}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            fail_silently=True,
+        )
+        
+        return Response({'message': 'Invitation resent successfully'})
