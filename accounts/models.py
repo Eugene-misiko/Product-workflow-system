@@ -97,4 +97,73 @@ class User(AbstractUser):
     
     @property
     def is_client(self):
-        return self.role == self.CLIENT        
+        return self.role == self.CLIENT   
+class Invitation(models.Model):
+    """
+    Invitation model for inviting users to join the system.
+    Admin creates invitations and sends them via email.
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_EXPIRED = 'expired'
+    STATUS_CANCELLED = 'cancelled'
+    
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_ACCEPTED, 'Accepted'),
+        (STATUS_EXPIRED, 'Expired'),
+        (STATUS_CANCELLED, 'Cancelled'),
+    ]
+    
+    # Token for invitation link
+    token = models.CharField(max_length=64, unique=True, editable=False)
+    
+    # Who sent the invitation
+    invited_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sent_invitations'
+    )
+    
+    # Invitation details
+    email = models.EmailField()
+    role = models.CharField(max_length=20, choices=User.ROLE_CHOICES)
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.CASCADE,
+        related_name='invitations'
+    )
+    
+    # Personal message
+    message = models.TextField(blank=True)
+    
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    
+    # User who accepted (linked after registration)
+    accepted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='accepted_invitation'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Invitation to {self.email} as {self.role}"
+    
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = self.generate_token()
+        if not self.expires_at:
+            # Invitation expires in 7 days
+            self.expires_at = timezone.now() + timezone.timedelta(days=7)
+        super().save(*args, **kwargs)             
