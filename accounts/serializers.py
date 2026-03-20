@@ -65,3 +65,56 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'phone', 'address', 'avatar']
+
+class RegisterSerializer(serializers.ModelSerializer):
+    """
+    Serializer for user registration via invitation
+    """
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password_confirm = serializers.CharField(write_only=True)
+    invitation_token = serializers.CharField(write_only=True)
+    
+    class Meta:
+        model = User
+        fields = [
+            'email', 'password', 'password_confirm', 'invitation_token',
+            'first_name', 'last_name', 'phone'
+        ]
+    
+    def validate_invitation_token(self, value):
+        try:
+            invitation = Invitation.objects.get(token=value)
+            if not invitation.is_valid:
+                raise serializers.ValidationError("This invitation is no longer valid.")
+            return invitation
+        except Invitation.DoesNotExist:
+            raise serializers.ValidationError("Invalid invitation token.")
+    
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+        return attrs
+    
+    def create(self, validated_data):
+        invitation = validated_data.pop('invitation_token')
+        validated_data.pop('password_confirm')
+        
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            phone=validated_data.get('phone', ''),
+            role=invitation.role,
+            company=invitation.company,
+            email_verified=True,
+            email_verified_at=timezone.now(),
+        )
+        
+        # Accept the invitation
+        invitation.accept(user)
+        
+        # Create profile
+        UserProfile.objects.get_or_create(user=user)
+        
+        return user        
