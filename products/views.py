@@ -109,3 +109,29 @@ class ProductListView(generics.ListAPIView):
             queryset = queryset.filter(is_active=True)
         return queryset.order_by('-is_featured', '-created_at')
 
+class ProductDetailView(generics.RetrieveAPIView):
+    """
+    Get product details.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProductSerializer
+    
+    def get_queryset(self):
+        return Product.objects.filter(company=self.request.user.company)
+
+
+class CreateProductView(generics.CreateAPIView):
+    """
+    Create product (admin only).
+    
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = CreateProductSerializer
+    
+    def perform_create(self, serializer):
+        if not self.request.user.is_company_admin:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only admin can create products.")
+        serializer.save(company=self.request.user.company)
+
+
