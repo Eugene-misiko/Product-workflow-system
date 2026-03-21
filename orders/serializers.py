@@ -20,3 +20,33 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'field_values', 'created_at'
         ]
         read_only_fields = ['id', 'unit_price', 'subtotal', 'created_at']
+
+
+class OrderStatusHistorySerializer(serializers.ModelSerializer):
+    changed_by_name = serializers.CharField(source='changed_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = OrderStatusHistory
+        fields = ['id', 'old_status', 'new_status', 'changed_by', 'changed_by_name', 'note', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    designer_name = serializers.CharField(source='assigned_designer.get_full_name', read_only=True)
+    printer_name = serializers.CharField(source='assigned_printer.get_full_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'order_number', 'user', 'user_name',
+            'assigned_designer', 'designer_name',
+            'assigned_printer', 'printer_name',
+            'status', 'status_display', 'priority',
+            'subtotal', 'tax', 'delivery_fee', 'discount', 'total_price',
+            'needs_design', 'design_description',
+            'created_at', 'updated_at', 'items'
+        ]
+        read_only_fields = ['id', 'order_number', 'subtotal', 'total_price', 'created_at', 'updated_at']
