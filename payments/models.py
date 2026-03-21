@@ -1,10 +1,9 @@
 from django.db import models
-from orders.models import Order
 from accounts.models import User
 import uuid
 class MpesaRequest(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="payments")
-    order = models.ForeignKey(Order,on_delete=models.CASCADE, related_name="payments")
+
     phone_number = models.CharField(max_length=15)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     account_reference = models.CharField(max_length=50)
@@ -30,7 +29,6 @@ class MpesaResponse(models.Model):
     
 class Receipt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
     invoice = models.ForeignKey("orders.Invoice", on_delete=models.CASCADE, related_name="receipts")
     receipt_number = models.UUIDField(default=uuid.uuid4, editable=False)
     mpesa_receipt = models.CharField(max_length=100)

@@ -97,3 +97,33 @@ class Product(models.Model):
                 return tier.get('price', self.price)
         
         return self.price
+
+class ProductField(models.Model):
+    """Custom fields for products (dynamic form fields)."""
+    
+    FIELD_TYPES = [
+        ('text', 'Text'),
+        ('number', 'Number'),
+        ('email', 'Email'),
+        ('phone', 'Phone'),
+        ('textarea', 'Text Area'),
+        ('select', 'Select'),
+        ('checkbox', 'Checkbox'),
+        ('file', 'File Upload'),
+        ('date', 'Date'),
+    ]
+    
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='fields')
+    name = models.CharField(max_length=100)
+    field_type = models.CharField(max_length=20, choices=FIELD_TYPES)
+    required = models.BooleanField(default=True)
+    options = models.JSONField(default=list, blank=True)
+    placeholder = models.CharField(max_length=200, blank=True)
+    help_text = models.CharField(max_length=200, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.name}"
