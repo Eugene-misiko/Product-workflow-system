@@ -1,52 +1,43 @@
 """
-Account Views - Authentication and User Management.
+Accounts App - Views
 
-This module provides:
-1. Authentication (login, logout, token refresh)
-2. User registration (via invitation)
-3. Company registration (creates admin automatically)
-4. User management (admin manages company users)
-5. Invitation management
+All views for:
+- Authentication (login, logout, token refresh)
+- User registration (company registration, invitation acceptance)
+- User management (profile, password change)
+- Invitation management (create, list, cancel)
 
+NO MANAGEMENT COMMANDS!
+- Platform Admin: python manage.py createsuperuser
+- Company Admin: POST /api/auth/register-company/
 """
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import authenticate
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-
-from .models import Invitation, PasswordResetToken, UserProfile, User
+from .models import User, Invitation, PasswordResetToken, UserProfile
 from .serializers import (
     UserSerializer, UserDetailSerializer, UserUpdateSerializer,
-    RegisterSerializer, LoginSerializer, ChangePasswordSerializer,
+    LoginSerializer, ChangePasswordSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
+    RegisterSerializer, CompanyRegistrationSerializer,
     InvitationSerializer, CreateInvitationSerializer,
-    CompanyRegistrationSerializer, CompanyInvitationSerializer,
 )
-from companies.models import Company, CompanySettings, CompanyInvitation
 
-User = get_user_model()
 
+# =====================
 # AUTHENTICATION VIEWS
+# =====================
 
 class LoginView(APIView):
     """
-    User Login View.
-    
-    Authenticate user and return JWT tokens.
-    
-    Request Body:
-        email: User email
-        password: User password
-    
-    Returns:
-        user: User data
-        tokens: JWT tokens (access and refresh)
+    User login - returns JWT tokens.
     """
     permission_classes = [AllowAny]
     
@@ -69,7 +60,6 @@ class LoginView(APIView):
                 'error': 'This account has been deactivated.'
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Generate tokens
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -83,9 +73,7 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     """
-    User Logout View.
-    
-    Blacklists the refresh token to prevent further use.
+    User logout - blacklists refresh token.
     """
     permission_classes = [IsAuthenticated]
     
@@ -102,9 +90,8 @@ class LogoutView(APIView):
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     """
-    User Profile View.
+    Get or update current user profile.
     
-    Get or update current user's profile.
     """
     permission_classes = [IsAuthenticated]
     
@@ -119,9 +106,8 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
 class ChangePasswordView(APIView):
     """
-    Change Password View.
-    
     Change password for authenticated user.
+    
     """
     permission_classes = [IsAuthenticated]
     
@@ -137,9 +123,7 @@ class ChangePasswordView(APIView):
 
 class PasswordResetRequestView(APIView):
     """
-    Request Password Reset View.
-    
-    Send password reset email to user.
+    Request password reset email.
     """
     permission_classes = [AllowAny]
     
@@ -154,9 +138,20 @@ class PasswordResetRequestView(APIView):
         
         # Send email
         reset_url = f"{settings.FRONTEND_URL}/reset-password/{reset_token.token}"
+        company_name = user.company.name if user.company else "PrintFlow"
+        
         send_mail(
-            subject=f'Password Reset - {user.company.name if user.company else "PrintFlow"}',
-            message=f'Click the following link to reset your password: {reset_url}',
+            subject=f'Password Reset - {company_name}',
+            message=f'''
+            Hello {user.get_full_name()},
+            You requested to reset your password.
+            Click the following link to reset your password:
+           {reset_url}
+           This link will expire in 24 hours.
+           If you did not request this, please ignore this email.
+            Best regards,
+            {company_name}
+            ''',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=True,
@@ -169,9 +164,9 @@ class PasswordResetRequestView(APIView):
 
 class PasswordResetConfirmView(APIView):
     """
-    Confirm Password Reset View.
+    Confirm password reset with token.
     
-    Reset password using token from email.
+
     """
     permission_classes = [AllowAny]
     
@@ -188,19 +183,10 @@ class PasswordResetConfirmView(APIView):
 
 class RegisterView(generics.CreateAPIView):
     """
-    User Registration View (via Invitation).
+    User registration via invitation.
+    This is used when a user accepts an invitation to join
+    a company as designer, printer, or client.
     
-    Register a new user using an invitation token.
-    The user is automatically assigned to the company
-    and given the role specified in the invitation.
-    
-    Request Body:
-        invitation_token: Token from invitation email
-        email: User email (must match invitation)
-        password: User password
-        first_name: First name
-        last_name: Last name
-        phone: Phone number (optional)
     """
     queryset = User.objects.all()
     permission_classes = [AllowAny]
@@ -211,7 +197,6 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        # Generate tokens
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -220,51 +205,39 @@ class RegisterView(generics.CreateAPIView):
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             },
-            'message': 'Registration successful!'
+            'message': f'Welcome! You have joined {user.company.name}.'
         }, status=status.HTTP_201_CREATED)
 
 
 class CompanyRegistrationView(generics.CreateAPIView):
     """
-    Company Registration View.
-    
-    Register a new company. The registering user becomes
-    the company admin automatically.
-    This is how new companies join the platform:
-    1. User fills out company regstration form
+    Company registration - creates company and admin user.
+    1. User fills out company registration form
     2. System creates company
     3. System creates user as company admin
     4. User can immediately start managing their company
-    
-    Request Body:
-        company_name: Name of the company
-        company_slug: URL-friendly identifier
-        company_email: Company email
-        company_phone: Company phone
-        company_address: Company address
-        admin_first_name: Admin's first name
-        admin_last_name: Admin's last name
-        admin_email: Admin's email
-        admin_password: Admin's password
-        admin_phone: Admin's phone (optional)
+
     """
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = CompanyRegistrationSerializer
     
     def create(self, request, *args, **kwargs):
+        from companies.models import Company, CompanySettings
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
         
         # Create company
         company = Company.objects.create(
-            name=serializer.validated_data['company_name'],
-            slug=serializer.validated_data['company_slug'],
-            email=serializer.validated_data['company_email'],
-            phone=serializer.validated_data['company_phone'],
-            address=serializer.validated_data['company_address'],
-            city=serializer.validated_data.get('company_city', ''),
-            country=serializer.validated_data.get('company_country', 'Kenya'),
+            name=data['company_name'],
+            slug=data['company_slug'],
+            email=data['company_email'],
+            phone=data['company_phone'],
+            address=data['company_address'],
+            city=data.get('company_city', ''),
+            country=data.get('company_country', 'Kenya'),
         )
         
         # Create company settings
@@ -272,22 +245,21 @@ class CompanyRegistrationView(generics.CreateAPIView):
         
         # Create admin user
         admin = User.objects.create_user(
-            email=serializer.validated_data['admin_email'],
-            password=serializer.validated_data['admin_password'],
-            first_name=serializer.validated_data['admin_first_name'],
-            last_name=serializer.validated_data['admin_last_name'],
-            phone=serializer.validated_data.get('admin_phone', ''),
+            email=data['admin_email'],
+            password=data['admin_password'],
+            first_name=data['admin_first_name'],
+            last_name=data['admin_last_name'],
+            phone=data.get('admin_phone', ''),
             role=User.ADMIN,
             company=company,
             email_verified=True,
-            email_verified_at=timezone.now(),
         )
         
         # Set company admin
         company.admin = admin
         company.save()
         
-        # Create user profile
+        # Create profile
         UserProfile.objects.get_or_create(user=admin)
         
         # Generate tokens
@@ -308,17 +280,13 @@ class CompanyRegistrationView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+# =====================
 # USER MANAGEMENT VIEWS
-
+# =====================
 
 class UserListView(generics.ListAPIView):
     """
-    List Users View.
-    
-    List all users in the company.
-    Company admin can see all users.
-    Designers/Printers can see staff.
-    Clients can only see themselves.
+    List users in the company.
     """
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
@@ -326,15 +294,12 @@ class UserListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         
-        # Platform admin sees all
         if user.is_platform_admin:
             return User.objects.all()
         
-        # Company users see their company's users
         if user.company:
             queryset = User.objects.filter(company=user.company)
             
-            # Filter by role
             role = self.request.query_params.get('role')
             if role:
                 queryset = queryset.filter(role=role)
@@ -346,11 +311,7 @@ class UserListView(generics.ListAPIView):
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
     """
-    User Detail View.
-    
-    Get or update a user's details.
-    Only admin can update other users.
-    Users can update their own profile.
+    Get or update a user.
     """
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
@@ -362,29 +323,12 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
         if user.company:
             return User.objects.filter(company=user.company)
         return User.objects.none()
-    
-    def update(self, request, *args, **kwargs):
-        user = self.get_object()
-        
-        # Only admin can change roles
-        if 'role' in request.data and not request.user.is_company_admin:
-            return Response({
-                'error': 'Only company admin can change user roles.'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        # Cannot change admin role
-        if user.is_company_admin and 'role' in request.data:
-            return Response({
-                'error': 'Cannot change admin role.'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        return super().update(request, *args, **kwargs)
 
 
 class DeactivateUserView(APIView):
     """
-    Deactivate User View.
     Deactivate a user account (admin only).
+    
     """
     permission_classes = [IsAuthenticated]
     
@@ -410,9 +354,9 @@ class DeactivateUserView(APIView):
         
         return Response({'message': f'User {user.email} has been deactivated.'})
 
+
 class ChangeUserRoleView(APIView):
     """
-    Change User Role View.
     Change a user's role (admin only).
     """
     permission_classes = [IsAuthenticated]
@@ -447,7 +391,8 @@ class ChangeUserRoleView(APIView):
         return Response({
             'message': f'User role changed to {user.get_role_display()}',
             'user': UserSerializer(user).data
-        })        
+        })
+
 
 # =====================
 # INVITATION VIEWS
@@ -455,11 +400,8 @@ class ChangeUserRoleView(APIView):
 
 class InvitationListView(generics.ListCreateAPIView):
     """
-    List and Create Invitations View.
+    List and create invitations (admin only).
     
-    Company admin can:
-    - List all invitations for their company
-    - Create new invitations for designers, printers, clients
     """
     permission_classes = [IsAuthenticated]
     
@@ -475,9 +417,8 @@ class InvitationListView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         if not self.request.user.is_company_admin:
-            return Response({
-                'error': 'Only company admin can send invitations.'
-            }, status=status.HTTP_403_FORBIDDEN)
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only company admin can send invitations.")
         
         invitation = serializer.save(
             invited_by=self.request.user,
@@ -486,24 +427,26 @@ class InvitationListView(generics.ListCreateAPIView):
         
         # Send invitation email
         invite_url = f"{settings.FRONTEND_URL}/register/{invitation.token}"
+        
         send_mail(
             subject=f'Invitation to join {invitation.company.name}',
             message=f'''
-            You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message}
-            Click the following link to register: {invite_url}
-            This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+        Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}.
+       {invitation.message}
+       Click the following link to register:
+       {invite_url} This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+       Best regards, {invitation.company.name}
             ''',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invitation.email],
             fail_silently=True,
-        )        
+        )
+
 
 class InvitationDetailView(generics.RetrieveAPIView):
     """
-    Get Invitation Details View.
+    Get invitation details by token (for registration page).
     
-    Get invitation details using token (for registration page).
-    No authentication required.
     """
     permission_classes = [AllowAny]
     queryset = Invitation.objects.all()
@@ -513,9 +456,8 @@ class InvitationDetailView(generics.RetrieveAPIView):
 
 class CancelInvitationView(APIView):
     """
-    Cancel Invitation View.
+    Cancel a pending invitation (admin only).
     
-    Cancel a pending invitation.
     """
     permission_classes = [IsAuthenticated]
     
@@ -536,14 +478,15 @@ class CancelInvitationView(APIView):
                 'error': 'Can only cancel pending invitations.'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        invitation.cancel()
+        invitation.status = Invitation.STATUS_CANCELLED
+        invitation.save()
+        
         return Response({'message': 'Invitation cancelled.'})
+
 
 class ResendInvitationView(APIView):
     """
-    Resend Invitation View.
-    
-    Resend an expired or pending invitation.
+    Resend an invitation (admin only).
     """
     permission_classes = [IsAuthenticated]
     
@@ -566,62 +509,14 @@ class ResendInvitationView(APIView):
         
         # Send email again
         invite_url = f"{settings.FRONTEND_URL}/register/{invitation.token}"
+        
         send_mail(
-            subject=f'Invitation to join {invitation.company.name}',
-            message=f'Click the following link to register: {invite_url}',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[invitation.email],
-            fail_silently=True,
-        )
-        
-        return Response({'message': 'Invitation resent successfully'})
-
-# COMPANY INVITATION VIEWS (Platform Admin)
-
-
-class CompanyInvitationListView(generics.ListCreateAPIView):
-    """
-    Company Invitation List View.
-    Platform admin can invite new companies to join.
-    """
-    permission_classes = [IsAuthenticated]
-    serializer_class = CompanyInvitationSerializer
-    
-    def get_queryset(self):
-        # Only platform admin can see
-        if self.request.user.is_platform_admin:
-            return CompanyInvitation.objects.all()
-        return CompanyInvitation.objects.none()
-    
-    def perform_create(self, serializer):
-        if not self.request.user.is_platform_admin:
-            return Response({
-                'error': 'Only platform admin can send company invitations.'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        invitation = serializer.save(invited_by=self.request.user)
-        
-        # Send email
-        invite_url = f"{settings.FRONTEND_URL}/register-company/{invitation.token}"
-        send_mail(
-            subject='Invitation to Join PrintFlow',
-            message=f'''
-           You have been invited to join PrintFlow as a printing company.
-           Company Name: {invitation.company_name}
-           Click the following link to register: {invite_url}
-           This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+            subject=f'Invitation Reminder - {invitation.company.name}',
+            message=f''' Hello, This is a reminder about your invitation to join {invitation.company.name}. Click the following link to register:
+            {invite_url} This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
             ''',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invitation.email],
             fail_silently=True,
         )
-class CompanyInvitationDetailView(generics.RetrieveAPIView):
-    """
-    Company Invitation Detail View.
-    
-    Get company invitation details using token.
-    """
-    permission_classes = [AllowAny]
-    queryset = CompanyInvitation.objects.all()
-    serializer_class = CompanyInvitationSerializer
-    lookup_field = 'token'
+        return Response({'message': 'Invitation resent successfully.'})

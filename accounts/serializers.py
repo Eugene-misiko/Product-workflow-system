@@ -1,28 +1,24 @@
 """
-Account Serializers - User, Invitation, Authentication.
-
-All serializers for the accounts app.
+All serializers for user management, authentication, and invitations.
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
-from django.db import transaction
-import re
+
 from .models import Invitation, PasswordResetToken, UserProfile, User
-from companies.models import Company, CompanySettings, CompanyInvitation
+from companies.models import Company
 
 User = get_user_model()
 
 
-
+# =====================
 # USER SERIALIZERS
-
+# =====================
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Basic user serializer.
-    """
+    """Basic user serializer."""
+    
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
@@ -39,27 +35,24 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """
-    Extended user profile serializer.
-    """
+    """Extended user profile serializer."""
+    
     class Meta:
         model = UserProfile
         fields = [
             'bio', 'company_name', 'company_address',
             'website', 'linkedin',
             'total_orders', 'completed_jobs', 'total_spent',
-            'notification_preferences'
         ]
 
+
 class UserDetailSerializer(serializers.ModelSerializer):
-    """
-    Detailed user serializer with profile.
-    """
+    """Detailed user serializer with profile."""
+    
     profile = UserProfileSerializer(read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
-    
     class Meta:
         model = User
         fields = [
@@ -67,35 +60,29 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'role', 'role_display', 'avatar', 'phone', 'address',
             'company', 'company_name',
             'email_verified', 'created_at', 'updated_at',
+            'profile'
         ]
         read_only_fields = ['id', 'email', 'role', 'company', 'email_verified', 'created_at']
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for updating user profile.
-    """
+    """Serializer for updating user profile."""
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'phone', 'address', 'avatar']
 
-
-#
+# =====================
 # AUTHENTICATION SERIALIZERS
-
+# =====================
 
 class LoginSerializer(serializers.Serializer):
-    """
-    Serializer for user login.
-    """
+    """User login serializer."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    """
-    Serializer for changing password.
-    """
+    """Change password serializer."""
     old_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
     new_password_confirm = serializers.CharField(write_only=True)
@@ -119,21 +106,20 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    """
-    Serializer for requesting password reset.
-    """
+    """Password reset request serializer."""
+    
     email = serializers.EmailField()
     
     def validate_email(self, value):
         try:
-            user = User.objects.get(email=value)
-            return user
+            return User.objects.get(email=value)
         except User.DoesNotExist:
             raise serializers.ValidationError("No user found with this email address.")
+
+
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    """
-    Serializer for confirming password reset.
-    """
+    """Password reset confirmation serializer."""
+    
     token = serializers.CharField()
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
     new_password_confirm = serializers.CharField(write_only=True)
@@ -161,16 +147,16 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return user
 
 
+# =====================
 # REGISTRATION SERIALIZERS
-
+# =====================
 
 class RegisterSerializer(serializers.ModelSerializer):
     """
-    Serializer for user registration via invitation.
-    
-    This is used when a user accepts an invitation to join
-    a company as designer, printer, or client.
+    User registration via invitation.
+    Used when accepting invitation to join a company.
     """
+    
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
     invitation_token = serializers.CharField(write_only=True)
@@ -192,7 +178,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid invitation token.")
     
     def validate_email(self, value):
-        # Check email matches invitation
         invitation_token = self.initial_data.get('invitation_token')
         try:
             invitation = Invitation.objects.get(token=invitation_token)
@@ -222,28 +207,21 @@ class RegisterSerializer(serializers.ModelSerializer):
             role=invitation.role,
             company=invitation.company,
             email_verified=True,
-            email_verified_at=timezone.now(),
         )
         
-        # Accept the invitation
         invitation.accept(user)
-        
-        # Create profile
         UserProfile.objects.get_or_create(user=user)
         
         return user
 
+
 class CompanyRegistrationSerializer(serializers.Serializer):
     """
-    Serializer for company registration.
+    Company registration serializer.
+    Creates a new company and its admin user.
     
-    This creates:
-    1. A new company
-    2. A company admin user
-    
-    The registering user becomes the company admin automatically.
-    No invitation needed for this flow.
     """
+    
     # Company fields
     company_name = serializers.CharField(max_length=200)
     company_slug = serializers.SlugField(max_length=200)
@@ -274,20 +252,15 @@ class CompanyRegistrationSerializer(serializers.Serializer):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value
-    
-    def create(self, validated_data):
-        """
-        Create company and admin user.
-        This is handled in the view for better error handling.
-        """
-        return validated_data
 
+
+# =====================
 # INVITATION SERIALIZERS
+# =====================
 
 class InvitationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for invitations.
-    """
+    """Invitation serializer."""
+    
     invited_by_name = serializers.CharField(source='invited_by.get_full_name', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
@@ -311,14 +284,8 @@ class InvitationSerializer(serializers.ModelSerializer):
 
 
 class CreateInvitationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating invitations.
+    """Serializer for creating invitations (admin only)."""
     
-    Company admin can invite:
-    - Designers
-    - Printers
-    - Clients
-    """
     class Meta:
         model = Invitation
         fields = ['email', 'role', 'message']
@@ -331,7 +298,6 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
         return value
     
     def validate_email(self, value):
-        # Check if user already exists in company
         request = self.context.get('request')
         if request and request.user.company:
             if User.objects.filter(
@@ -342,7 +308,6 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
                     "A user with this email already exists in your company."
                 )
         
-        # Check for pending invitation
         if Invitation.objects.filter(
             email=value,
             status=Invitation.STATUS_PENDING
@@ -352,26 +317,3 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
             )
         
         return value
-
-class CompanyInvitationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for company invitations.
-    
-    Platform admin invites new companies to join.
-    """
-    invited_by_name = serializers.CharField(source='invited_by.get_full_name', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
-    class Meta:
-        model = CompanyInvitation
-        fields = [
-            'id', 'token', 'email', 'company_name',
-            'invited_by', 'invited_by_name',
-            'status', 'status_display',
-            'company',
-            'created_at', 'expires_at', 'accepted_at'
-        ]
-        read_only_fields = [
-            'id', 'token', 'invited_by', 'status',
-            'company', 'created_at', 'expires_at', 'accepted_at'
-        ]
