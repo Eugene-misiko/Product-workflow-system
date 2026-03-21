@@ -43,7 +43,6 @@ class CompanyUpdateView(generics.UpdateAPIView):
             raise PermissionDenied("Only company admin can update company details.")
         return self.request.user.company
 
-
 class CompanySettingsView(generics.RetrieveUpdateAPIView):
     """
     Get or update company settings (admin only).
@@ -59,3 +58,26 @@ class CompanySettingsView(generics.RetrieveUpdateAPIView):
         company = self.request.user.company
         settings, _ = CompanySettings.objects.get_or_create(company=company)
         return settings
+
+class PaymentSettingsView(APIView):
+    """
+    Get or update payment settings (admin only).
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        if not request.user.is_company_admin:
+            return Response({'error': 'Admin only'}, status=403)
+        
+        settings, _ = CompanySettings.objects.get_or_create(company=request.user.company)
+        
+        return Response({
+            'accept_mpesa': settings.accept_mpesa,
+            'accept_cash': settings.accept_cash,
+            'accept_card': settings.accept_card,
+            'accept_bank_transfer': settings.accept_bank_transfer,
+            'mpesa_shortcode': settings.mpesa_shortcode,
+            'mpesa_passkey': settings.mpesa_passkey,
+            'mpesa_consumer_key': settings.mpesa_consumer_key,
+            'mpesa_consumer_secret': settings.mpesa_consumer_secret,
+        })        
