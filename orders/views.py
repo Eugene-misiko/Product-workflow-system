@@ -383,3 +383,28 @@ class DesignerAssignmentListView(generics.ListAPIView):
             assigned_designer=self.request.user
         ).exclude(status__in=[Order.STATUS_COMPLETED, Order.STATUS_CANCELLED]).order_by('-created_at')
 
+class PrinterJobListView(generics.ListAPIView):
+    """List print jobs assigned to current printer."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = PrintJobSerializer
+    
+    def get_queryset(self):
+        return PrintJob.objects.filter(
+            assigned_printer=self.request.user
+        ).exclude(status='completed').order_by('-created_at')
+
+
+class UnassignedOrdersView(generics.ListAPIView):
+    """List orders needing assignment (admin only)."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderSerializer
+    
+    def get_queryset(self):
+        from django.db.models import Q
+        
+        return Order.objects.filter(
+            company=self.request.user.company,
+        ).filter(
+            Q(needs_design=True, assigned_designer__isnull=True, status='pending') |
+            Q(status='approved_for_printing', assigned_printer__isnull=True)
+        ).order_by('-created_at')
