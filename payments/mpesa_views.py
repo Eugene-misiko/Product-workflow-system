@@ -114,3 +114,145 @@ def stk_push(request):
         MpesaResponseSerializer(mpesa_response).data,
         status=status.HTTP_201_CREATED
     )
+
+@api_view(['POST'])
+def mpesa_callback(request):
+    """
+    Handle M-Pesa payment callback.
+    This endpoint receives payment confirmation from Safaricom
+    after an STK Push payment is completed (or failed).
+    On successful payment:
+    - Updates invoice status
+    - Creates payment record
+    - Generates receipt
+    - Sends notification to user
+    """
+    data = request.data
+    stk_callback = data.get('Body', {}).get('stkCallback', {})
+    
+    merchant_request_id = stk_callback.get('MerchantRequestID')
+    checkout_request_id = stk_callback.get('CheckoutRequestID')
+    result_code = stk_callback.get('ResultCode')
+    result_desc = stk_callback.get('ResultDesc')
+    
+    logger.info(f"M-Pesa Callback: CheckoutRequestID={checkout_request_id}, ResultCode={result_code}")
+    
+    try:
+        mpesa_response = MpesaResponse.objects.get(
+            merchant_request_id=merchant_request_id,
+            checkout_request_id=checkout_request_id
+        )
+    except MpesaResponse.DoesNotExist:
+        logger.error(f"MpesaResponse not found: {checkout_request_id}")
+        return Response(
+            {'ResultCode': 1, 'ResultDesc': 'Request not found'},
+            status=status.HTTP_200_OK
+        )
+    # Update response
+    mpesa_response.response_code = str(result_code)
+    mpesa_response.response_description = result_desc
+    
+    if result_code == 0:
+        # Payment successful
+        mpesa_response.is_successful = True
+        
+        invoice = mpesa_response.request.invoice
+        order = mpesa_response.request.order
+        user = mpesa_response.request.user
+        amount = mpesa_response.request.amount
+        
+        # Extract metadata
+        metadata = stk_callback.get('CallbackMetadata', {}).get('Item', [])
+        
+        mpesa_code = None
+        amount_paid = None
+        transaction_date = None
+        
+        for item in metadata:
+            name = item.get('Name')
+            value = item.get('Value')
+            
+            if name == 'MpesaReceiptNumber':
+                mpesa_code = value
+                mpesa_response.receipt_number = value
+            elif name == 'Amount':
+                amount_paid = value
+                mpesa_response.amount_paid = value
+            elif name == 'TransactionDate':
+                transaction_date = str(value)
+                mpesa_response.transaction_date = transaction_date
+        
+        mpesa_response.save()
+        
+        # Determine payment type
+        if invoice.status == Invoice.STATUS_PENDING:
+            payment_type = Payment.PAYMENT_TYPE_DEPOSIT
+            invoice.status = Invoice.STATUS_PARTIAL
+        else:
+            payment_type = Payment.PAYMENT_TYPE_BALANCE
+            invoice.status = Invoice.STATUS_PAID
+        
+        invoice.save()
+        
+        # Create payment record
+        payment = Payment.objects.create(
+            company=invoice.company,
+            invoice=invoice,
+            amount=amount_paid or amount,
+            payment_type=payment_type,
+            payment_method=Payment.METHOD_MPESA,
+            status=Payment.STATUS_COMPLETED,
+            mpesa_response=mpesa_response,
+            transaction_id=mpesa_code
+        )
+        payment.completed_at = timezone.now()
+        payment.save()
+        
+        # Create receipt
+        receipt = Receipt.objects.create(
+            company=invoice.company,
+            user=user,
+            order=order,
+            invoice=invoice,
+            payment=payment,
+            mpesa_receipt=mpesa_code,
+            amount_paid=amount_paid or amount,
+            payment_type=payment_type
+        )
+        
+        # Send notification
+        Notification.objects.create(
+            company=invoice.company,
+            user=user,
+            notification_type=Notification.TYPE_PAYMENT,
+            title='Payment Successful',
+            message=f'Your payment of ${amount_paid or amount} for order {order.order_number} was successful. Receipt: {mpesa_code}',
+            related_object_type='order',
+            related_object_id=order.id
+        )
+        
+        logger.info(f"Payment successful: {mpesa_code}")
+        
+    else:
+        # Payment failed
+        mpesa_response.is_successful = False
+        mpesa_response.save()
+        
+        logger.warning(f"Payment failed: {result_desc}")
+        
+        # Notify user of failure
+        Notification.objects.create(
+            company=mpesa_response.request.invoice.company,
+            user=mpesa_response.request.user,
+            notification_type=Notification.TYPE_PAYMENT,
+            title='Payment Failed',
+            message=f'Your payment for order {mpesa_response.request.order.order_number} failed. Reason: {result_desc}',
+            related_object_type='order',
+            related_object_id=mpesa_response.request.order.id
+        )
+    
+    return Response(
+        {'ResultCode': 0, 'ResultDesc': 'Success'},
+        status=status.HTTP_200_OK
+    )
+
