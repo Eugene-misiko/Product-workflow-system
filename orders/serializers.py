@@ -50,3 +50,29 @@ class OrderSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'items'
         ]
         read_only_fields = ['id', 'order_number', 'subtotal', 'total_price', 'created_at', 'updated_at']
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    status_history = OrderStatusHistorySerializer(many=True, read_only=True)
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'order_number', 'user', 'user_name',
+            'assigned_designer', 'assigned_printer',
+            'status', 'priority',
+            'subtotal', 'tax', 'delivery_fee', 'discount', 'total_price',
+            'needs_design', 'design_file', 'design_description', 'design_notes',
+            'design_revisions', 'max_revisions',
+            'client_files', 'description', 'internal_notes',
+            'rejection_reason', 'cancellation_reason',
+            'design_started_at', 'design_completed_at',
+            'printing_started_at', 'printing_completed_at',
+            'completed_at', 'estimated_completion',
+            'created_at', 'updated_at',
+            'items', 'status_history',
+        ]
+
+
