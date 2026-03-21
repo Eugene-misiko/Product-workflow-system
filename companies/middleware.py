@@ -48,4 +48,26 @@ class CompanyMiddleware:
                 return Company.objects.get(slug=company_slug, is_active=True)
             except Company.DoesNotExist:
                 pass
+        # 4. Subdomain
+        host = request.get_host().split(':')[0]
+        parts = host.split('.')
+        
+        if len(parts) >= 2:
+            subdomain = parts[0]
+            if subdomain not in ['www', 'api', 'admin', 'app']:
+                try:
+                    return Company.objects.get(subdomain=subdomain, is_active=True)
+                except Company.DoesNotExist:
+                    pass
+        
+        # 5. Custom domain
+        try:
+            return Company.objects.filter(
+                custom_domain=host,
+                is_active=True
+            ).first()
+        except:
+            pass
+        
+        return None                
         
