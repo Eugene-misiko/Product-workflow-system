@@ -283,3 +283,30 @@ class CancelOrderView(APIView):
         )
         
         return Response({'message': 'Order cancelled.'})
+
+
+class PrintJobViewSet(viewsets.ModelViewSet):
+    """Print job management."""
+    
+    permission_classes = [IsAuthenticated]
+    serializer_class = PrintJobSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        queryset = PrintJob.objects.filter(order__company=user.company)
+        
+        if user.role == User.PRINTER:
+            queryset = queryset.filter(assigned_printer=user)
+        
+        return queryset.order_by('-created_at')
+
+
+class StartPrintJobView(APIView):
+    """Start printing."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        print_job = get_object_or_404(PrintJob, pk=pk, order__company=request.user.company)
+        print_job.start()
+        return Response({'message': 'Printing started.'})
