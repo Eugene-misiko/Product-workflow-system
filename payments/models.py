@@ -198,18 +198,15 @@ class Payment(models.Model):
 
 class Receipt(models.Model):
     """Receipt auto-generated after payment."""
-    
     company = models.ForeignKey('companies.Company', on_delete=models.CASCADE, related_name='receipts')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='receipts')
     order = models.ForeignKey('orders.Order', on_delete=models.CASCADE, related_name='receipts')
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='receipts')
     payment = models.OneToOneField(Payment, on_delete=models.CASCADE, related_name='receipt', null=True)
-    
     receipt_number = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     mpesa_receipt = models.CharField(max_length=100, blank=True)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2)
     payment_type = models.CharField(max_length=20)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
