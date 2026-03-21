@@ -64,3 +64,53 @@ def stk_push(request):
     
     order = invoice.order
     user = request.user
+
+  # Determine amount to charge
+    if invoice.status == Invoice.STATUS_PENDING:
+        # Charge deposit (70%)
+        amount = invoice.deposit_amount
+        payment_type = Payment.PAYMENT_TYPE_DEPOSIT
+    elif invoice.status == Invoice.STATUS_PARTIAL:
+        # Charge balance (30%)
+        amount = invoice.balance_due
+        payment_type = Payment.PAYMENT_TYPE_BALANCE
+    else:
+        amount = invoice.balance_due
+        payment_type = Payment.PAYMENT_TYPE_BALANCE
+    
+    # Create M-Pesa request
+    mpesa_request = MpesaRequest.objects.create(
+        user=user,
+        order=order,
+        invoice=invoice,
+        phone_number=phone_number,
+        amount=amount,
+        account_reference=f"Order-{order.order_number}",
+        transaction_desc=f"PrintFlow Payment - {order.order_number}"
+    )
+    
+    # Initialize STK Push
+    response_data = initialize_stk_push(mpesa_request)
+    
+    # Check for errors
+    if 'error' in response_data or 'MerchantRequestID' not in response_data:
+        return Response({
+            'error': 'Failed to connect to M-Pesa',
+            'details': response_data
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Save response
+    mpesa_response = MpesaResponse.objects.create(
+        request=mpesa_request,
+        merchant_request_id=response_data.get('MerchantRequestID'),
+        checkout_request_id=response_data.get('CheckoutRequestID'),
+        response_code=response_data.get('ResponseCode'),
+        response_description=response_data.get('ResponseDescription'),
+    )
+    
+    logger.info(f"STK Push initiated: {mpesa_response.checkout_request_id}")
+    
+    return Response(
+        MpesaResponseSerializer(mpesa_response).data,
+        status=status.HTTP_201_CREATED
+    )
