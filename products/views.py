@@ -59,3 +59,17 @@ class CreateCategoryView(generics.CreateAPIView):
             raise PermissionDenied("Only admin can create categories.")
         serializer.save(company=self.request.user.company)
 
+class UpdateCategoryView(generics.UpdateAPIView):
+    """
+    Update category (admin only).
+    
+    PUT/PATCH /api/categories/{pk}/
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = CategorySerializer
+    
+    def get_queryset(self):
+        if not self.request.user.is_company_admin:
+            return Category.objects.none()
+        return Category.objects.filter(company=self.request.user.company)
+
