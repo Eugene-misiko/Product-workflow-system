@@ -103,3 +103,64 @@ class CreateOrderSerializer(serializers.ModelSerializer):
         return order
 
 
+class AssignDesignerSerializer(serializers.Serializer):
+    designer_id = serializers.IntegerField()
+
+class AssignPrinterSerializer(serializers.Serializer):
+    printer_id = serializers.IntegerField()
+
+
+class SubmitDesignSerializer(serializers.Serializer):
+    design_file = serializers.FileField(required=False)
+    design_notes = serializers.CharField(required=False, allow_blank=True)
+
+class ApproveDesignSerializer(serializers.Serializer):
+    approved = serializers.BooleanField()
+    rejection_reason = serializers.CharField(required=False, allow_blank=True)
+
+
+class PrintJobSerializer(serializers.ModelSerializer):
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
+    assigned_printer_name = serializers.CharField(source='assigned_printer.get_full_name', read_only=True)
+    
+    class Meta:
+        model = PrintJob
+        fields = [
+            'id', 'order', 'order_number',
+            'assigned_printer', 'assigned_printer_name',
+            'status', 'print_quantity', 'paper_type', 'print_color', 'finish_type',
+            'progress_percentage', 'print_notes', 'issues',
+            'started_at', 'estimated_completion', 'completed_at',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class TransportationSerializer(serializers.ModelSerializer):
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
+    
+    class Meta:
+        model = Transportation
+        fields = [
+            'id', 'order', 'order_number',
+            'transport_type', 'status',
+            'delivery_address', 'delivery_city', 'delivery_phone', 'delivery_instructions',
+            'pickup_location', 'pickup_scheduled_time',
+            'delivery_scheduled_time', 'estimated_arrival', 'actual_delivery_time',
+            'tracking_number', 'tracking_url', 'driver_name', 'driver_phone',
+            'delivery_fee', 'notes',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class CreateTransportationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transportation
+        fields = [
+            'transport_type',
+            'delivery_address', 'delivery_city', 'delivery_phone', 'delivery_instructions',
+            'pickup_scheduled_time', 'delivery_scheduled_time',
+            'notes'
+        ]
+
