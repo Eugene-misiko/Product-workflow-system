@@ -250,3 +250,64 @@ class OrderStatusHistory(models.Model):
     
     def __str__(self):
         return f"{self.order.order_number}: {self.old_status} → {self.new_status}"
+
+class PrintJob(models.Model):
+    """Printer's job tracking with detailed status."""
+    STATUS_QUEUED = 'queued'
+    STATUS_IN_PRINTING = 'in_printing'
+    STATUS_PAUSED = 'paused'
+    STATUS_POLISHING = 'polishing'
+    STATUS_COMPLETED = 'completed'
+    
+    STATUS_CHOICES = [
+        (STATUS_QUEUED, 'Queued'),
+        (STATUS_IN_PRINTING, 'In Printing'),
+        (STATUS_PAUSED, 'Paused'),
+        (STATUS_POLISHING, 'Polishing'),
+        (STATUS_COMPLETED, 'Completed'),
+    ]
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='print_job')
+    assigned_printer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='print_jobs'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_QUEUED)
+    print_quantity = models.PositiveIntegerField(default=1)
+    paper_type = models.CharField(max_length=100, blank=True)
+    print_color = models.CharField(max_length=50, blank=True)
+    finish_type = models.CharField(max_length=50, blank=True)
+    progress_percentage = models.PositiveIntegerField(default=0)
+    print_notes = models.TextField(blank=True)
+    issues = models.TextField(blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    estimated_completion = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Print Job #{self.id} - {self.order.order_number}"
+    
+    def start(self):
+        self.status = self.STATUS_IN_PRINTING
+        self.started_at = timezone.now()
+        self.save()
+        self.order.update_status(Order.STATUS_PRINTING, note="Printing started")
+    
+    def move_to_polishing(self):
+        self.status = self.STATUS_POLISHING
+        self.save()
+        self.order.update_status(Order.STATUS_POLISHING, note="Moved to polishing")
+    
+    def complete(self):
+        self.status = self.STATUS_COMPLETED
+        self.completed_at = timezone.now()
+        self.progress_percentage = 100
+        self.save()
+        self.order.update_status(Order.STATUS_READY_FOR_PICKUP, note="Printing completed")
