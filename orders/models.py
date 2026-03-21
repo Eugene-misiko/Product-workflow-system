@@ -181,3 +181,36 @@ class Order(models.Model):
             changed_by=user,
             note=note
         )
+
+
+class OrderItem(models.Model):
+    """Items in an order."""
+    
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
+    
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    specifications = models.JSONField(default=dict, blank=True)
+    notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['id']
+    
+    def __str__(self):
+        return f"{self.product.name} x {self.quantity}"
+    
+    def save(self, *args, **kwargs):
+        self.unit_price = self.product.get_price_for_quantity(self.quantity)
+        self.subtotal = self.unit_price * self.quantity
+        super().save(*args, **kwargs)
+        
+        # Update order total
+        self.order.subtotal = sum(item.subtotal for item in self.order.items.all())
+        self.order.total_price = self.order.subtotal + self.order.tax + self.order.delivery_fee - self.order.discount
+        self.order.save()
+
