@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from payments.models import (
     Invoice, MpesaRequest, MpesaResponse,
@@ -255,4 +256,35 @@ def mpesa_callback(request):
         {'ResultCode': 0, 'ResultDesc': 'Success'},
         status=status.HTTP_200_OK
     )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def payment_status(request, checkout_request_id):
+    """
+    Check status of an M-Pesa payment.
+    Use this endpoint to check if a payment was completed
+    if the callback was not received or to poll for status.
+    """
+    try:
+        mpesa_response = MpesaResponse.objects.get(
+            checkout_request_id=checkout_request_id,
+            request__user=request.user
+        )
+    except MpesaResponse.DoesNotExist:
+        return Response({
+            'error': 'Payment request not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    return Response({
+        'checkout_request_id': mpesa_response.checkout_request_id,
+        'is_successful': mpesa_response.is_successful,
+        'response_code': mpesa_response.response_code,
+        'response_description': mpesa_response.response_description,
+        'amount_paid': mpesa_response.amount_paid,
+        'receipt_number': mpesa_response.receipt_number,
+        'created_at': mpesa_response.created_at
+    })
+
+
 
