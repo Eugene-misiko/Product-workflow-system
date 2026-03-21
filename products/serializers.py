@@ -63,3 +63,28 @@ class ProductListSerializer(serializers.ModelSerializer):
     
     def get_price_display(self, obj):
         return f"KSh {obj.price:,.2f}"
+        
+class ProductSerializer(serializers.ModelSerializer):
+    """Product serializer."""
+    
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    price_display = serializers.SerializerMethodField()
+    fields = ProductFieldSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'description', 'price', 'price_display',
+            'category', 'category_name',
+            'image', 'gallery',
+            'min_quantity', 'max_quantity',
+            'requires_design', 'design_templates',
+            'production_time', 'print_specs',
+            'is_active', 'is_featured',
+            'fields',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
+    
+    def get_price_display(self, obj):
+        return f"KSh {obj.price:,.2f}"
