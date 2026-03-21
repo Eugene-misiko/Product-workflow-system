@@ -135,3 +135,35 @@ class CreateProductView(generics.CreateAPIView):
         serializer.save(company=self.request.user.company)
 
 
+class UpdateProductView(generics.UpdateAPIView):
+    """
+    Update product (admin only).
+    
+    PUT/PATCH /api/products/{pk}/
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = CreateProductSerializer
+    
+    def get_queryset(self):
+        if not self.request.user.is_company_admin:
+            return Product.objects.none()
+        return Product.objects.filter(company=self.request.user.company)
+
+
+class DeleteProductView(generics.DestroyAPIView):
+    """
+    Delete product (admin only) - Soft delete.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        if not self.request.user.is_company_admin:
+            return Product.objects.none()
+        return Product.objects.filter(company=self.request.user.company)
+    
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save()
+
+
+
