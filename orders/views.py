@@ -49,3 +49,47 @@ class OrderViewSet(viewsets.ModelViewSet):
             company=self.request.user.company
         )
 
+class AssignDesignerView(APIView):
+    """Assign designer to order (admin only)."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk, company=request.user.company)
+        
+        if not order.can_assign_designer:
+            return Response({'error': 'Cannot assign designer to this order.'}, status=400)
+        
+        serializer = AssignDesignerSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        designer = get_object_or_404(
+            User,
+            id=serializer.validated_data['designer_id'],
+            role=User.DESIGNER,
+            company=request.user.company
+        )
+        
+        order.assigned_designer = designer
+        order.status = Order.STATUS_ASSIGNED_TO_DESIGNER
+        order.save()
+        
+        OrderStatusHistory.objects.create(
+            order=order,
+            old_status=Order.STATUS_PENDING,
+            new_status=Order.STATUS_ASSIGNED_TO_DESIGNER,
+            changed_by=request.user,
+            note=f'Assigned to {designer.get_full_name()}'
+        )
+        
+        Notification.objects.create(
+            company=order.company,
+            user=designer,
+            notification_type='order',
+            title='New Design Assignment',
+            message=f'You have been assigned to design order {order.order_number}',
+            related_object_type='order',
+            related_object_id=order.id
+        )
+        
+        return Response({'message': 'Designer assigned successfully.'})
