@@ -63,7 +63,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     
     def get_price_display(self, obj):
         return f"KSh {obj.price:,.2f}"
-        
+
 class ProductSerializer(serializers.ModelSerializer):
     """Product serializer."""
     
@@ -88,3 +88,43 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_price_display(self, obj):
         return f"KSh {obj.price:,.2f}"
+
+class CreateProductSerializer(serializers.ModelSerializer):
+    """Create product serializer (admin only)."""
+    
+    fields = ProductFieldSerializer(many=True, required=False)
+    
+    class Meta:
+        model = Product
+        fields = [
+            'name', 'description', 'price',
+            'category', 'image',
+            'min_quantity', 'max_quantity',
+            'requires_design', 'production_time',
+            'has_quantity_pricing', 'quantity_pricing',
+            'print_specs', 'fields'
+        ]
+    
+    def create(self, validated_data):
+        fields_data = validated_data.pop('fields', [])
+        
+        product = Product.objects.create(**validated_data)
+        
+        for field_data in fields_data:
+            ProductField.objects.create(product=product, **field_data)
+        
+        return product
+    
+    def update(self, instance, validated_data):
+        fields_data = validated_data.pop('fields', None)
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        if fields_data is not None:
+            instance.fields.all().delete()
+            for field_data in fields_data:
+                ProductField.objects.create(product=instance, **field_data)
+        
+        return instance
