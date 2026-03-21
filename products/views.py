@@ -35,3 +35,14 @@ class CategoryListView(generics.ListAPIView):
             company=self.request.user.company,
             is_active=True
         ).order_by('order', 'name')
+
+#category detail view
+class CategoryDetailView(generics.RetrieveAPIView):
+    """
+    Get category with products.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = CategoryDetailSerializer
+    
+    def get_queryset(self):
+        return Category.objects.filter(company=self.request.user.company)
