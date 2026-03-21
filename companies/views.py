@@ -81,3 +81,23 @@ class PaymentSettingsView(APIView):
             'mpesa_consumer_key': settings.mpesa_consumer_key,
             'mpesa_consumer_secret': settings.mpesa_consumer_secret,
         })        
+    
+    def put(self, request):
+        if not request.user.is_company_admin:
+            return Response({'error': 'Admin only'}, status=403)
+        settings, _ = CompanySettings.objects.get_or_create(company=request.user.company)
+        settings.accept_mpesa = request.data.get('accept_mpesa', settings.accept_mpesa)
+        settings.accept_cash = request.data.get('accept_cash', settings.accept_cash)
+        settings.accept_card = request.data.get('accept_card', settings.accept_card)
+        settings.accept_bank_transfer = request.data.get('accept_bank_transfer', settings.accept_bank_transfer)
+        if request.data.get('mpesa_shortcode'):
+            settings.mpesa_shortcode = request.data['mpesa_shortcode']
+        if request.data.get('mpesa_passkey'):
+            settings.mpesa_passkey = request.data['mpesa_passkey']
+        if request.data.get('mpesa_consumer_key'):
+            settings.mpesa_consumer_key = request.data['mpesa_consumer_key']
+        if request.data.get('mpesa_consumer_secret'):
+            settings.mpesa_consumer_secret = request.data['mpesa_consumer_secret']
+        settings.save()
+        
+        return Response({'message': 'Payment settings updated successfully.'})        
