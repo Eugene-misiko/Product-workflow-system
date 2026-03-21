@@ -1,205 +1,195 @@
-import requests, base64
-from datetime import datetime
-from django.conf import settings
-from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework import status, generics, viewsets
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import MpesaRequest, MpesaResponse,Receipt
-from .serializers import MpesaRequestSerializer, MpesaResponseSerializer
-from django.shortcuts import render
-from orders.models import Invoice
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.http import HttpResponse
 import logging
-from .utils import generate_receipt_pdf
- 
+
+from .models import Invoice, Payment, Receipt, MpesaRequest, MpesaResponse
+from .serializers import (
+    InvoiceSerializer, PaymentSerializer, CreatePaymentSerializer, 
+    ReceiptSerializer, StkPushSerializer
+)
+from .mpesa_utils import initialize_stk_push
+from .pdf_utils import generate_invoice_pdf, generate_receipt_pdf
+from notifications.models import Notification
+
 logger = logging.getLogger(__name__)
-def get_mpesa_url(endpoint):
-    """
-    Switch between Sandbox and Production
-    """
-    base = "https://api.safaricom.co.ke" if settings.MPESA_ENVIRONMENT == "production" else "https://sandbox.safaricom.co.ke"
-    return f"{base}/{endpoint}"
-def get_access_token():
-    url = get_mpesa_url("oauth/v1/generate?grant_type=client_credentials")
-    response = requests.get(
-        url,
-        auth=(settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET)
-    )
-    print("TOKEN RESPONSE:", response.text)
-    return response.json().get("access_token")
-def generate_password(timestamp):
-    data = f"{settings.MPESA_EXPRESS_SHORTCODE}{settings.MPESA_PASSKEY}{timestamp}"
-    return base64.b64encode(data.encode()).decode("utf-8")
-def initialize_stk_push(mpesa_request):
-    access_token = get_access_token()
-    api_url = get_mpesa_url("mpesa/stkpush/v1/processrequest")
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    password = generate_password(timestamp)
 
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
 
-    payload = {
-        "BusinessShortCode": settings.MPESA_EXPRESS_SHORTCODE,
-        "Password": password,
-        "Timestamp": timestamp,
-        "TransactionType": "CustomerPayBillOnline",
-        "Amount": int(mpesa_request.amount),
-        "PartyA": mpesa_request.phone_number,
-        "PartyB": settings.MPESA_EXPRESS_SHORTCODE,
-        "PhoneNumber": mpesa_request.phone_number,
-        "CallBackURL": settings.MPESA_CALLBACK_URL,
-        "AccountReference": mpesa_request.account_reference or "Printing Payment",
-        "TransactionDesc": mpesa_request.transaction_desc or "Printing Order Payment"
-    }
+class InvoiceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = InvoiceSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Invoice.objects.filter(company=user.company)
+        
+        if user.role == 'client':
+            queryset = queryset.filter(order__user=user)
+        
+        return queryset.order_by('-created_at')
 
-    print("===== MPESA REQUEST =====")
-    print("URL:", api_url)
-    print("HEADERS:", headers)
-    print("PAYLOAD:", payload)
 
-    response = requests.post(api_url, json=payload, headers=headers)
+def download_invoice(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    if request.user.role != 'admin' and invoice.order.user != request.user:
+        return HttpResponse('Unauthorized', status=401)
+    
+    return generate_invoice_pdf(invoice)
 
-    print("===== MPESA RESPONSE =====")
-    print("STATUS CODE:", response.status_code)
-    print("RAW RESPONSE:", response.text)
 
-    try:
-        return response.json()
-    except Exception as e:
-        print("JSON ERROR:", str(e))
-        return {"error": "Invalid response from Safaricom", "raw": response.text}
-@api_view(["POST"])
-def stk_push(request):
-   
+def send_invoice(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk, company=request.user.company)
+    # Send email logic here
+    return Response({'message': 'Invoice sent.'})
 
-    invoice_id = request.data.get("invoice_id")
-    phone_number = request.data.get("phone_number")
 
-    try:
-        invoice = Invoice.objects.get(id=invoice_id)
-    except Invoice.DoesNotExist:
-        return Response({"error": "Invoice not found"}, status=404)
+class PendingDepositInvoicesView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = InvoiceSerializer
+    
+    def get_queryset(self):
+        return Invoice.objects.filter(
+            company=self.request.user.company,
+            status='pending'
+        ).order_by('-created_at')
 
-    order = invoice.order
-    user = order.user
 
-    # amount logic (deposit first)
-    if invoice.status == "pending":
-        amount = invoice.deposit_amount
-    else:
-        amount = invoice.balance_due
+class PendingBalanceInvoicesView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = InvoiceSerializer
+    
+    def get_queryset(self):
+        return Invoice.objects.filter(
+            company=self.request.user.company,
+            status='partial'
+        ).order_by('-created_at')
 
-    mpesa_request = MpesaRequest.objects.create(
-        user=user,
-        order=order,
-        invoice=invoice,
-        phone_number=phone_number,
-        amount=amount,
-        account_reference=f"Order {order.id}",
-        transaction_desc="Printing Order Payment"
-    )
 
-    response_data = initialize_stk_push(mpesa_request)
+class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PaymentSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Payment.objects.filter(company=user.company)
+        
+        if user.role == 'client':
+            queryset = queryset.filter(invoice__order__user=user)
+        
+        return queryset.order_by('-created_at')
 
-    if "MerchantRequestID" not in response_data:
-        return Response(
-            {"error": "Failed to connect to Safaricom", "details": response_data},
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
-    mpesa_response = MpesaResponse.objects.create(
-        request=mpesa_request,
-        merchant_request_id=response_data.get("MerchantRequestID"),
-        checkout_request_id=response_data.get("CheckoutRequestID"),
-        response_code=response_data.get("ResponseCode"),
-        response_description=response_data.get("ResponseDescription"),
-    )
+class ReceiptViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReceiptSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Receipt.objects.filter(company=user.company)
+        
+        if user.role == 'client':
+            queryset = queryset.filter(user=user)
+        
+        return queryset.order_by('-created_at')
 
-    return Response(
-        MpesaResponseSerializer(mpesa_response).data,
-        status=status.HTTP_201_CREATED
-    )
-@api_view(["POST"])
-def mpesa_callback(request):
-    """
-    Safaricom sends payment confirmation here
-    """
-    data = request.data
-    stk_callback = data.get("Body", {}).get("stkCallback", {})
 
-    merchant_request_id = stk_callback.get("MerchantRequestID")
-    checkout_request_id = stk_callback.get("CheckoutRequestID")
-    result_code = stk_callback.get("ResultCode")
-    result_desc = stk_callback.get("ResultDesc")
-    try:
-        mpesa_response = MpesaResponse.objects.get(
-            merchant_request_id=merchant_request_id,
-            checkout_request_id=checkout_request_id
-        )
-
-        mpesa_response.response_code = str(result_code)
-        mpesa_response.response_description = result_desc
-
-        if result_code == 0:
-            mpesa_response.is_successful = True
-            invoice = mpesa_response.request.invoice
-            order = mpesa_response.request.order
-            user = mpesa_response.request.user
-            if invoice.status == "pending":
-                invoice.status = "partial"
-                payment_type = "deposit"
-            else:
-                invoice.status = "paid"
-                payment_type = "full"
-            invoice.save()        
-            metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
-
-            amount_paid = None
-            mpesa_code = None
-            for item in metadata:
-                name = item.get("Name")
-                value = item.get("Value")
-
-                if name == "MpesaReceiptNumber":
-                    mpesa_code = value
-                    mpesa_response.receipt_number = value
-                if name == "Amount":
-                    amount_paid = value
-            mpesa_response.amount_paid = amount_paid 
-            mpesa_response.save()
-
-            #create Receipt
-            Receipt.objects.create(
-                user=user,
-                order=order,
-                mpesa_receipt=mpesa_code,
-                amount_paid=amount_paid,
-                payment_type=payment_type
-            )       
-
-            logger.info(f"Payment Successful: {checkout_request_id}")
-
-        else:
-
-            mpesa_response.is_successful = False
-
-            logger.warning(f"Payment Failed: {result_desc}")
-
-        mpesa_response.save()
-
-    except MpesaResponse.DoesNotExist:
-
-        logger.error(f"MpesaResponse not found for {checkout_request_id}")
-
-    return Response(
-        {"ResultCode": 0, "ResultDesc": "Success"},
-        status=status.HTTP_200_OK
-    )
-
-def download_receipt(request, receipt_id):
-
-    receipt = Receipt.objects.get(id=receipt_id)
-
+def download_receipt(request, pk):
+    receipt = get_object_or_404(Receipt, pk=pk)
+    
+    if request.user.role != 'admin' and receipt.user != request.user:
+        return HttpResponse('Unauthorized', status=401)
+    
     return generate_receipt_pdf(receipt)
+
+
+class RecordPaymentView(APIView):
+    """Record manual payment (admin only)."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        if not request.user.is_company_admin:
+            return Response({'error': 'Only admin can record payments.'}, status=403)
+        
+        serializer = CreatePaymentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        invoice = get_object_or_404(
+            Invoice,
+            id=serializer.validated_data['invoice_id'],
+            company=request.user.company
+        )
+        
+        payment = Payment.objects.create(
+            company=invoice.company,
+            invoice=invoice,
+            amount=serializer.validated_data['amount'],
+            payment_type=serializer.validated_data['payment_type'],
+            payment_method=serializer.validated_data['payment_method'],
+            transaction_id=serializer.validated_data.get('transaction_id', ''),
+            notes=serializer.validated_data.get('notes', ''),
+            status='completed',
+            recorded_by=request.user,
+            completed_at=timezone.now()
+        )
+        
+        # Update invoice
+        invoice.amount_paid += payment.amount
+        if payment.payment_type == 'deposit':
+            invoice.deposit_paid += payment.amount
+        invoice.balance_due = invoice.total_amount - invoice.amount_paid
+        invoice.save()
+        
+        # Create receipt
+        receipt = Receipt.objects.create(
+            company=invoice.company,
+            user=invoice.order.user,
+            order=invoice.order,
+            invoice=invoice,
+            payment=payment,
+            amount_paid=payment.amount,
+            payment_type=payment.payment_type
+        )
+        
+        # Notify client
+        Notification.objects.create(
+            company=invoice.company,
+            user=invoice.order.user,
+            notification_type='payment',
+            title='Payment Received',
+            message=f'Payment of KSh {payment.amount} received for order {invoice.order.order_number}',
+            related_object_type='invoice',
+            related_object_id=invoice.id
+        )
+        
+        return Response({
+            'payment': PaymentSerializer(payment).data,
+            'receipt': ReceiptSerializer(receipt).data
+        }, status=201)
+
+
+class PaymentStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        company = request.user.company
+        
+        total_revenue = Payment.objects.filter(
+            company=company,
+            status='completed'
+        ).aggregate(total=sum('amount'))['total'] or 0
+        
+        pending_invoices = Invoice.objects.filter(
+            company=company,
+            status__in=['pending', 'partial']
+        ).count()
+        
+        return Response({
+            'total_revenue': str(total_revenue),
+            'pending_invoices': pending_invoices
+        })
