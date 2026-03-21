@@ -1,6 +1,5 @@
 """
 PDF Generation Utilities.
-
 This module provides functions for generating PDF invoices
 and receipts for the PrintFlow system.
 """
@@ -193,4 +192,151 @@ def generate_invoice_pdf(invoice):
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
     
+    return response
+
+
+def generate_receipt_pdf(receipt):
+    """
+    Generate a PDF receipt with
+    - Company branding
+    - Receipt details
+    - Payment information
+    - M-Pesa transaction details (if applicable)
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=2*cm,
+        leftMargin=2*cm,
+        topMargin=2*cm,
+        bottomMargin=2*cm
+    )
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#1a365d'),
+        alignment=TA_CENTER,
+        spaceAfter=20
+    )
+    
+    heading_style = ParagraphStyle(
+        'Heading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#2d3748'),
+        spaceAfter=10
+    )
+    
+    normal_style = ParagraphStyle(
+        'Normal',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#4a5568')
+    )
+    success_style = ParagraphStyle(
+        'Success',
+        parent=styles['Normal'],
+        fontSize=16,
+        textColor=colors.HexColor('#38a169'),
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Build content
+    content = []
+    
+    # Header
+    company = receipt.company
+    
+    content.append(Paragraph(company.name, title_style))
+    content.append(Paragraph(company.address, normal_style))
+    content.append(Paragraph(f"{company.city}, {company.country}", normal_style))
+    content.append(Spacer(1, 30))
+    # Receipt Title
+    content.append(Paragraph("PAYMENT RECEIPT", title_style))
+    content.append(Spacer(1, 10))
+    # Success Badge
+    content.append(Paragraph("✓ PAYMENT SUCCESSFUL", success_style))
+    content.append(Spacer(1, 30))
+    # Receipt Details
+    receipt_data = [
+        ['Receipt Number:', f"RCP-{str(receipt.receipt_number)[:8].upper()}"],
+        ['Date:', receipt.created_at.strftime('%B %d, %Y at %I:%M %p')],
+        ['Payment Type:', receipt.get_payment_type_display()],
+    ]
+    if receipt.mpesa_receipt:
+        receipt_data.append(['M-Pesa Receipt:', receipt.mpesa_receipt])
+    
+    receipt_table = Table(receipt_data, colWidths=[4*cm, 10*cm])
+    receipt_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#4a5568')),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    content.append(receipt_table)
+    content.append(Spacer(1, 30))
+    
+    # Client Details
+    content.append(Paragraph("Received From:", heading_style))
+    content.append(Paragraph(f"<b>{receipt.user.get_full_name()}</b>", normal_style))
+    content.append(Paragraph(receipt.user.email, normal_style))
+    if receipt.user.phone:
+        content.append(Paragraph(receipt.user.phone, normal_style))
+    content.append(Spacer(1, 30))
+    
+    # Order Details
+    content.append(Paragraph("Order Details:", heading_style))
+    content.append(Paragraph(f"Order Number: <b>{receipt.order.order_number}</b>", normal_style))
+    content.append(Paragraph(f"Invoice Number: <b>{receipt.invoice.invoice_number}</b>", normal_style))
+    content.append(Spacer(1, 30))
+    
+    # Payment Amount
+    amount_data = [
+        ['Amount Paid:', f"${receipt.amount_paid:.2f}"],
+    ]
+    if receipt.payment_type == 'deposit':
+        amount_data.append(['Payment For:', f'Deposit ({receipt.invoice.deposit_percentage}%)'])
+        amount_data.append(['Remaining Balance:', f"${receipt.invoice.balance_due:.2f}"])
+    elif receipt.payment_type == 'balance':
+        amount_data.append(['Payment For:', 'Balance Payment'])
+        amount_data.append(['Total Paid:', f"${receipt.invoice.amount_paid:.2f}"])
+    else:
+        amount_data.append(['Payment For:', 'Full Payment'])
+    
+    amount_table = Table(amount_data, colWidths=[6*cm, 8*cm])
+    amount_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#1a365d')),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+    ]))
+    content.append(amount_table)
+    content.append(Spacer(1, 40))
+    
+    # Thank You
+    content.append(Paragraph("Thank you for your payment!", normal_style))
+    content.append(Paragraph(
+        f"For inquiries, contact us at {company.email} or {company.phone}",
+        normal_style
+    ))
+    
+    # Build PDF
+    doc.build(content)
+    
+    # Get PDF content
+    pdf = buffer.getvalue()
+    buffer.close()
+    # Create response
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="receipt_{str(receipt.receipt_number)[:8]}.pdf"'
+
     return response
