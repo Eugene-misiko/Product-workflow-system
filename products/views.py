@@ -180,4 +180,46 @@ class FeaturedProductsView(generics.ListAPIView):
         ).order_by('-created_at')
 
 
+# =====================
+# PUBLIC VIEWS (No Auth)
+# =====================
+
+class PublicProductListView(generics.ListAPIView):
+    """
+    Public product list (no auth required).
+    Used for public storefront.
+    """
+    permission_classes = [AllowAny]
+    serializer_class = ProductListSerializer
+    
+    def get_queryset(self):
+        company_slug = self.request.query_params.get('company')
+        if not company_slug:
+            return Product.objects.none()
+        
+        return Product.objects.filter(
+            company__slug=company_slug,
+            is_active=True
+        ).order_by('-is_featured', 'name')
+
+
+class PublicCategoryListView(generics.ListAPIView):
+    """
+    Public category list (no auth required).
+    """
+    permission_classes = [AllowAny]
+    serializer_class = CategorySerializer
+    
+    def get_queryset(self):
+        company_slug = self.request.query_params.get('company')
+        if not company_slug:
+            return Category.objects.none()
+        
+        return Category.objects.filter(
+            company__slug=company_slug,
+            is_active=True
+        ).order_by('order', 'name')
+
+
+
 
