@@ -343,3 +343,19 @@ class CompletePrintJobView(APIView):
         )
         
         return Response({'message': 'Print job completed.'})
+
+
+class TransportationViewSet(viewsets.ModelViewSet):
+    """Transportation/Delivery management."""
+    
+    permission_classes = [IsAuthenticated]
+    serializer_class = TransportationSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Transportation.objects.filter(order__company=user.company)
+        
+        if user.role == User.CLIENT:
+            queryset = queryset.filter(order__user=user)
+        
+        return queryset.order_by('-created_at')
