@@ -41,3 +41,26 @@ class MarkAsReadView(APIView):
             return Response({'error': 'Not found.'}, status=404)
 
 
+class MarkAllReadView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        Notification.objects.filter(
+            user=request.user,
+            is_read=False
+        ).update(is_read=True, read_at=timezone.now())
+        
+        return Response({'message': 'All notifications marked as read.'})
+
+
+class UnreadCountView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        count = Notification.objects.filter(
+            user=request.user,
+            is_read=False
+        ).count()
+        
+        return Response({'unread_count': count})
+
