@@ -46,3 +46,16 @@ class CategoryDetailView(generics.RetrieveAPIView):
     
     def get_queryset(self):
         return Category.objects.filter(company=self.request.user.company)
+class CreateCategoryView(generics.CreateAPIView):
+    """
+    Create category (admin only).
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = CategorySerializer
+    
+    def perform_create(self, serializer):
+        if not self.request.user.is_company_admin:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only admin can create categories.")
+        serializer.save(company=self.request.user.company)
+
