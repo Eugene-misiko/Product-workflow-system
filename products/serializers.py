@@ -28,3 +28,38 @@ class CategorySerializer(serializers.ModelSerializer):
     
     def get_products_count(self, obj):
         return obj.products.filter(is_active=True).count()
+
+class CategoryDetailSerializer(serializers.ModelSerializer):
+    """Category with products."""
+    
+    products = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Category
+        fields = [
+            'id', 'name', 'slug', 'description', 'image',
+            'is_active', 'order', 'products',
+            'created_at', 'updated_at'
+        ]
+    
+    def get_products(self, obj):
+        products = obj.products.filter(is_active=True)
+        return ProductListSerializer(products, many=True).data
+
+
+class ProductListSerializer(serializers.ModelSerializer):
+    """Product list serializer (lightweight)."""
+    
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    price_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'price', 'price_display',
+            'category_name', 'image', 'is_featured',
+            'production_time', 'is_active'
+        ]
+    
+    def get_price_display(self, obj):
+        return f"KSh {obj.price:,.2f}"
