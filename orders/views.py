@@ -155,3 +155,49 @@ class StartDesignView(APIView):
         
         return Response({'message': 'Design work started.'})
 
+
+class SubmitDesignView(APIView):
+    """Designer submits completed design."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk, company=request.user.company)
+        
+        if request.user != order.assigned_designer:
+            return Response({'error': 'You are not assigned to this order.'}, status=403)
+        
+        if not order.can_submit_design:
+            return Response({'error': 'Cannot submit design at this stage.'}, status=400)
+        
+        serializer = SubmitDesignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        if serializer.validated_data.get('design_file'):
+            order.design_file = serializer.validated_data['design_file']
+        if serializer.validated_data.get('design_notes'):
+            order.design_notes = serializer.validated_data['design_notes']
+        
+        order.design_completed_at = timezone.now()
+        order.status = Order.STATUS_DESIGN_COMPLETED
+        order.save()
+        
+        OrderStatusHistory.objects.create(
+            order=order,
+            old_status=Order.STATUS_DESIGN_IN_PROGRESS,
+            new_status=Order.STATUS_DESIGN_COMPLETED,
+            changed_by=request.user,
+            note='Design submitted for approval'
+        )
+        
+        Notification.objects.create(
+            company=order.company,
+            user=order.user,
+            notification_type='design',
+            title='Design Ready for Review',
+            message=f'Your design for order {order.order_number} is ready for review',
+            related_object_type='order',
+            related_object_id=order.id
+        )
+        
+        return Response({'message': 'Design submitted for approval.'})
