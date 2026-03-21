@@ -101,3 +101,23 @@ class StartConversationView(APIView):
             'conversation': ConversationSerializer(conversation).data,
             'message': MessageSerializer(msg).data
         }, status=201)
+
+class SetTypingStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        return Response({'status': 'ok'})
+
+
+class UnreadConversationsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ConversationSerializer
+    
+    def get_queryset(self):
+        # Return conversations with unread messages
+        return Conversation.objects.filter(
+            participants=self.request.user
+        ).exclude(
+            messages__read_by=self.request.user
+        ).distinct()
+
