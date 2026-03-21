@@ -256,3 +256,30 @@ class ApproveDesignView(APIView):
                 )
             
             return Response({'message': 'Design rejected. Designer has been notified.'})
+
+
+class CancelOrderView(APIView):
+    """Cancel an order."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk, company=request.user.company)
+        
+        if order.status in [Order.STATUS_COMPLETED, Order.STATUS_CANCELLED]:
+            return Response({'error': 'Cannot cancel this order.'}, status=400)
+        
+        reason = request.data.get('reason', '')
+        order.status = Order.STATUS_CANCELLED
+        order.cancellation_reason = reason
+        order.save()
+        
+        OrderStatusHistory.objects.create(
+            order=order,
+            old_status=order.status,
+            new_status=Order.STATUS_CANCELLED,
+            changed_by=request.user,
+            note=f'Order cancelled: {reason}'
+        )
+        
+        return Response({'message': 'Order cancelled.'})
