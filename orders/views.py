@@ -359,3 +359,27 @@ class TransportationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(order__user=user)
         
         return queryset.order_by('-created_at')
+
+
+# Dashboard Views
+class ClientOrderListView(generics.ListAPIView):
+    """List orders for current client."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderSerializer
+    
+    def get_queryset(self):
+        return Order.objects.filter(
+            user=self.request.user
+        ).order_by('-created_at')
+
+
+class DesignerAssignmentListView(generics.ListAPIView):
+    """List orders assigned to current designer."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderSerializer
+    
+    def get_queryset(self):
+        return Order.objects.filter(
+            assigned_designer=self.request.user
+        ).exclude(status__in=[Order.STATUS_COMPLETED, Order.STATUS_CANCELLED]).order_by('-created_at')
+
