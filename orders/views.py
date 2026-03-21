@@ -93,3 +93,43 @@ class AssignDesignerView(APIView):
         )
         
         return Response({'message': 'Designer assigned successfully.'})
+
+class AssignPrinterView(APIView):
+    """Assign printer to order (admin only)."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk, company=request.user.company)
+        
+        if order.status not in [Order.STATUS_APPROVED_FOR_PRINTING, Order.STATUS_PRINTING_QUEUED]:
+            return Response({'error': 'Order must be approved for printing first.'}, status=400)
+        
+        serializer = AssignPrinterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        printer = get_object_or_404(
+            User,
+            id=serializer.validated_data['printer_id'],
+            role=User.PRINTER,
+            company=request.user.company
+        )
+        
+        order.assigned_printer = printer
+        order.status = Order.STATUS_PRINTING_QUEUED
+        order.save()
+        
+        PrintJob.objects.get_or_create(order=order, defaults={'assigned_printer': printer})
+        
+        Notification.objects.create(
+            company=order.company,
+            user=printer,
+            notification_type='printing',
+            title='New Print Job',
+            message=f'You have been assigned to print order {order.order_number}',
+            related_object_type='order',
+            related_object_id=order.id
+        )
+        
+        return Response({'message': 'Printer assigned successfully.'})
+
