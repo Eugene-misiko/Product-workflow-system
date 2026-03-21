@@ -133,3 +133,25 @@ class AssignPrinterView(APIView):
         
         return Response({'message': 'Printer assigned successfully.'})
 
+class StartDesignView(APIView):
+    """Designer starts working on an order."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk, company=request.user.company)
+        
+        if request.user != order.assigned_designer:
+            return Response({'error': 'You are not assigned to this order.'}, status=403)
+        
+        if not order.can_start_design:
+            return Response({'error': 'Cannot start design on this order.'}, status=400)
+        
+        order.update_status(
+            Order.STATUS_DESIGN_IN_PROGRESS,
+            user=request.user,
+            note='Design work started'
+        )
+        
+        return Response({'message': 'Design work started.'})
+
