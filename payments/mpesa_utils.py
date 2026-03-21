@@ -113,3 +113,43 @@ def initialize_stk_push(mpesa_request):
             'error': 'Request failed',
             'details': str(e)
         }
+
+
+
+def query_stk_status(checkout_request_id):
+    """
+    Query the status of an STK Push request.
+    
+    """
+    access_token = get_access_token()
+    
+    if not access_token:
+        return {'error': 'Failed to get access token'}
+    
+    api_url = get_mpesa_url("mpesa/stkpushquery/v1/query")
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = generate_password(timestamp)
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "BusinessShortCode": settings.MPESA_EXPRESS_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "CheckoutRequestID": checkout_request_id
+    }
+    
+    try:
+        response = requests.post(
+            api_url,
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"STK Status Query Error: {str(e)}")
+        return {'error': str(e)}
