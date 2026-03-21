@@ -159,3 +159,15 @@ class CompanyDashboardView(APIView):
             'recent_orders': recent_orders_data,
         })
 
+class StaffListView(generics.ListAPIView):
+    """
+    List company staff (designers and printers).
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = 'accounts.serializers.UserSerializer'
+    
+    def get_queryset(self):
+        return User.objects.filter(
+            company=self.request.user.company,
+            role__in=['designer', 'printer']
+        ).order_by('-created_at')
