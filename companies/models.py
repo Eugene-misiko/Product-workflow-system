@@ -1,73 +1,49 @@
 """
-Company Models - Multi-tenant Architecture.
-
-Each company is a separate tenant with:
-- Its own admin
-- Its own users
-- Its own orders
-- Its own products
-- Its own settings
+Multi-tenant architecture where each company is a separate tenant.
+Each company has its own admin, users, products, orders, and payments.
 """
 from django.db import models
 from django.conf import settings
 import string
 import random
+
 def generate_company_code():
-    """Generate unique company code for identification."""
+    """Generate unique company code."""
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
 class Company(models.Model):
     """
     Company/Tenant model for multi-tenant architecture.
-    Each company is a separate printing business that:
-    - Has its own admin user
-    - Has its own staff (designers, printers)
-    - Has its own clients
-    - Has its own products and categories
-    - Has its own orders and payments
-    - Has its own settings
-    Data Isolation:
-    - All queries are filtered by company
-    - Users can only see their company's data
-    - Each company has unique subdomain or custom domain
-
-    Attributes:
-        name: Company name
-        slug: URL-friendly identifier
-        code: Unique company code (for identification)
-        admin: The admin user for this company
-        logo: Company logo
-        email: Company email
-        phone: Company phone
-        address: Company address
-        is_active: Whether company is active
-        subscription_plan: Current subscription
+    
+    Each company is a separate printing business with:
+    - One admin user
+    - Multiple designers, printers, and clients
+    - Own products, categories, orders, and payments
     """
-    # Basic Info
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     code = models.CharField(max_length=10, unique=True, default=generate_company_code)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
     
-    # Contact Information
+    # Contact
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     address = models.TextField()
-    city = models.CharField(max_length=100)
+    city = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, default='Kenya')
     website = models.URLField(blank=True)
     
-    # Domain Configuration
+    # Domain
     custom_domain = models.CharField(max_length=255, blank=True, unique=True, null=True)
     subdomain = models.CharField(max_length=100, blank=True, unique=True, null=True)
     
-    # Admin User (One admin per company)
+    # Admin (One per company)
     admin = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='managed_company',
-        help_text='The admin user who manages this company'
+        related_name='managed_company'
     )
     
     # Status
@@ -80,23 +56,16 @@ class Company(models.Model):
         ('professional', 'Professional'),
         ('enterprise', 'Enterprise'),
     ]
-    subscription_plan = models.CharField(
-        max_length=20,
-        choices=SUBSCRIPTION_PLANS,
-        default='free'
-    )
+    subscription_plan = models.CharField(max_length=20, choices=SUBSCRIPTION_PLANS, default='free')
     subscription_active = models.BooleanField(default=True)
     subscription_starts = models.DateField(null=True, blank=True)
     subscription_expires = models.DateField(null=True, blank=True)
+    
     # Business Settings
     currency = models.CharField(max_length=10, default='KES')
     currency_symbol = models.CharField(max_length=5, default='KSh')
-    deposit_percentage = models.PositiveIntegerField(
-        default=70,
-        help_text='Percentage deposit required before work starts (default 70%)'
-    )
+    deposit_percentage = models.PositiveIntegerField(default=70)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -109,98 +78,61 @@ class Company(models.Model):
     
     @property
     def staff_count(self):
-        """Get count of staff members (designers + printers)."""
         return self.users.filter(role__in=['designer', 'printer']).count()
     
     @property
     def clients_count(self):
-        """Get count of clients."""
         return self.users.filter(role='client').count()
     
     @property
     def orders_count(self):
-        """Get total orders count."""
         return self.orders.count()
 
 
 class CompanySettings(models.Model):
     """
-    Detailed settings for each company.
-    
-    These settings control:
-    - Working hours
-    - Notification preferences
-    - Payment methods
-    - Delivery options
-    - Social media links
+    Detailed settings for each company including M-Pesa credentials.
     """
     
-    company = models.OneToOneField(
-        Company,
-        on_delete=models.CASCADE,
-        related_name='settings'
-    )
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='settings')
     
     # Working Hours
-    working_days = models.JSONField(
-        default=list,
-        blank=True,
-        help_text='List of working days e.g. ["monday", "tuesday", ...]'
-    )
+    working_days = models.JSONField(default=list, blank=True)
     opening_time = models.TimeField(null=True, blank=True)
     closing_time = models.TimeField(null=True, blank=True)
     timezone = models.CharField(max_length=50, default='Africa/Nairobi')
     
-    # Notification Settings
+    # Notifications
     email_notifications = models.BooleanField(default=True)
     sms_notifications = models.BooleanField(default=False)
     
-    # Payment Settings
+    # Payment Methods
     accept_mpesa = models.BooleanField(default=True)
     accept_cash = models.BooleanField(default=True)
     accept_card = models.BooleanField(default=False)
     accept_bank_transfer = models.BooleanField(default=True)
     
-    # M-Pesa Settings (Each company can have their own)
+    # Company M-Pesa Credentials
     mpesa_shortcode = models.CharField(max_length=10, blank=True)
     mpesa_passkey = models.CharField(max_length=100, blank=True)
     mpesa_consumer_key = models.CharField(max_length=100, blank=True)
     mpesa_consumer_secret = models.CharField(max_length=100, blank=True)
     
-    # Delivery Settings
+    # Delivery
     offer_pickup = models.BooleanField(default=True)
     offer_delivery = models.BooleanField(default=True)
-    delivery_fee = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
-    free_delivery_threshold = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        help_text='Free delivery for orders above this amount'
-    )
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    free_delivery_threshold = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
-    # Social Media
+    # Social
     facebook = models.URLField(blank=True)
     instagram = models.URLField(blank=True)
     twitter = models.URLField(blank=True)
     whatsapp_number = models.CharField(max_length=20, blank=True)
     
-    # Terms and Policies
+    # Terms
     terms_conditions = models.TextField(blank=True)
     privacy_policy = models.TextField(blank=True)
-    
-    # Email Templates
-    invoice_email_template = models.TextField(
-        blank=True,
-        help_text='Custom email template for invoices'
-    )
-    receipt_email_template = models.TextField(
-        blank=True,
-        help_text='Custom email template for receipts'
-    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -214,11 +146,10 @@ class CompanySettings(models.Model):
 
 class CompanyInvitation(models.Model):
     """
-    Invitation for new company registration.
-    
-    Platform superuser can invite new companies to join.
-    When accepted, the invitee becomes the company admin.
+    Platform-level invitation for new companies to join.
+    Sent by platform admin.
     """
+    
     STATUS_PENDING = 'pending'
     STATUS_ACCEPTED = 'accepted'
     STATUS_EXPIRED = 'expired'
@@ -235,7 +166,6 @@ class CompanyInvitation(models.Model):
     email = models.EmailField()
     company_name = models.CharField(max_length=200)
     
-    # Who sent the invitation (platform superuser)
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -244,7 +174,6 @@ class CompanyInvitation(models.Model):
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     
-    # Company created after accepting
     company = models.ForeignKey(
         Company,
         on_delete=models.SET_NULL,
