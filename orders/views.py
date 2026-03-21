@@ -201,3 +201,58 @@ class SubmitDesignView(APIView):
         )
         
         return Response({'message': 'Design submitted for approval.'})
+
+
+class ApproveDesignView(APIView):
+    """Client approves or rejects design."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk, company=request.user.company)
+        
+        if request.user != order.user:
+            return Response({'error': 'Only the client can approve the design.'}, status=403)
+        
+        if not order.can_approve_design:
+            return Response({'error': 'Cannot approve design at this stage.'}, status=400)
+        
+        serializer = ApproveDesignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        if serializer.validated_data['approved']:
+            order.update_status(
+                Order.STATUS_APPROVED_FOR_PRINTING,
+                user=request.user,
+                note='Design approved by client'
+            )
+            
+            PrintJob.objects.get_or_create(order=order)
+            
+            return Response({'message': 'Design approved. Order is ready for printing.'})
+        else:
+            order.status = Order.STATUS_DESIGN_REJECTED
+            order.rejection_reason = serializer.validated_data.get('rejection_reason', '')
+            order.design_revisions += 1
+            order.save()
+            
+            OrderStatusHistory.objects.create(
+                order=order,
+                old_status=Order.STATUS_DESIGN_COMPLETED,
+                new_status=Order.STATUS_DESIGN_REJECTED,
+                changed_by=request.user,
+                note=f'Design rejected: {order.rejection_reason}'
+            )
+            
+            if order.assigned_designer:
+                Notification.objects.create(
+                    company=order.company,
+                    user=order.assigned_designer,
+                    notification_type='design',
+                    title='Design Rejected',
+                    message=f'Design for order {order.order_number} was rejected. Reason: {order.rejection_reason}',
+                    related_object_type='order',
+                    related_object_id=order.id
+                )
+            
+            return Response({'message': 'Design rejected. Designer has been notified.'})
