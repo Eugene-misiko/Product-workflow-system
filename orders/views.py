@@ -310,3 +310,36 @@ class StartPrintJobView(APIView):
         print_job = get_object_or_404(PrintJob, pk=pk, order__company=request.user.company)
         print_job.start()
         return Response({'message': 'Printing started.'})
+
+
+class MoveToPolishingView(APIView):
+    """Move to polishing phase."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        print_job = get_object_or_404(PrintJob, pk=pk, order__company=request.user.company)
+        print_job.move_to_polishing()
+        return Response({'message': 'Moved to polishing phase.'})
+
+
+class CompletePrintJobView(APIView):
+    """Mark print job as completed."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        print_job = get_object_or_404(PrintJob, pk=pk, order__company=request.user.company)
+        print_job.complete()
+        
+        Notification.objects.create(
+            company=print_job.order.company,
+            user=print_job.order.user,
+            notification_type='order',
+            title='Order Ready',
+            message=f'Your order {print_job.order.order_number} is ready for pickup/delivery.',
+            related_object_type='order',
+            related_object_id=print_job.order.id
+        )
+        
+        return Response({'message': 'Print job completed.'})
