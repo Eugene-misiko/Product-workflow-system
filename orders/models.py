@@ -311,3 +311,71 @@ class PrintJob(models.Model):
         self.progress_percentage = 100
         self.save()
         self.order.update_status(Order.STATUS_READY_FOR_PICKUP, note="Printing completed")
+
+class Transportation(models.Model):
+    """Transportation/Delivery information for orders."""
+    TRANSPORT_PICKUP = 'pickup'
+    TRANSPORT_DELIVERY = 'delivery'
+    TRANSPORT_UBER = 'uber'
+    
+    TRANSPORT_CHOICES = [
+        (TRANSPORT_PICKUP, 'Client Pickup'),
+        (TRANSPORT_DELIVERY, 'Company Delivery'),
+        (TRANSPORT_UBER, 'Uber/Third-party'),
+    ]
+    
+    STATUS_PENDING = 'pending'
+    STATUS_SCHEDULED = 'scheduled'
+    STATUS_IN_TRANSIT = 'in_transit'
+    STATUS_DELIVERED = 'delivered'
+    STATUS_FAILED = 'failed'
+    
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_SCHEDULED, 'Scheduled'),
+        (STATUS_IN_TRANSIT, 'In Transit'),
+        (STATUS_DELIVERED, 'Delivered'),
+        (STATUS_FAILED, 'Failed'),
+    ]
+    
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='transportation')
+    
+    transport_type = models.CharField(max_length=20, choices=TRANSPORT_CHOICES, default=TRANSPORT_PICKUP)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    
+    delivery_address = models.TextField(blank=True)
+    delivery_city = models.CharField(max_length=100, blank=True)
+    delivery_phone = models.CharField(max_length=20, blank=True)
+    delivery_instructions = models.TextField(blank=True)
+    
+    pickup_location = models.TextField(blank=True)
+    pickup_scheduled_time = models.DateTimeField(null=True, blank=True)
+    
+    delivery_scheduled_time = models.DateTimeField(null=True, blank=True)
+    estimated_arrival = models.DateTimeField(null=True, blank=True)
+    actual_delivery_time = models.DateTimeField(null=True, blank=True)
+    
+    tracking_number = models.CharField(max_length=100, blank=True)
+    tracking_url = models.URLField(blank=True)
+    driver_name = models.CharField(max_length=100, blank=True)
+    driver_phone = models.CharField(max_length=20, blank=True)
+    
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.order.order_number} - {self.get_transport_type_display()}"
+    
+    @property
+    def is_pickup(self):
+        return self.transport_type == self.TRANSPORT_PICKUP
+    
+    @property
+    def is_delivery(self):
+        return self.transport_type in [self.TRANSPORT_DELIVERY, self.TRANSPORT_UBER]
