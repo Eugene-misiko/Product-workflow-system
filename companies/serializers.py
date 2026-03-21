@@ -70,3 +70,29 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
             'facebook', 'instagram', 'twitter', 'whatsapp_number',
             'terms_conditions', 'privacy_policy',
         ]
+
+class CompanyUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating company info."""
+    
+    class Meta:
+        model = Company
+        fields = [
+            'name', 'logo', 'phone', 'address', 'city', 'country', 'website',
+            'currency', 'currency_symbol', 'deposit_percentage',
+        ]
+
+
+class CompanyInvitationSerializer(serializers.ModelSerializer):
+    """Company invitation serializer."""
+    
+    invited_by_name = serializers.CharField(source='invited_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = CompanyInvitation
+        fields = [
+            'id', 'token', 'email', 'company_name',
+            'invited_by', 'invited_by_name',
+            'status', 'company',
+            'created_at', 'expires_at', 'accepted_at'
+        ]
+        read_only_fields = ['id', 'token', 'invited_by', 'status', 'company', 'created_at', 'expires_at', 'accepted_at']
