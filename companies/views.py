@@ -171,3 +171,21 @@ class StaffListView(generics.ListAPIView):
             company=self.request.user.company,
             role__in=['designer', 'printer']
         ).order_by('-created_at')
+
+class StaffStatsView(APIView):
+    """
+    Get staff statistics.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        company = request.user.company
+        
+        designers = User.objects.filter(company=company, role='designer')
+        printers = User.objects.filter(company=company, role='printer')
+        
+        return Response({
+            'total_designers': designers.count(),
+            'total_printers': printers.count(),
+            'active_designers': designers.filter(is_active=True).count(),
+            'active_printers': printers.filter(is_active=True).count(),
+        })
