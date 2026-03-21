@@ -71,7 +71,7 @@ class UpdateCategoryView(generics.UpdateAPIView):
         if not self.request.user.is_company_admin:
             return Category.objects.none()
         return Category.objects.filter(company=self.request.user.company)
-        
+
 class DeleteCategoryView(generics.DestroyAPIView):
     """
     Delete category (admin only).
@@ -83,3 +83,29 @@ class DeleteCategoryView(generics.DestroyAPIView):
         if not self.request.user.is_company_admin:
             return Category.objects.none()
         return Category.objects.filter(company=self.request.user.company)
+
+# =====================
+# PRODUCT VIEWS
+# =====================
+
+class ProductListView(generics.ListAPIView):
+    """
+    List products for current company.
+    
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProductListSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['category', 'is_featured', 'requires_design']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'price', 'created_at']
+    
+    def get_queryset(self):
+        queryset = Product.objects.filter(
+            company=self.request.user.company
+        )
+        
+        if self.request.user.role != User.ADMIN:
+            queryset = queryset.filter(is_active=True)
+        return queryset.order_by('-is_featured', '-created_at')
+
