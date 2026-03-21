@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
-
 class Notification(models.Model):
     """User notifications."""
     TYPE_ORDER = 'order'
@@ -29,10 +28,8 @@ class Notification(models.Model):
     link = models.URLField(blank=True)
     related_object_type = models.CharField(max_length=50, blank=True)
     related_object_id = models.PositiveIntegerField(null=True, blank=True)
-
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

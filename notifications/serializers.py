@@ -2,9 +2,13 @@ from rest_framework import serializers
 from .models import Notification
 
 class NotificationSerializer(serializers.ModelSerializer):
-    """
-    Notification serializer.
-    """
+    notification_type_display = serializers.CharField(source='get_notification_type_display', read_only=True)
+    
     class Meta:
         model = Notification
-        fields = "__all__"
+        fields = [
+            'id', 'notification_type', 'notification_type_display',
+            'title', 'message', 'link',
+            'related_object_type', 'related_object_id',
+            'is_read', 'read_at', 'created_at'
+        ]
