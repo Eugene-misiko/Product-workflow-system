@@ -99,5 +99,63 @@ class PaymentSettingsView(APIView):
         if request.data.get('mpesa_consumer_secret'):
             settings.mpesa_consumer_secret = request.data['mpesa_consumer_secret']
         settings.save()
+        return Response({'message': 'Payment settings updated successfully.'})  
+
+class CompanyDashboardView(APIView):
+    """
+    Get company dashboard statistics.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        from orders.models import Order
+        from payments.models import Invoice, Payment
+        company = request.user.company
         
-        return Response({'message': 'Payment settings updated successfully.'})        
+        # Orders
+        orders = Order.objects.filter(company=company)
+        total_orders = orders.count()
+        pending_orders = orders.filter(status='pending').count()
+        in_progress = orders.exclude(status__in=['pending', 'completed', 'cancelled']).count()
+        completed_orders = orders.filter(status='completed').count()
+        
+        # Revenue
+        total_revenue = Payment.objects.filter(
+            company=company,
+            status='completed'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        pending_payments = Invoice.objects.filter(
+            company=company,
+            status__in=['pending', 'partial']
+        ).aggregate(total=Sum('balance_due'))['total'] or 0
+        
+        # Users
+        total_clients = company.users.filter(role='client').count()
+        total_staff = company.users.filter(role__in=['designer', 'printer']).count()
+        
+        # Recent orders
+        recent_orders = orders.order_by('-created_at')[:5]
+        recent_orders_data = [
+            {
+                'id': order.id,
+                'order_number': order.order_number,
+                'client_name': order.user.get_full_name(),
+                'status': order.status,
+                'total': str(order.total_price),
+                'created_at': order.created_at.isoformat(),
+            }
+            for order in recent_orders
+        ]
+        
+        return Response({
+            'total_orders': total_orders,
+            'pending_orders': pending_orders,
+            'in_progress': in_progress,
+            'completed_orders': completed_orders,
+            'total_revenue': str(total_revenue),
+            'pending_payments': str(pending_payments),
+            'total_clients': total_clients,
+            'total_staff': total_staff,
+            'recent_orders': recent_orders_data,
+        })
+
