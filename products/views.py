@@ -62,7 +62,6 @@ class CreateCategoryView(generics.CreateAPIView):
 class UpdateCategoryView(generics.UpdateAPIView):
     """
     Update category (admin only).
-    
     PUT/PATCH /api/categories/{pk}/
     """
     permission_classes = [IsAuthenticated]
@@ -72,4 +71,15 @@ class UpdateCategoryView(generics.UpdateAPIView):
         if not self.request.user.is_company_admin:
             return Category.objects.none()
         return Category.objects.filter(company=self.request.user.company)
+        
+class DeleteCategoryView(generics.DestroyAPIView):
+    """
+    Delete category (admin only).
 
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        if not self.request.user.is_company_admin:
+            return Category.objects.none()
+        return Category.objects.filter(company=self.request.user.company)
