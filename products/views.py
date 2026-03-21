@@ -165,5 +165,19 @@ class DeleteProductView(generics.DestroyAPIView):
         instance.is_active = False
         instance.save()
 
+class FeaturedProductsView(generics.ListAPIView):
+    """
+    Get featured products.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProductListSerializer
+    
+    def get_queryset(self):
+        return Product.objects.filter(
+            company=self.request.user.company,
+            is_featured=True,
+            is_active=True
+        ).order_by('-created_at')
+
 
 
