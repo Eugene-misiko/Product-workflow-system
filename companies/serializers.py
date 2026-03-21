@@ -96,3 +96,15 @@ class CompanyInvitationSerializer(serializers.ModelSerializer):
             'created_at', 'expires_at', 'accepted_at'
         ]
         read_only_fields = ['id', 'token', 'invited_by', 'status', 'company', 'created_at', 'expires_at', 'accepted_at']
+
+class DashboardStatsSerializer(serializers.Serializer):
+    """Dashboard statistics serializer."""
+    
+    total_orders = serializers.IntegerField()
+    pending_orders = serializers.IntegerField()
+    completed_orders = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
+    pending_payments = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_clients = serializers.IntegerField()
+    total_staff = serializers.IntegerField()
+    recent_orders = serializers.ListField()
