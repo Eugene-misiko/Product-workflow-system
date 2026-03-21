@@ -214,3 +214,39 @@ class OrderItem(models.Model):
         self.order.total_price = self.order.subtotal + self.order.tax + self.order.delivery_fee - self.order.discount
         self.order.save()
 
+class OrderItemFieldValue(models.Model):
+    """Values for custom product fields."""
+    
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name='field_values')
+    field = models.ForeignKey('products.ProductField', on_delete=models.CASCADE)
+    value = models.TextField()
+    file_url = models.URLField(blank=True)
+    
+    class Meta:
+        unique_together = ['order_item', 'field']
+    
+    def __str__(self):
+        return f"{self.field.name}: {self.value[:50]}"
+
+
+class OrderStatusHistory(models.Model):
+    """Track all status changes for an order."""
+    
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_history')
+    old_status = models.CharField(max_length=30)
+    new_status = models.CharField(max_length=30)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = 'Order Status History'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.order.order_number}: {self.old_status} → {self.new_status}"
