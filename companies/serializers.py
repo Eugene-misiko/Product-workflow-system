@@ -52,3 +52,21 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             }
         except CompanySettings.DoesNotExist:
             return None
+
+
+class CompanySettingsSerializer(serializers.ModelSerializer):
+    """Company settings serializer."""
+    
+    class Meta:
+        model = CompanySettings
+        fields = [
+            'working_days', 'opening_time', 'closing_time', 'timezone',
+            'email_notifications', 'sms_notifications',
+            'accept_mpesa', 'accept_cash', 'accept_card', 'accept_bank_transfer',
+            'mpesa_shortcode', 'mpesa_passkey',
+            'mpesa_consumer_key', 'mpesa_consumer_secret',
+            'offer_pickup', 'offer_delivery',
+            'delivery_fee', 'free_delivery_threshold',
+            'facebook', 'instagram', 'twitter', 'whatsapp_number',
+            'terms_conditions', 'privacy_policy',
+        ]
