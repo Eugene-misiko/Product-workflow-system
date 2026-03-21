@@ -20,3 +20,24 @@ class NotificationListView(generics.ListAPIView):
         
         return queryset.order_by('-created_at')
 
+
+class NotificationDetailView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NotificationSerializer
+    
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+
+
+class MarkAsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        try:
+            notification = Notification.objects.get(pk=pk, user=request.user)
+            notification.mark_as_read()
+            return Response({'message': 'Marked as read.'})
+        except Notification.DoesNotExist:
+            return Response({'error': 'Not found.'}, status=404)
+
+
