@@ -19,13 +19,22 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+# Admin site configuration
+admin.site.site_header = "PrintFlow Administration"
+admin.site.site_title = "PrintFlow Admin"
+admin.site.index_title = "Welcome to PrintFlow Administration"
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('accounts.urls')),# accounts.urls 
-    path("api/", include("products.urls")),
-    path("api/", include("orders.urls")),
-    path('api/', include('payments.urls')),
+    path('api/', include('accounts.urls')),
     path('api/', include('companies.urls')),
-    path('api-auth/', include('rest_framework.urls'))
+    path('api/', include('products.urls')),
+    path('api/', include('orders.urls')),
+    path('api/', include('payments.urls')),
+    path('api/', include('notifications.urls')),
+    path('api/', include('messaging.urls')),
     
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+

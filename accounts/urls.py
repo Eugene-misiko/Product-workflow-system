@@ -29,7 +29,7 @@ urlpatterns = [
     path('users/<int:pk>/deactivate/', views.DeactivateUserView.as_view(), name='user_deactivate'),
     path('users/<int:pk>/change-role/', views.ChangeUserRoleView.as_view(), name='change_role'),
     
-    # ============
+    # =============
     # INVITATIONS
     # ============
     path('invitations/', views.InvitationListView.as_view(), name='invitation_list'),

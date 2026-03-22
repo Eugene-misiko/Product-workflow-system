@@ -31,9 +31,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 
@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'accounts',
     'corsheaders',
     'orders',
+    'products',
+    'messaging',
     'payments',
     'notifications',
     'companies',
@@ -72,7 +74,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 FRONTEND_URL = config("FRONTEND_URL")
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS").split(",")
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS").split(",")
@@ -122,27 +126,33 @@ WSGI_APPLICATION = 'print_flow.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DATABASE_NAME'),
+#         'USER': config('DATABASE_USER'),
+#         'PASSWORD': config('DATABASE_PASSWORD'),
+#         'HOST': config('DATABASE_HOST'),
+#         'PORT': config('PORT'),
+#     }
+# }
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASSWORD'),
-        'HOST': config('DATABASE_HOST'),
-        'PORT': config('PORT'),
-    }
+    'default': dj_database_url.config(default='sqlite:///db.sqlite3')
 }
 # configuring email backend
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_BACKEND = config('EMAIL_BACKEND')
 # configuring email host
 EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_PORT = config('EMAIL_PORT')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 # configuring cloudinary
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / '.env')
+load_dotenv(BASE_DIR /)
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
     "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
@@ -187,7 +197,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR/'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 #authentication for users
 AUTH_USER_MODEL = "accounts.User"
 
@@ -206,3 +216,51 @@ MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT')
 MPESA_EXPRESS_SHORTCODE = config('MPESA_EXPRESS_SHORTCODE')
 LNM_PHONE_NUMBER = config('LNM_PHONE_NUMBER')
 
+# Logging Configuration
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'printflow.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+        'payments': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('PAYMENTS_LOG_LEVEL', 'DEBUG'),
+        },
+        'printflow': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('PRINTFLOW_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
+
+PRINTFLOW = {
+    'ADMIN_EMAIL': os.environ.get('PRINTFLOW_ADMIN_EMAIL'),
+    'ADMIN_PASSWORD': os.environ.get('PRINTFLOW_ADMIN_PASSWORD'),
+    'COMPANY_NAME': os.environ.get('PRINTFLOW_COMPANY_NAME', 'PrintFlow'),
+    'DEPOSIT_PERCENTAGE': int(os.environ.get('PRINTFLOW_DEPOSIT_PERCENTAGE', 70)),
+    'CURRENCY': os.environ.get('PRINTFLOW_CURRENCY', 'KES'),
+    'CURRENCY_SYMBOL': os.environ.get('PRINTFLOW_CURRENCY_SYMBOL', 'KSh'),
+}
+if not PRINTFLOW['ADMIN_EMAIL'] or not PRINTFLOW['ADMIN_PASSWORD']:
+    raise ValueError("PRINTFLOW_ADMIN_EMAIL and PRINTFLOW_ADMIN_PASSWORD must be set in .env")

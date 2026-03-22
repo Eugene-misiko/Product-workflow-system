@@ -11,20 +11,20 @@ Admin is created via:
 1. Platform Admin: python manage.py createsuperuser
 2. Company Admin: POST /api/auth/register-company/
 """
-from django.contrib.auth.models import AbstractUser
+
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 import secrets
 import string
-
-
+from .managers import UserManager
 class User(AbstractUser):
     """
     Custom User model with role-based access control.
     """
-    
+    #objects = UserManager()
     username = None
-    
+    objects = UserManager()
     # Roles
     PLATFORM_ADMIN = 'platform_admin'
     ADMIN = 'admin'
