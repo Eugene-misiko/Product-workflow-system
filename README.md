@@ -7,8 +7,6 @@ The system supports three user roles:
 - **Designer** – handles design requests and updates design status  
 - **Admin** – manages users, orders, payments, approvals, and system reports  
 
-The project follows clean backend architecture and real-world business workflows, with a fully integrated frontend interface.
-
 ---
 
 ## Key Features
