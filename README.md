@@ -57,18 +57,7 @@ The project follows clean backend architecture and real-world business workflows
 
 ### Admin Dashboard
 - Orders and payments summary
-- Charts using Chart.js
 - System overview
-
-### Audit Logs
-- Tracks sensitive system actions
-- Logs user, action, and timestamp
-
-### Testing
-- Unit tests for core business logic
-- Permission and model validation
-
----
 
 ## Technologies Used
 
@@ -76,14 +65,6 @@ The project follows clean backend architecture and real-world business workflows
 - Django
 - Django REST Framework
 - Simple JWT (Authentication)
-- SQLite (Development database)
-- Chart.js (Dashboard charts)
-- HTML / Django Templates
-- Gunicorn (Production server)
-- Nginx (Reverse proxy)
-
----
-
-## Project Structure
+  
 
 
