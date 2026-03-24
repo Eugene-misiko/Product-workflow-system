@@ -24,7 +24,7 @@ The project follows clean backend architecture and real-world business workflows
 - Create and manage orders  
 - Add and manage order items  
 - Order status workflow: **pending → confirmed → in production → delivered**  
-- Admin approval / rejection of orders  
+  
 
 ### Design Management
 - Clients can upload design files  
