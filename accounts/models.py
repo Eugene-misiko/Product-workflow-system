@@ -73,7 +73,9 @@ class User(AbstractUser):
     @property
     def is_platform_admin(self):
         return self.role == self.PLATFORM_ADMIN
-    
+    @property
+    def is_staff(self):
+        return self.role in [self.ADMIN, self.DESIGNER, self.PRINTER] or self.is_superuser
     @property
     def is_company_admin(self):
         return self.role == self.ADMIN
@@ -94,6 +96,18 @@ class User(AbstractUser):
     def is_staff_member(self):
         return self.role in [self.ADMIN, self.DESIGNER, self.PRINTER]
 
+    """
+        Restricts the platfoem admin from creating it's own company
+    """
+    def clean(self):
+
+        if self.role == self.PLATFORM_ADMIN and self.company is not None:
+
+            raise ValidationError("Platform admin cannot belong to a company")
+
+        if self.role != self.PLATFORM_ADMIN and self.company is None:
+            raise ValidationError("Non-platform users must belong to a company")
+         
 
 class Invitation(models.Model):
     """
@@ -150,17 +164,30 @@ class Invitation(models.Model):
         return self.status == self.STATUS_PENDING and not self.is_expired
     
     def accept(self, user):
+        user.company = self.company
+        user.role = self.role
+        user.save()
+
         self.status = self.STATUS_ACCEPTED
         self.accepted_by = user
         self.accepted_at = timezone.now()
         self.save()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['email', 'company'],
+                condition=models.Q(status='pending'),
+                name='unique_pending_invitation_per_email_company'
+            )
+        ]           
 
 
 class PasswordResetToken(models.Model):
     """Password reset token."""
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_tokens')
-    token = models.CharField(max_length=64, unique=True)
+    token = models.CharField(max_length=64, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)

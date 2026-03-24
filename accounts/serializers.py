@@ -111,10 +111,10 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
     
     def validate_email(self, value):
-        try:
-            return User.objects.get(email=value)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("No user found with this email address.")
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "No user found with this email address.")
+        return value
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
@@ -139,11 +139,13 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
     
     def save(self):
-        reset_token = self.validated_data['token']
-        user = reset_token.user
+        reset_token_obj = self.validated_data['token']
+        user = reset_token_obj.user
+
         user.set_password(self.validated_data['new_password'])
         user.save()
-        reset_token.mark_used()
+
+        reset_token_obj.mark_used()
         return user
 
 
@@ -171,22 +173,33 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_invitation_token(self, value):
         try:
             invitation = Invitation.objects.get(token=value)
-            if not invitation.is_valid:
-                raise serializers.ValidationError("This invitation is no longer valid.")
+
+            if invitation.status != Invitation.STATUS_PENDING:
+                raise serializers.ValidationError("Invitation already used.")
+
+            if invitation.is_expired:
+                raise serializers.ValidationError("Invitation has expired.")
+
             return invitation
+
         except Invitation.DoesNotExist:
             raise serializers.ValidationError("Invalid invitation token.")
     
     def validate_email(self, value):
+        value = value.lower()
+
         invitation_token = self.initial_data.get('invitation_token')
+
         try:
             invitation = Invitation.objects.get(token=invitation_token)
-            if invitation.email.lower() != value.lower():
+
+            if invitation.email.lower() != value:
                 raise serializers.ValidationError(
                     f"Email must match invitation: {invitation.email}"
                 )
         except Invitation.DoesNotExist:
             pass
+
         return value
     
     def validate(self, attrs):
@@ -204,11 +217,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
             phone=validated_data.get('phone', ''),
-            role=invitation.role,
-            company=invitation.company,
             email_verified=True,
         )
-        
+
         invitation.accept(user)
         UserProfile.objects.get_or_create(user=user)
         
@@ -252,6 +263,15 @@ class CompanyRegistrationSerializer(serializers.Serializer):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value
+    def validate(self, attrs):
+        if User.objects.filter(
+            company__slug=attrs.get('company_slug'),
+            role=User.ADMIN
+        ).exists():
+            raise serializers.ValidationError(
+                "This company already has an admin."
+            )
+        return attrs        
 
 
 # =====================
@@ -307,11 +327,18 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "A user with this email already exists in your company."
                 )
-        
+    def create(self, validated_data):
+        request = self.context['request']
+
+        validated_data['invited_by'] = request.user
+        validated_data['company'] = request.user.company
+
+        return super().create(validated_data)
+
         if Invitation.objects.filter(
             email=value,
-            status=Invitation.STATUS_PENDING
-        ).exists():
+            company=request.user.company,
+            status=Invitation.STATUS_PENDING).exists():
             raise serializers.ValidationError(
                 "A pending invitation already exists for this email."
             )

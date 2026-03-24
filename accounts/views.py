@@ -48,7 +48,7 @@ class LoginView(APIView):
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
         
-        user = authenticate(email=email, password=password)
+        user = authenticate(request, email=email, password=password)
         
         if user is None:
             return Response({
@@ -131,7 +131,8 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        user = serializer.validated_data['email']
+        email = serializer.validated_data['email']
+        user = User.objects.get(email=email)
         
         # Create reset token
         reset_token = PasswordResetToken.objects.create(user=user)
@@ -221,14 +222,15 @@ class CompanyRegistrationView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = CompanyRegistrationSerializer
-    
+
     def create(self, request, *args, **kwargs):
         from companies.models import Company, CompanySettings
-        
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        
+        if User.objects.filter(role=User.ADMIN, company__slug=data['company_slug']).exists():
+                return Response({'error': 'This company already has an admin.'}, status=status.HTTP_400_BAD_REQUEST)        
         # Create company
         company = Company.objects.create(
             name=data['company_name'],
@@ -295,7 +297,9 @@ class UserListView(generics.ListAPIView):
         user = self.request.user
         
         if user.is_platform_admin:
-            return User.objects.all()
+            queryset = User.objects.all()
+        else:
+            queryset = User.objects.filter(company=user.company)
         
         if user.company:
             queryset = User.objects.filter(company=user.company)
@@ -303,7 +307,7 @@ class UserListView(generics.ListAPIView):
             role = self.request.query_params.get('role')
             if role:
                 queryset = queryset.filter(role=role)
-            
+
             return queryset
         
         return User.objects.none()
@@ -324,6 +328,11 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
             return User.objects.filter(company=user.company)
         return User.objects.none()
 
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UserUpdateSerializer
+        return UserSerializer        
+
 
 class DeactivateUserView(APIView):
     """
@@ -343,7 +352,11 @@ class DeactivateUserView(APIView):
             pk=pk,
             company=request.user.company
         )
-        
+        if user == request.user:
+            return Response({
+                'error': 'You cannot deactivate your own account.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         if user.is_company_admin:
             return Response({
                 'error': 'Cannot deactivate admin account.'
@@ -406,9 +419,12 @@ class InvitationListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        return Invitation.objects.filter(
-            company=self.request.user.company
-        ).order_by('-created_at')
+        user = self.request.user
+
+        if not user.company:
+            return Invitation.objects.none()
+
+        return Invitation.objects.filter(company=user.company).order_by('-created_at')
     
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -448,11 +464,23 @@ class InvitationDetailView(generics.RetrieveAPIView):
     Get invitation details by token (for registration page).
     
     """
+    """something I need to fix here overide"""#Hrer
     permission_classes = [AllowAny]
     queryset = Invitation.objects.all()
     serializer_class = InvitationSerializer
     lookup_field = 'token'
 
+    def get_object(self):
+        invitation = get_object_or_404(
+            Invitation,
+            token=self.kwargs['token']
+        )
+
+        if not invitation.is_valid:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Invalid or expired invitation.")
+
+        return invitation
 
 class CancelInvitationView(APIView):
     """
@@ -462,9 +490,13 @@ class CancelInvitationView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, pk):
+        if not request.user.company:
+            return Response({
+            'error': 'No company associated with user.'
+        }, status=status.HTTP_400_BAD_REQUEST)            
         invitation = get_object_or_404(
             Invitation,
-            pk=pk,
+            token=token,
             company=request.user.company
         )
         
@@ -501,6 +533,10 @@ class ResendInvitationView(APIView):
             return Response({
                 'error': 'Only company admin can resend invitations.'
             }, status=status.HTTP_403_FORBIDDEN)
+        if invitation.status == Invitation.STATUS_ACCEPTED:
+            return Response({
+                'error': 'Cannot resend an accepted invitation.'
+            }, status=status.HTTP_400_BAD_REQUEST)            
         
         # Reset expiration
         invitation.expires_at = timezone.now() + timezone.timedelta(days=7)

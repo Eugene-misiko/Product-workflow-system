@@ -18,7 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.contrib.auth import views as auth_views
 # Admin site configuration
 admin.site.site_header = "PrintFlow Administration"
 admin.site.site_title = "PrintFlow Admin"
@@ -32,7 +33,9 @@ urlpatterns = [
     path('api/', include('payments.urls')),
     path('api/', include('notifications.urls')),
     path('api/', include('messaging.urls')),
-    
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/login/'), name='logout'),    
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
