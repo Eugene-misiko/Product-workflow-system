@@ -14,9 +14,11 @@ Admin is created via:
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from cloudinary.models import CloudinaryField
 from django.utils import timezone
 import secrets
 import string
+from django.core.exceptions import ValidationError
 from .managers import UserManager
 class User(AbstractUser):
     """
@@ -50,8 +52,8 @@ class User(AbstractUser):
         null=True,
         blank=True
     )
-    
-    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    is_staff = models.BooleanField(default=False)
+    avatar = CloudinaryField('image', folder='profiles/') 
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     
@@ -73,9 +75,8 @@ class User(AbstractUser):
     @property
     def is_platform_admin(self):
         return self.role == self.PLATFORM_ADMIN
-    @property
-    def is_staff(self):
-        return self.role in [self.ADMIN, self.DESIGNER, self.PRINTER] or self.is_superuser
+    # def is_staff(self):
+    #     return self.role in [self.ADMIN, self.DESIGNER, self.PRINTER] or self.is_superuser
     @property
     def is_company_admin(self):
         return self.role == self.ADMIN
