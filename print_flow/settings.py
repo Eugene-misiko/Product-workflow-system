@@ -31,9 +31,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 
@@ -127,21 +127,21 @@ WSGI_APPLICATION = 'print_flow.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASSWORD'),
-        'HOST': config('DATABASE_HOST'),
-        'PORT': config('PORT'),
-    }
-}
-# import dj_database_url
-
 # DATABASES = {
-#     'default': dj_database_url.config(default='sqlite:///db.sqlite3')
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DATABASE_NAME'),
+#         'USER': config('DATABASE_USER'),
+#         'PASSWORD': config('DATABASE_PASSWORD'),
+#         'HOST': config('DATABASE_HOST'),
+#         'PORT': config('PORT'),
+#     }
 # }
+import dj_database_url
+
+DATABASES = {
+    'default': dj_database_url.config(default='sqlite:///db.sqlite3')
+}
 # configuring email backend
 EMAIL_BACKEND = config('EMAIL_BACKEND')
 # configuring email host
@@ -219,41 +219,41 @@ LNM_PHONE_NUMBER = config('LNM_PHONE_NUMBER')
 
 # Logging Configuration
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {
-#             'format': '{levelname} {asctime} {module} {message}',
-#             'style': '{',
-#         },
-#     },
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'verbose',
-#         },
-#         'file': {
-#             'class': 'logging.FileHandler',
-#             'filename': 'printflow.log',
-#             'formatter': 'verbose',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['console'],
-#             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-#         },
-#         'payments': {
-#             'handlers': ['console', 'file'],
-#             'level': os.getenv('PAYMENTS_LOG_LEVEL', 'DEBUG'),
-#         },
-#         'printflow': {
-#             'handlers': ['console', 'file'],
-#             'level': os.getenv('PRINTFLOW_LOG_LEVEL', 'INFO'),
-#         },
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'printflow.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+        'payments': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('PAYMENTS_LOG_LEVEL', 'DEBUG'),
+        },
+        'printflow': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('PRINTFLOW_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
 
 PRINTFLOW = {
     'ADMIN_EMAIL': os.environ.get('PRINTFLOW_ADMIN_EMAIL'),
