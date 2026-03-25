@@ -6,6 +6,7 @@ from django.db import models
 from django.conf import settings
 import string
 import random
+from cloudinary.models import CloudinaryField
 
 def generate_company_code():
     """Generate unique company code."""
@@ -23,7 +24,7 @@ class Company(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     code = models.CharField(max_length=10, unique=True, default=generate_company_code)
-    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
+    logo = CloudinaryField('image', folder='company/') 
     
     # Contact
     email = models.EmailField()

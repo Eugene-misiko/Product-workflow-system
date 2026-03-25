@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
 from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 from .models import Company, CompanySettings, CompanyInvitation
 from .serializers import (
     CompanySerializer, CompanyDetailSerializer,
@@ -36,10 +37,9 @@ class CompanyUpdateView(generics.UpdateAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = CompanyUpdateSerializer
-    
     def get_object(self):
+        user = self.request.user
         if not self.request.user.is_company_admin:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Only company admin can update company details.")
         return self.request.user.company
 
@@ -49,16 +49,16 @@ class CompanySettingsView(generics.RetrieveUpdateAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = CompanySettingsSerializer
-    
     def get_object(self):
-        if not self.request.user.is_company_admin:
+        # Check that the user is a company admin
+        if not self.request.user.is_company_admin:  
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Only company admin can manage settings.")
-        
+        # Get the company
         company = self.request.user.company
+        # Get or create the company settings
         settings, _ = CompanySettings.objects.get_or_create(company=company)
-        return settings
-
+        return settings   
 class PaymentSettingsView(APIView):
     """
     Get or update payment settings (admin only).

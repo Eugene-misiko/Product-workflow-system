@@ -16,7 +16,7 @@ class NotificationListView(generics.ListAPIView):
         
         is_read = self.request.query_params.get('is_read')
         if is_read is not None:
-            queryset = queryset.filter(is_read=is_read.lower() == 'true')
+            queryset = queryset.filter(is_read=is_read.lower() in ['true', '1'])
         
         return queryset.order_by('-created_at')
 
@@ -26,7 +26,10 @@ class NotificationDetailView(generics.RetrieveAPIView):
     serializer_class = NotificationSerializer
     
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        return Notification.objects.filter(
+            user=self.request.user,
+            company=self.request.user.company   
+        )
 
 
 class MarkAsReadView(APIView):
@@ -36,7 +39,8 @@ class MarkAsReadView(APIView):
         try:
             notification = Notification.objects.get(pk=pk, user=request.user)
             notification.mark_as_read()
-            return Response({'message': 'Marked as read.'})
+            serializer = NotificationSerializer(notification)
+            return Response(serializer.data)
         except Notification.DoesNotExist:
             return Response({'error': 'Not found.'}, status=404)
 

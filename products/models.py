@@ -4,6 +4,7 @@ Each company has its own products and categories.
 """
 from django.db import models
 from django.conf import settings
+from cloudinary.models import CloudinaryField
 # Create your models here.
 class Category(models.Model):
     """Product category (company-specific)."""
@@ -16,7 +17,7 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(blank=True)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='categories/', blank=True, null=True)
+    image = CloudinaryField('image', folder='categories/') 
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
     
@@ -56,7 +57,7 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image = CloudinaryField('image', folder='products/') 
     gallery = models.JSONField(default=list, blank=True)
     
     min_quantity = models.PositiveIntegerField(default=1)

@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 import random
 import string
-
+from cloudinary.models import CloudinaryField
 def generate_order_number():
     date_part = timezone.now().strftime('%Y%m%d')
     random_part = ''.join(random.choices(string.digits, k=4))
@@ -86,7 +86,7 @@ class Order(models.Model):
     
     # Design
     needs_design = models.BooleanField(default=False)
-    design_file = models.FileField(upload_to='designs/', blank=True, null=True)
+    design_file = CloudinaryField('image', folder='orders/') 
     design_description = models.TextField(blank=True)
     design_notes = models.TextField(blank=True)
     design_revisions = models.PositiveIntegerField(default=0)

@@ -42,9 +42,6 @@ class ConversationMessagesView(generics.ListAPIView):
             participants=self.request.user
         )
         return Message.objects.filter(conversation=conversation).order_by('created_at')
-
-
-
 class StartConversationView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
