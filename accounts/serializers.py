@@ -353,8 +353,15 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
                 company=request.user.company
             ).exists():
                 raise serializers.ValidationError(
-                    "A user with this email already exists in your company."
-                )
+                    "A user with this email already exists in your company.")
+            if Invitation.objects.filter(
+                email=value,
+                company=request.user.company,
+                status=Invitation.STATUS_PENDING).exists():
+                raise serializers.ValidationError(
+                    "A pending invitation already exists for this email.")
+        return value
+        
     def create(self, validated_data):
         request = self.context['request']
 

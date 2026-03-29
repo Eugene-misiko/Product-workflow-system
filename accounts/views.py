@@ -458,30 +458,6 @@ class InvitationListView(generics.ListCreateAPIView):
             fail_silently=True,
         )
 
-
-class InvitationDetailView(generics.RetrieveAPIView):
-    """
-    Get invitation details by token (for registration page).
-    
-    """
-    """something I need to fix here overide"""#Hrer
-    permission_classes = [AllowAny]
-    queryset = Invitation.objects.all()
-    serializer_class = InvitationSerializer
-    lookup_field = 'token'
-
-    def get_object(self):
-        invitation = get_object_or_404(
-            Invitation,
-            token=self.kwargs['token']
-        )
-
-        if not invitation.is_valid:
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("Invalid or expired invitation.")
-
-        return invitation
-
 class CancelInvitationView(APIView):
     """
     Cancel a pending invitation (admin only).
@@ -558,6 +534,9 @@ class ResendInvitationView(APIView):
         return Response({'message': 'Invitation resent successfully.'})
 
 class InvitationDetailView(APIView):
+        """
+         Get invitation details by token (for registration page).
+        """
     def get(self, request, token):
         try:
             invitation = Invitation.objects.get(token=token)
