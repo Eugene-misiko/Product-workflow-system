@@ -344,3 +344,11 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
             )
         
         return value
+
+class InvitationDetailSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+
+    class Meta:
+        model = Invitation
+        fields = ['email', 'company_name', 'role', 'role_display', 'is_valid']
