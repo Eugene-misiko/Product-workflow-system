@@ -271,7 +271,35 @@ class CompanyRegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 "This company already has an admin."
             )
-        return attrs        
+        return attrs
+    def create(self, validated_data):
+        company = Company.objects.create(
+            name=validated_data['company_name'],
+            slug=validated_data['company_slug'],
+            email=validated_data['company_email'],
+            phone=validated_data['company_phone'],
+            address=validated_data['company_address'],
+            city=validated_data.get('company_city', ''),
+            country=validated_data.get('company_country', 'Kenya'),
+        )
+
+        admin = User.objects.create_user(
+            email=validated_data['admin_email'],
+            password=validated_data['admin_password'],
+            first_name=validated_data['admin_first_name'],
+            last_name=validated_data['admin_last_name'],
+            phone=validated_data.get('admin_phone', ''),
+            role=User.ADMIN,
+            company=company,
+            email_verified=True
+        )
+
+        UserProfile.objects.get_or_create(user=admin)
+
+        return {
+            "company": company,
+            "admin": admin
+        }                
 
 
 # =====================
