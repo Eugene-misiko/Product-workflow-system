@@ -27,7 +27,7 @@ from .serializers import (
     LoginSerializer, ChangePasswordSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     RegisterSerializer, CompanyRegistrationSerializer,
-    InvitationSerializer, CreateInvitationSerializer,
+    InvitationSerializer, CreateInvitationSerializer,InvitationDetailSerializer
 )
 
 
@@ -556,3 +556,17 @@ class ResendInvitationView(APIView):
             fail_silently=True,
         )
         return Response({'message': 'Invitation resent successfully.'})
+
+class InvitationDetailView(APIView):
+    def get(self, request, token):
+        try:
+            invitation = Invitation.objects.get(token=token)
+
+            if not invitation.is_valid:
+                return Response({"error": "Invalid or expired invitation"}, status=400)
+
+            serializer = InvitationDetailSerializer(invitation)
+            return Response(serializer.data)
+
+        except Invitation.DoesNotExist:
+            return Response({"error": "Invalid token"}, status=404)
