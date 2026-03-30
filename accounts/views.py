@@ -295,22 +295,23 @@ class UserListView(generics.ListAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        
+
+        # PLATFORM ADMIN 
         if user.is_platform_admin:
             queryset = User.objects.all()
-        else:
-            queryset = User.objects.filter(company=user.company)
-        
-        if user.company:
-            queryset = User.objects.filter(company=user.company)
-            
-            role = self.request.query_params.get('role')
-            if role:
-                queryset = queryset.filter(role=role)
 
-            return queryset
-        
-        return User.objects.none()
+        #  COMPANY ADMIN OR COMPANY USER
+        elif user.company:
+            queryset = User.objects.filter(company=user.company)
+
+        else:
+            return User.objects.none()
+
+        role = self.request.query_params.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+
+        return queryset
 
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
@@ -442,7 +443,7 @@ class InvitationListView(generics.ListCreateAPIView):
         )
         
         # Send invitation email
-        invite_url = f"{settings.FRONTEND_URL}/register/{invitation.token}"
+        invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
         
         send_mail(
             subject=f'Invitation to join {invitation.company.name}',
@@ -464,31 +465,26 @@ class CancelInvitationView(APIView):
     
     """
     permission_classes = [IsAuthenticated]
-    
-    def post(self, request, pk):
-        if not request.user.company:
-            return Response({
-            'error': 'No company associated with user.'
-        }, status=status.HTTP_400_BAD_REQUEST)            
+    def post(self, request, token):
         invitation = get_object_or_404(
             Invitation,
             token=token,
             company=request.user.company
         )
-        
+
         if not request.user.is_company_admin:
             return Response({
                 'error': 'Only company admin can cancel invitations.'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
+            }, status=403)
+
         if invitation.status != Invitation.STATUS_PENDING:
             return Response({
                 'error': 'Can only cancel pending invitations.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+            }, status=400)
+
         invitation.status = Invitation.STATUS_CANCELLED
         invitation.save()
-        
+
         return Response({'message': 'Invitation cancelled.'})
 
 
@@ -498,50 +494,51 @@ class ResendInvitationView(APIView):
     """
     permission_classes = [IsAuthenticated]
     
-    def post(self, request, pk):
+    def post(self, request, token):
         invitation = get_object_or_404(
             Invitation,
-            pk=pk,
+            token=token,
             company=request.user.company
         )
-        
+
         if not request.user.is_company_admin:
             return Response({
                 'error': 'Only company admin can resend invitations.'
-            }, status=status.HTTP_403_FORBIDDEN)
+            }, status=403)
+
         if invitation.status == Invitation.STATUS_ACCEPTED:
             return Response({
                 'error': 'Cannot resend an accepted invitation.'
-            }, status=status.HTTP_400_BAD_REQUEST)            
-        
-        # Reset expiration
+            }, status=400)
+
         invitation.expires_at = timezone.now() + timezone.timedelta(days=7)
         invitation.status = Invitation.STATUS_PENDING
         invitation.save()
-        
-        # Send email again
-        invite_url = f"{settings.FRONTEND_URL}/register/{invitation.token}"
-        
+
+        invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
+
         send_mail(
             subject=f'Invitation Reminder - {invitation.company.name}',
-            message=f''' Hello, This is a reminder about your invitation to join {invitation.company.name}. Click the following link to register:
-            {invite_url} This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
-            ''',
+            message=f"""Hello, This is a reminder about your invitation to join {invitation.company.name}. Click the link below to register: {invite_url}
+            This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+            """,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invitation.email],
             fail_silently=True,
-        )
+              )
+
         return Response({'message': 'Invitation resent successfully.'})
 
 class InvitationDetailView(APIView):
-        """
-         Get invitation details by token (for registration page).
-        """
+    """
+        Get invitation details by token (for registration page).
+    """
+    permission_classes = [AllowAny]
     def get(self, request, token):
         try:
-            invitation = Invitation.objects.get(token=token)
+            invitation = Invitation.objects.filter(token=token, status=Invitation.STATUS_PENDING).first()
 
-            if not invitation.is_valid:
+            if not invitation or invitation.is_expired:
                 return Response({"error": "Invalid or expired invitation"}, status=400)
 
             serializer = InvitationDetailSerializer(invitation)
