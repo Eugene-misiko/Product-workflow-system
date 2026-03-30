@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+import dj_database_url
 import os
 from dotenv import load_dotenv
 import cloudinary.uploader
@@ -129,10 +130,11 @@ WSGI_APPLICATION = 'print_flow.wsgi.application'
 #     }
 # }
 
-import dj_database_url
-DATABASE_URL= os.environ.get('DATABASE_URL')
-if DATABASE_URL:
 
+DATABASE_URL= os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    print(DATABASE_URL) 
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -140,6 +142,7 @@ if DATABASE_URL:
             conn_health_checks=True)
         
     }
+   
 else:
     DATABASES = {
         'default': {
