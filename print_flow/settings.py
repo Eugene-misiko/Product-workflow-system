@@ -130,19 +130,22 @@ WSGI_APPLICATION = 'print_flow.wsgi.application'
 # }
 
 
-DATABASE_URL= os.environ.get('DATABASE_URL')
+#DATABASE_URL= os.environ.get('DATABASE_URL')
+
+DATABASE_URL = config('DATABASE_URL', default=None)
 
 if DATABASE_URL:
-    print(DATABASE_URL) 
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=60,
-            conn_health_checks=True)
-        
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-    
+    print(f"--- DATABASE CONNECTION: REMOTE (RENDER) ---")
+    print(f"--- HOST: {DATABASES['default'].get('HOST')} ---")
 else:
+    print("--- DATABASE CONNECTION: LOCAL CONFIG ---")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -150,7 +153,7 @@ else:
             'USER': config('DATABASE_USER'),
             'PASSWORD': config('DATABASE_PASSWORD'),
             'HOST': config('DATABASE_HOST'),
-            'PORT': config('PORT'),
+            'PORT': config('PORT', default='5432'),
         }
     }
 # configuring email backend
