@@ -13,11 +13,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from .models import Category, Product, ProductField
 from .serializers import (
-    CategorySerializer, CategoryDetailSerializer,
+    CategorySerializer,
+    CategoryDetailSerializer,
     ProductSerializer, ProductListSerializer, CreateProductSerializer,
     ProductFieldSerializer
 )
 from accounts.models import User
+from rest_framework.exceptions import PermissionDenied
 # Create your views here.
 
 
@@ -34,7 +36,7 @@ class CategoryListView(generics.ListAPIView):
         return Category.objects.filter(
             company=self.request.user.company,
             is_active=True
-        ).order_by('order', 'name')
+        ).prefetch_related('products').order_by('order', 'name')
 
 #category detail view
 class CategoryDetailView(generics.RetrieveAPIView):
@@ -45,7 +47,7 @@ class CategoryDetailView(generics.RetrieveAPIView):
     serializer_class = CategoryDetailSerializer
     
     def get_queryset(self):
-        return Category.objects.filter(company=self.request.user.company)
+        return Category.objects.filter(company=self.request.user.company, is_active=True)
 class CreateCategoryView(generics.CreateAPIView):
     """
     Create category (admin only).
@@ -71,7 +73,8 @@ class UpdateCategoryView(generics.UpdateAPIView):
         if not self.request.user.is_company_admin:
             return Category.objects.none()
         return Category.objects.filter(company=self.request.user.company)
-
+    def perform_update(self, serializer):
+        serializer.save()
 class DeleteCategoryView(generics.DestroyAPIView):
     """
     Delete category (admin only).
@@ -103,7 +106,7 @@ class ProductListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Product.objects.filter(
             company=self.request.user.company
-        )
+        ).select_related('category')
         
         if self.request.user.role != User.ADMIN:
             queryset = queryset.filter(is_active=True)
@@ -115,9 +118,14 @@ class ProductDetailView(generics.RetrieveAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = ProductSerializer
-    
+
     def get_queryset(self):
-        return Product.objects.filter(company=self.request.user.company)
+        queryset = Product.objects.filter(company=self.request.user.company)
+
+        if self.request.user.role != User.ADMIN:
+            queryset = queryset.filter(is_active=True)
+        
+        return queryset
 
 
 class CreateProductView(generics.CreateAPIView):
@@ -127,12 +135,12 @@ class CreateProductView(generics.CreateAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = CreateProductSerializer
-    
+    http_method_names = ['post']
     def perform_create(self, serializer):
         if not self.request.user.is_company_admin:
-            from rest_framework.exceptions import PermissionDenied
+            
             raise PermissionDenied("Only admin can create products.")
-        serializer.save(company=self.request.user.company)
+        serializer.save()
 
 
 class UpdateProductView(generics.UpdateAPIView):
@@ -149,6 +157,8 @@ class UpdateProductView(generics.UpdateAPIView):
             return Product.objects.none()
         return Product.objects.filter(company=self.request.user.company)
 
+    def perform_update(self, serializer):
+        serializer.save()
 
 class DeleteProductView(generics.DestroyAPIView):
     """
@@ -200,7 +210,7 @@ class PublicProductListView(generics.ListAPIView):
         return Product.objects.filter(
             company__slug=company_slug,
             is_active=True
-        ).order_by('-is_featured', 'name')
+        ).select_related('category').order_by('-is_featured', 'name')
 
 
 class PublicCategoryListView(generics.ListAPIView):
@@ -218,8 +228,33 @@ class PublicCategoryListView(generics.ListAPIView):
         return Category.objects.filter(
             company__slug=company_slug,
             is_active=True
-        ).order_by('order', 'name')
+        ).prefetch_related('products').order_by('order', 'name')
+class PublicProductDetailView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ProductSerializer
 
+    def get_queryset(self):
+        company_slug = self.request.query_params.get('company')
+        if not company_slug:
+            return Product.objects.none()
+
+        return Product.objects.filter(
+            company__slug=company_slug,
+            is_active=True
+        )
+class PublicCategoryDetailView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = CategoryDetailSerializer
+
+    def get_queryset(self):
+        company_slug = self.request.query_params.get('company')
+        if not company_slug:
+            return Category.objects.none()
+
+        return Category.objects.filter(
+            company__slug=company_slug,
+            is_active=True
+        )        
 
 
 
