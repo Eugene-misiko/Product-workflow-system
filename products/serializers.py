@@ -25,10 +25,18 @@ class CategorySerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
-    
+    def validate_category(self, value):
+        request = self.context.get('request')
+        company = request.user.company
+
+        if value.company != company:
+            raise serializers.ValidationError("Invalid category for this company.")
+        
+        return value   
+
     def get_products_count(self, obj):
         return obj.products.filter(is_active=True).count()
-
+    
 class CategoryDetailSerializer(serializers.ModelSerializer):
     """Category with products."""
     
@@ -43,7 +51,10 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
         ]
     
     def get_products(self, obj):
-        products = obj.products.filter(is_active=True)
+        request = self.context.get('request')
+        company = request.user.company
+        products = obj.products.filter(is_active=True,company=company)
+
         return ProductListSerializer(products, many=True).data
 
 
@@ -88,7 +99,6 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_price_display(self, obj):
         return f"KSh {obj.price:,.2f}"
-
 class CreateProductSerializer(serializers.ModelSerializer):
     """Create product serializer (admin only)."""
     
@@ -104,14 +114,23 @@ class CreateProductSerializer(serializers.ModelSerializer):
             'has_quantity_pricing', 'quantity_pricing',
             'print_specs', 'fields'
         ]
-    
+    def validate_quantity_pricing(self, value):
+        for tier in value:
+            if 'min_qty' not in tier or 'price' not in tier:
+                raise serializers.ValidationError("Invalid quantity pricing format.")
+        return value
+            
     def create(self, validated_data):
         fields_data = validated_data.pop('fields', [])
-        
-        product = Product.objects.create(**validated_data)
-        
+        request = self.context.get('request')
+        company = request.user.company 
+        product = Product.objects.create(company=company, **validated_data)
         for field_data in fields_data:
-            ProductField.objects.create(product=product, **field_data)
+            ProductField.objects.create(
+                product=product,
+                company=company_or_instance.company,
+                **field_data
+            )
         
         return product
     
@@ -125,6 +144,6 @@ class CreateProductSerializer(serializers.ModelSerializer):
         if fields_data is not None:
             instance.fields.all().delete()
             for field_data in fields_data:
-                ProductField.objects.create(product=instance, **field_data)
+                ProductField.objects.create(product=instance,company=instance.company, **field_data)
         
         return instance
