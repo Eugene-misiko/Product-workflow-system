@@ -62,7 +62,6 @@ INSTALLED_APPS = [
     'cloudinary_storage',  
     'widget_tweaks',
     'tailwind',
-    'django_daraja',
     'theme',
 ]
 TAILWIND_APP_NAME = 'theme'
