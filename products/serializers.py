@@ -128,7 +128,7 @@ class CreateProductSerializer(serializers.ModelSerializer):
         for field_data in fields_data:
             ProductField.objects.create(
                 product=product,
-                company=company_or_instance.company,
+                company=company,
                 **field_data
             )
         

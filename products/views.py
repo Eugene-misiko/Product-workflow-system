@@ -135,7 +135,7 @@ class CreateProductView(generics.CreateAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = CreateProductSerializer
-    http_method_names = ['post']
+    #http_method_names = ['post']
     def perform_create(self, serializer):
         if not self.request.user.is_company_admin:
             
