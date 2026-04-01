@@ -41,7 +41,6 @@ class CreateMessageSerializer(serializers.Serializer):
         allow_empty=True
     )
 
-
 class StartConversationSerializer(serializers.Serializer):
     recipient_id = serializers.IntegerField()
     order_id = serializers.IntegerField(required=False)
