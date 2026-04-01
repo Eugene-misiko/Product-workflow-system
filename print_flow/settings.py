@@ -81,6 +81,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 FRONTEND_URL = config("FRONTEND_URL")
 # CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS").split(",")
 # CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS").split(",")
+CORS_ALLOW_CREDENTIALS=True
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in config("CORS_ALLOWED_ORIGINS", default="").split(",")
