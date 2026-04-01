@@ -443,7 +443,7 @@ class InvitationListView(generics.ListCreateAPIView):
         )
         
         # Send invitation email
-        invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
+        invite_url = f"{settings.FRONTEND_URL}/accept-invitation?token={invitation.token}"
         
         send_mail(
             subject=f'Invitation to join {invitation.company.name}',
@@ -462,7 +462,6 @@ class InvitationListView(generics.ListCreateAPIView):
 class CancelInvitationView(APIView):
     """
     Cancel a pending invitation (admin only).
-    
     """
     permission_classes = [IsAuthenticated]
     def post(self, request, token):
@@ -515,7 +514,7 @@ class ResendInvitationView(APIView):
         invitation.status = Invitation.STATUS_PENDING
         invitation.save()
 
-        invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
+        invite_url = f"{settings.FRONTEND_URL}/accept-invitation?token={invitation.token}"
 
         send_mail(
             subject=f'Invitation Reminder - {invitation.company.name}',

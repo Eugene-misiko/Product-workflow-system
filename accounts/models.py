@@ -167,6 +167,7 @@ class Invitation(models.Model):
     def accept(self, user):
         user.company = self.company
         user.role = self.role
+        user.is_active = True 
         user.save()
 
         self.status = self.STATUS_ACCEPTED
