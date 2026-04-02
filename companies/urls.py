@@ -6,6 +6,8 @@ app_name = 'companies'
 urlpatterns = [
     # Company Info
     path('company/', views.CompanyDetailView.as_view(), name='company_detail'),
+    #list companies
+    path("companies/", views.CompanyListView.as_view(), name="companies"),
     path('company/update/', views.CompanyUpdateView.as_view(), name='company_update'),
     # Settings
     path('company/settings/', views.CompanySettingsView.as_view(), name='company_settings'),

@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
 from django.utils import timezone
+from rest_framework.generics import ListAPIView
 from rest_framework.exceptions import PermissionDenied
 from .models import Company, CompanySettings, CompanyInvitation
 from .serializers import (
@@ -30,6 +31,11 @@ class CompanyDetailView(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user.company
 
+
+class CompanyListView(ListAPIView):
+    queryset = Company.objects.filter(is_active=True)
+    serializer_class = CompanySerializer
+    permission_classes = []  
 
 class CompanyUpdateView(generics.UpdateAPIView):
     """
