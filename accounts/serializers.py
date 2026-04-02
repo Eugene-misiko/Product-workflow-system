@@ -387,3 +387,54 @@ class InvitationDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
         fields = ['email', 'company_name', 'role', 'role_display', 'is_valid']
+
+
+User = get_user_model()
+
+class RegisterUserSerializer(serializers.ModelSerializer):
+    company_id = serializers.IntegerField(write_only=True)
+    role = serializers.CharField(required=False, default=User.CLIENT)
+
+    class Meta:
+        model = User
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "password",
+            "company_id",
+            "role",
+        ]
+        extra_kwargs = {
+            "password": {"write_only": True}
+        }
+
+    def validate_company_id(self, value):
+        try:
+            company = Company.objects.get(id=value, is_active=True)
+        except Company.DoesNotExist:
+            raise serializers.ValidationError("Company does not exist")
+        return value
+
+    def validate_role(self, value):
+        
+        if value not in [User.CLIENT]:
+            raise serializers.ValidationError("Only client registration is allowed")
+        return value
+
+    def create(self, validated_data):
+        company_id = validated_data.pop("company_id")
+        role = validated_data.pop("role", User.CLIENT)
+
+        company = Company.objects.get(id=company_id)
+
+        user = User.objects.create_user(
+            **validated_data,
+            role=role,
+            company=company
+        )
+        user.full_clean()
+        user.save()
+
+        return user        
