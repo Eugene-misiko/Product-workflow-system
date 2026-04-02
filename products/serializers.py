@@ -60,7 +60,7 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
 
 class ProductListSerializer(serializers.ModelSerializer):
     """Product list serializer (lightweight)."""
-    
+    image = serializers.SerializerMethodField()
     category_name = serializers.CharField(source='category.name', read_only=True)
     price_display = serializers.SerializerMethodField()
     
@@ -74,6 +74,11 @@ class ProductListSerializer(serializers.ModelSerializer):
     
     def get_price_display(self, obj):
         return f"KSh {obj.price:,.2f}"
+    def get_image(self, obj):
+        if obj.image:
+            return obj.image.url   
+        return None        
+
 
 class ProductSerializer(serializers.ModelSerializer):
     """Product serializer."""
@@ -81,7 +86,7 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     price_display = serializers.SerializerMethodField()
     fields = ProductFieldSerializer(many=True, read_only=True)
-    
+    image = serializers.SerializerMethodField()
     class Meta:
         model = Product
         fields = [
@@ -99,6 +104,11 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_price_display(self, obj):
         return f"KSh {obj.price:,.2f}"
+    
+    def get_image(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None        
 class CreateProductSerializer(serializers.ModelSerializer):
     """Create product serializer (admin only)."""
     

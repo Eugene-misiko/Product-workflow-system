@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from .models import Category, Product, ProductField
 from .serializers import (
@@ -133,6 +134,7 @@ class CreateProductView(generics.CreateAPIView):
     Create product (admin only).
     
     """
+    parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated]
     serializer_class = CreateProductSerializer
     #http_method_names = ['post']
