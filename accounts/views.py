@@ -27,7 +27,8 @@ from .serializers import (
     LoginSerializer, ChangePasswordSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     RegisterSerializer, CompanyRegistrationSerializer,
-    InvitationSerializer, CreateInvitationSerializer,InvitationDetailSerializer
+    InvitationSerializer, CreateInvitationSerializer,InvitationDetailSerializer,
+    RegisterUserSerializer
 )
 
 
@@ -178,10 +179,40 @@ class PasswordResetConfirmView(APIView):
         return Response({'message': 'Password reset successful. You can now login.'})
 
 
-# =====================
+# =================
 # REGISTRATION VIEWS
-# =====================
+# ==================
 
+
+#User registration views
+class RegisterUserView(APIView):
+    permission_classes = []  
+
+    def post(self, request):
+        serializer = RegisterUserSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.save()
+
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role,
+                    "company": user.company.name
+                },
+                "tokens": {
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                }
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 class RegisterView(generics.CreateAPIView):
     """
     User registration via invitation.
