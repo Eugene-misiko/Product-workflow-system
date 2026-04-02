@@ -17,6 +17,7 @@ urlpatterns = [
 
     # REGISTRATION
     path('auth/register/', views.RegisterView.as_view()),
+    path('auth/register-user/', views.RegisterUserView.as_view()),
     path('auth/register-company/', views.CompanyRegistrationView.as_view()),
 
     # USERS
