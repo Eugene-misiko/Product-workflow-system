@@ -18,7 +18,7 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     """Basic user serializer."""
-    
+    company_id = serializers.IntegerField(source='company.id', read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
@@ -28,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name',
             'role', 'role_display', 'avatar', 'phone',
-            'company', 'company_name',
+            'company', 'company_name','company_id'
             'email_verified', 'created_at','is_active'
         ]
         read_only_fields = ['id', 'email', 'role', 'company', 'email_verified', 'created_at']
@@ -302,6 +302,8 @@ class CompanyRegistrationSerializer(serializers.Serializer):
             company=company,
             email_verified=True
         )
+        company.admin = admin
+        company.save()
 
         UserProfile.objects.get_or_create(user=admin)
 
@@ -379,15 +381,15 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
 
-        if Invitation.objects.filter(
-            email=value,
-            company=request.user.company,
-            status=Invitation.STATUS_PENDING).exists():
-            raise serializers.ValidationError(
-                "A pending invitation already exists for this email."
-            )
+        # if Invitation.objects.filter(
+        #     email=value,
+        #     company=request.user.company,
+        #     status=Invitation.STATUS_PENDING).exists():
+        #     raise serializers.ValidationError(
+        #         "A pending invitation already exists for this email."
+        #     )
         
-        return value
+        # return value 
 
 class InvitationDetailSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
