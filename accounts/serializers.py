@@ -87,6 +87,8 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials")
         if not user.is_active:
             raise serializers.ValidationError("User account is inactive")
+        attrs["user"] = user
+        return attrs            
 
 class ChangePasswordSerializer(serializers.Serializer):
     """Change password serializer."""
@@ -304,8 +306,8 @@ class CompanyRegistrationSerializer(serializers.Serializer):
         UserProfile.objects.get_or_create(user=admin)
 
         return {
-            "company": company,
-            "admin": admin
+            "company": CompanySerializer(company).data,
+            "admin": UserSerializer(admin).data
         }                
 
 
