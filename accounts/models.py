@@ -108,7 +108,9 @@ class User(AbstractUser):
 
         if self.role != self.PLATFORM_ADMIN and self.company is None:
             raise ValidationError("Non-platform users must belong to a company")
-         
+    def save(self, *args, **kwargs):
+        self.full_clean()  
+        super().save(*args, **kwargs)         
 
 class Invitation(models.Model):
     """

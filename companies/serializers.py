@@ -78,7 +78,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             'name', 'logo', 'phone', 'address', 'city', 'country', 'website',
-            'currency', 'currency_symbol', 'deposit_percentage',
+            'currency', 'currency_symbol', 'deposit_percentage','email'
         ]
 
 
