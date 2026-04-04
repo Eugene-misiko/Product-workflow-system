@@ -41,35 +41,27 @@ class LoginView(APIView):
     User login - returns JWT tokens.
     """
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        email = serializer.validated_data['email']
-        password = serializer.validated_data['password']
-        
-        user = authenticate(request, email=email, password=password)
-        
-        if user is None:
-            return Response({
-                'error': 'Invalid email or password.'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-        
-        if not user.is_active:
-            return Response({
-                'error': 'This account has been deactivated.'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-        
+
+        user = serializer.validated_data['user']
+
         refresh = RefreshToken.for_user(user)
-        
+
         return Response({
-            'user': UserSerializer(user).data,
+            'user': {
+                **UserSerializer(user).data,
+                'company_id': user.company.id if user.company else None,
+                'company_name': user.company.name if user.company else None,
+                'is_platform_admin': user.is_platform_admin,
+            },
             'tokens': {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             }
-        })
+        }, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -186,32 +178,27 @@ class PasswordResetConfirmView(APIView):
 
 #User registration views
 class RegisterUserView(APIView):
-    permission_classes = []  
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegisterUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if serializer.is_valid():
-            user = serializer.save()
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
 
-            refresh = RefreshToken.for_user(user)
-
-            return Response({
-                "user": {
-                    "id": user.id,
-                    "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "role": user.role,
-                    "company": user.company.name
-                },
-                "tokens": {
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                }
-            }, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "user": {
+                **UserSerializer(user).data,
+                "company_id": user.company.id if user.company else None,
+                "company_name": user.company.name if user.company else None,
+                "is_platform_admin": user.is_platform_admin,
+            },
+            "tokens": {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            }
+        }, status=status.HTTP_201_CREATED)
         
 class RegisterView(generics.CreateAPIView):
     """
@@ -294,7 +281,17 @@ class CompanyRegistrationView(generics.CreateAPIView):
         
         # Create profile
         UserProfile.objects.get_or_create(user=admin)
-        
+        #acces token
+        token = request.data.get("token")
+
+        invitation = get_object_or_404(
+            CompanyInvitation,
+            token=token,
+            status=CompanyInvitation.STATUS_PENDING
+        )
+
+        if invitation.expires_at < timezone.now():
+            return Response({'error': 'Invitation expired'}, status=400)        
         # Generate tokens
         refresh = RefreshToken.for_user(admin)
         
@@ -311,6 +308,11 @@ class CompanyRegistrationView(generics.CreateAPIView):
             },
             'message': f'Company "{company.name}" registered successfully! You are now the admin.'
         }, status=status.HTTP_201_CREATED)
+        invitation.status = CompanyInvitation.STATUS_ACCEPTED
+        invitation.accepted_at = timezone.now()
+        invitation.company = company
+        invitation.save()        
+
 
 
 # =====================
@@ -474,7 +476,10 @@ class InvitationListView(generics.ListCreateAPIView):
         )
         
         # Send invitation email
-        invite_url = f"{settings.FRONTEND_URL}/accept-invitation?token={invitation.token}"
+        if invitation.role == User.ADMIN:
+            invite_url = f"{settings.FRONTEND_URL}/register-company?token={invitation.token}"
+        else:
+            invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
         
         send_mail(
             subject=f'Invitation to join {invitation.company.name}',
@@ -545,7 +550,7 @@ class ResendInvitationView(APIView):
         invitation.status = Invitation.STATUS_PENDING
         invitation.save()
 
-        invite_url = f"{settings.FRONTEND_URL}/accept-invitation?token={invitation.token}"
+        invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
 
         send_mail(
             subject=f'Invitation Reminder - {invitation.company.name}',
