@@ -53,7 +53,7 @@ class User(AbstractUser):
         blank=True
     )
     is_staff = models.BooleanField(default=False)
-    avatar = CloudinaryField('image', folder='profiles/') 
+    avatar = CloudinaryField('image', folder='profiles/', blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     
@@ -185,7 +185,7 @@ class Invitation(models.Model):
             raise ValidationError("Invitation is not valid")
         user.company = self.company
         user.role = self.role
-        user.is_active = True 
+        user.is_active = False
         user.save()
 
         self.status = self.STATUS_ACCEPTED

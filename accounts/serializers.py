@@ -2,7 +2,7 @@
 All serializers for user management, authentication, and invitations.
 """
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model,authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 
@@ -12,9 +12,9 @@ from companies.models import Company
 User = get_user_model()
 
 
-# =====================
+# =================
 # USER SERIALIZERS
-# =====================
+# =================
 
 class UserSerializer(serializers.ModelSerializer):
     """Basic user serializer."""
@@ -79,7 +79,14 @@ class LoginSerializer(serializers.Serializer):
     """User login serializer."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-
+    def validate(self, attrs):
+        email = attrs.get("email").lower()
+        password = attrs.get("password")
+        user = authenticate(username=email, password=password)
+        if not user:
+            raise serializers.ValidationError("Invalid credentials")
+        if not user.is_active:
+            raise serializers.ValidationError("User account is inactive")
 
 class ChangePasswordSerializer(serializers.Serializer):
     """Change password serializer."""
