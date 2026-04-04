@@ -111,7 +111,10 @@ class User(AbstractUser):
 
         if self.role == self.PLATFORM_ADMIN:
             if User.objects.filter(role=self.PLATFORM_ADMIN).exclude(pk=self.pk).exists():
-                raise ValidationError("There can only be one platform admin")            
+                raise ValidationError("There can only be one platform admin") 
+        if self.role == self.ADMIN and self.company:
+            if User.objects.filter(company=self.company, role=self.ADMIN).exclude(pk=self.pk).exists():
+                raise ValidationError("This company already has an admin")                           
     def save(self, *args, **kwargs):
         if self.role == self.PLATFORM_ADMIN:
             self.is_staff = True
