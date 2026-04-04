@@ -17,4 +17,7 @@ urlpatterns = [
     # Staff
     path('company/staff/', views.StaffListView.as_view(), name='staff_list'),
     path('company/staff/stats/', views.StaffStatsView.as_view(), name='staff_stats'),
+    #invite company 
+    path('company/invitations/', views.CompanyInvitationCreateView.as_view()),
+    path('company-invitations/<str:token>/', views.CompanyInvitationDetailView.as_view()),
 ]
