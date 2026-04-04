@@ -108,6 +108,10 @@ class User(AbstractUser):
 
         if self.role != self.PLATFORM_ADMIN and self.company is None:
             raise ValidationError("Non-platform users must belong to a company")
+            
+        if self.role == self.PLATFORM_ADMIN:
+            if User.objects.filter(role=self.PLATFORM_ADMIN).exclude(pk=self.pk).exists():
+                raise ValidationError("There can only be one platform admin")            
     def save(self, *args, **kwargs):
         self.full_clean()  
         super().save(*args, **kwargs)         
