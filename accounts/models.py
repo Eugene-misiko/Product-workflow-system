@@ -178,6 +178,8 @@ class Invitation(models.Model):
         return self.status == self.STATUS_PENDING and not self.is_expired
     
     def accept(self, user):
+        if not self.is_valid:
+            raise ValidationError("Invitation is not valid")
         user.company = self.company
         user.role = self.role
         user.is_active = True 
