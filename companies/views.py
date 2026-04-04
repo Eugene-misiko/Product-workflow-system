@@ -225,3 +225,21 @@ class CompanyInvitationCreateView(APIView):
         )
 
         return Response({'message': 'Invitation sent'})
+class CompanyInvitationDetailView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        invitation = get_object_or_404(
+            CompanyInvitation,
+            token=token,
+            status=CompanyInvitation.STATUS_PENDING
+        )
+
+        if invitation.expires_at < timezone.now():
+            return Response({"error": "Expired"}, status=400)
+
+        return Response({
+            "email": invitation.email,
+            "company_name": invitation.company_name,
+            "is_valid": True
+        })        
