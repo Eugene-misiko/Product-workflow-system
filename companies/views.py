@@ -195,3 +195,33 @@ class StaffStatsView(APIView):
             'active_designers': designers.filter(is_active=True).count(),
             'active_printers': printers.filter(is_active=True).count(),
         })
+class CompanyInvitationCreateView(APIView):
+    """
+     invitation view by platform admin
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not request.user.is_platform_admin:
+            return Response({'error': 'Only platform admin allowed'}, status=403)
+
+        email = request.data.get('email')
+        company_name = request.data.get('company_name')
+
+        invitation = CompanyInvitation.objects.create(
+            email=email,
+            company_name=company_name,
+            invited_by=request.user,
+            expires_at=timezone.now() + timezone.timedelta(days=7)
+        )
+
+        invite_url = f"{settings.FRONTEND_URL}/register-company?token={invitation.token}"
+
+        send_mail(
+            subject='Company Invitation',
+            message=f"Register your company here: {invite_url}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+        )
+
+        return Response({'message': 'Invitation sent'})
