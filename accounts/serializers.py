@@ -5,7 +5,6 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model,authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
-
 from .models import Invitation, PasswordResetToken, UserProfile, User
 from companies.models import Company
 
@@ -404,7 +403,7 @@ User = get_user_model()
 
 class RegisterUserSerializer(serializers.ModelSerializer):
     company_id = serializers.IntegerField(write_only=True)
-    role = serializers.CharField(required=False, default=User.CLIENT)
+    role = serializers.ChoiceField(choices=[User.CLIENT],default=User.CLIENT)
 
     class Meta:
         model = User
