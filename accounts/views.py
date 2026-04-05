@@ -472,12 +472,26 @@ class InvitationListView(generics.ListCreateAPIView):
         return InvitationSerializer
     
     def perform_create(self, serializer):
-        if not self.request.user.is_company_admin:
-            raise PermissionDenied("Only company admin can send invitations.")
-        
+        user = self.request.user
+        role = serializer.validated_data.get("role")
+        # PLATFORM ADMIN 
+        if user.role == "platform_admin":
+            if role != User.ADMIN:
+                raise PermissionDenied("Platform admin can only invite company admins.")
+            company = serializer.validated_data.get("company")
+            if not company:
+                raise PermissionDenied("Company is required for admin invitation.")
+        # COMPANY ADMIN 
+        elif user.role == "admin":
+            if role == User.ADMIN:
+                raise PermissionDenied("Company admin cannot invite another admin.")
+            company = user.company
+        else:
+            raise PermissionDenied("Not allowed to send invitations.")
+
         invitation = serializer.save(
-            invited_by=self.request.user,
-            company=self.request.user.company
+            invited_by=user,
+            company=company
         )
         # Send invitation email
         if invitation.role == User.ADMIN:
