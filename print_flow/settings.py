@@ -41,12 +41,14 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'cloudinary_storage', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary', 
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
@@ -58,8 +60,6 @@ INSTALLED_APPS = [
     'payments',
     'notifications',
     'companies',
-    'cloudinary',
-    'cloudinary_storage',  
     'widget_tweaks',
     'tailwind',
     'theme',
@@ -204,9 +204,9 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
-    "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
-    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
+    "CLOUD_NAME": config("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": config("CLOUDINARY_API_KEY"),
+    "API_SECRET": config("CLOUDINARY_API_SECRET"),
     "UPLOAD_OPTIONS": {
         "folder": "avatars",
         "resource_type": "image",
