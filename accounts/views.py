@@ -13,6 +13,7 @@ NO MANAGEMENT COMMANDS!
 """
 from rest_framework import status, generics
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -455,10 +456,15 @@ class InvitationListView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        if not user.company:
-            return Invitation.objects.none()
+        # PLATFORM ADMIN- see ALL invitations
+        if user.role == "platform_admin":
+            return Invitation.objects.all().order_by('-created_at')
 
-        return Invitation.objects.filter(company=user.company).order_by('-created_at')
+        # COMPANY ADMIN- only their company
+        if user.company:
+            return Invitation.objects.filter(company=user.company).order_by('-created_at')
+
+        return Invitation.objects.none()
     
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -467,14 +473,12 @@ class InvitationListView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         if not self.request.user.is_company_admin:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Only company admin can send invitations.")
         
         invitation = serializer.save(
             invited_by=self.request.user,
             company=self.request.user.company
         )
-        
         # Send invitation email
         if invitation.role == User.ADMIN:
             invite_url = f"{settings.FRONTEND_URL}/register-company?token={invitation.token}"
