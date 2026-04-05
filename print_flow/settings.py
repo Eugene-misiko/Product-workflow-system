@@ -36,9 +36,6 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.*\.vercel\.app$",
-]
 
 # Application definition
 
