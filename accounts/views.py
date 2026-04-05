@@ -449,7 +449,6 @@ class ChangeUserRoleView(APIView):
 class InvitationListView(generics.ListCreateAPIView):
     """
     List and create invitations (admin only).
-    
     """
     permission_classes = [IsAuthenticated]
     
@@ -495,9 +494,7 @@ class InvitationListView(generics.ListCreateAPIView):
         )
         # Send invitation email
         if invitation.role == User.ADMIN:
-            invite_url = f"{settings.FRONTEND_URL}/register-company?token={invitation.token}"
-        else:
-            invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
+            invite_url = f"{settings.FRONTEND_URL}/accept-invitation/{invitation.token}"
         
         send_mail(
             subject=f'Invitation to join {invitation.company.name}',
@@ -525,10 +522,17 @@ class CancelInvitationView(APIView):
             company=request.user.company
         )
 
-        if not request.user.is_company_admin:
-            return Response({
-                'error': 'Only company admin can cancel invitations.'
-            }, status=403)
+        user = request.user
+
+        if user.role == "platform_admin":
+            pass  
+
+        elif user.role == "admin":
+            if invitation.company != user.company:
+                return Response({"error": "Not allowed"}, status=403)
+
+        else:
+            return Response({"error": "Not allowed"}, status=403)
 
         if invitation.status != Invitation.STATUS_PENDING:
             return Response({
@@ -539,7 +543,6 @@ class CancelInvitationView(APIView):
         invitation.save()
 
         return Response({'message': 'Invitation cancelled.'})
-
 
 class ResendInvitationView(APIView):
     """
@@ -554,10 +557,16 @@ class ResendInvitationView(APIView):
             company=request.user.company
         )
 
-        if not request.user.is_company_admin:
-            return Response({
-                'error': 'Only company admin can resend invitations.'
-            }, status=403)
+        user = request.user
+
+        if user.role == "platform_admin":
+            pass
+        elif user.role == "admin":
+            if invitation.company != user.company:
+                return Response({"error": "Not allowed"}, status=403)
+
+        else:
+            return Response({"error": "Not allowed"}, status=403)
 
         if invitation.status == Invitation.STATUS_ACCEPTED:
             return Response({
@@ -568,7 +577,7 @@ class ResendInvitationView(APIView):
         invitation.status = Invitation.STATUS_PENDING
         invitation.save()
 
-        invite_url = f"{settings.FRONTEND_URL}/register?token={invitation.token}"
+        invite_url = f"{settings.FRONTEND_URL}/accept-invitation/{invitation.token}"
 
         send_mail(
             subject=f'Invitation Reminder - {invitation.company.name}',
@@ -589,9 +598,8 @@ class InvitationDetailView(APIView):
     permission_classes = [AllowAny]
     def get(self, request, token):
         try:
-            invitation = Invitation.objects.filter(token=token, status=Invitation.STATUS_PENDING).first()
-
-            if not invitation or invitation.is_expired:
+            invitation = get_object_or_404(Invitation,token=token,status=Invitation.STATUS_PENDING)
+            if invitation.is_expired:
                 return Response({"error": "Invalid or expired invitation"}, status=400)
 
             serializer = InvitationDetailSerializer(invitation)
