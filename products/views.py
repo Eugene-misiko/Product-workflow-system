@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
 from django.shortcuts import get_object_or_404
 from .models import Category, Product, ProductField
 from .serializers import (
@@ -106,10 +106,11 @@ class ProductListView(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = Product.objects.filter(
-            company=self.request.user.company
+            company=self.request.user.company,
+            is_active=True
         ).select_related('category')
         
-        if self.request.user.role != User.ADMIN:
+        if not self.request.user.is_company_admin:
             queryset = queryset.filter(is_active=True)
         return queryset.order_by('-is_featured', '-created_at')
 
@@ -123,7 +124,7 @@ class ProductDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         queryset = Product.objects.filter(company=self.request.user.company)
 
-        if self.request.user.role != User.ADMIN:
+        if not self.request.user.is_company_admin:
             queryset = queryset.filter(is_active=True)
         
         return queryset
@@ -134,10 +135,9 @@ class CreateProductView(generics.CreateAPIView):
     Create product (admin only).
     
     """
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [IsAuthenticated]
     serializer_class = CreateProductSerializer
-    #http_method_names = ['post']
     def perform_create(self, serializer):
         if not self.request.user.is_company_admin:
             

@@ -25,14 +25,18 @@ class CategorySerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
-    def validate_category(self, value):
-        request = self.context.get('request')
-        company = request.user.company
 
-        if value.company != company:
-            raise serializers.ValidationError("Invalid category for this company.")
-        
-        return value   
+    def get_products_count(self, obj):
+        request = self.context.get('request')
+
+        if request and request.user.is_authenticated:
+            return obj.products.filter(
+                is_active=True,
+                company=request.user.company
+            ).count()
+
+        return obj.products.filter(is_active=True).count()        
+
 
     def get_products_count(self, obj):
         return obj.products.filter(is_active=True).count()
@@ -52,8 +56,14 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
     
     def get_products(self, obj):
         request = self.context.get('request')
-        company = request.user.company
-        products = obj.products.filter(is_active=True,company=company)
+
+        if request and request.user.is_authenticated:
+            products = obj.products.filter(
+                is_active=True,
+                company=request.user.company
+            )
+        else:
+            products = obj.products.filter(is_active=True)
 
         return ProductListSerializer(products, many=True).data
 
@@ -63,13 +73,15 @@ class ProductListSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     category_name = serializers.CharField(source='category.name', read_only=True)
     price_display = serializers.SerializerMethodField()
-    
+    fields = ProductFieldSerializer(many=True, read_only=True)
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.IntegerField(source='category.id', read_only=True) 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'slug', 'price', 'price_display',
-            'category_name', 'image', 'is_featured',
-            'production_time', 'is_active'
+            'category_name', 'image', 'is_featured','fields',
+            'production_time', 'is_active','category_id','category','description',
         ]
     
     def get_price_display(self, obj):
@@ -113,7 +125,7 @@ class CreateProductSerializer(serializers.ModelSerializer):
     """Create product serializer (admin only)."""
     
     fields = ProductFieldSerializer(many=True, required=False)
-    
+    image = serializers.ImageField(required=False, allow_null=True)
     class Meta:
         model = Product
         fields = [
@@ -157,3 +169,12 @@ class CreateProductSerializer(serializers.ModelSerializer):
                 ProductField.objects.create(product=instance,company=instance.company, **field_data)
         
         return instance
+
+    def validate_category(self, value):
+        request = self.context.get('request')
+        company = request.user.company
+
+        if value.company != company:
+            raise serializers.ValidationError("Category does not belong to your company.")
+
+        return value

@@ -52,9 +52,9 @@ class Category(models.Model):
         if not self.slug:
             self.slug = self.generate_unique_slug()
         super().save(*args, **kwargs)
-    def clean(self):
-        if self.category.company != self.company:
-            raise ValidationError("Category must belong to the same company as the product.")        
+    # def clean(self):
+    #     if self.category.company != self.company:
+    #         raise ValidationError("Category must belong to the same company as the product.")        
   
 class Product(models.Model):
     """Product/Service offered by a printing company."""
@@ -95,7 +95,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-            verbose_name_plural = 'Categories'
+            verbose_name_plural = 'Products'
             ordering = ['-created_at']
             unique_together = ['company', 'slug']
             indexes = [
@@ -111,7 +111,7 @@ class Product(models.Model):
         slug = base_slug
         counter = 1
         
-        while Product.objects.filter(company=self.company, slug=slug).exists():
+        while Category.objects.filter(company=self.company, slug=slug).exists():
             slug = f"{base_slug}-{counter}"
             counter += 1
         
