@@ -493,6 +493,7 @@ class InvitationListView(generics.ListCreateAPIView):
             company=company
         )
         # Send invitation email
+        invite_url=None
         if invitation.role == User.ADMIN:
             invite_url = f"{settings.FRONTEND_URL}/accept-invitation/{invitation.token}"
         

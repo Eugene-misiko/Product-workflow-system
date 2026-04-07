@@ -349,10 +349,29 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
         fields = ['email', 'role', 'message']
     
     def validate_role(self, value):
-        if value not in [User.DESIGNER, User.PRINTER, User.CLIENT]:
+        request = self.context.get("request")
+        user = request.user
+
+        # PLATFORM ADMIN
+        if user.role == "platform_admin":
+            allowed_roles = [User.ADMIN]  # company admin only
+
+        # COMPANY ADMIN
+        elif user.role == "admin":
+            allowed_roles = [
+                User.DESIGNER,
+                User.PRINTER,
+                User.CLIENT
+            ]
+
+        else:
+            raise serializers.ValidationError("Not allowed to send invitations.")
+
+        if value not in allowed_roles:
             raise serializers.ValidationError(
-                "Can only invite designer, printer, or client."
+                f"You can only invite: {', '.join(allowed_roles)}"
             )
+
         return value
     
     def validate_email(self, value):
@@ -379,16 +398,6 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
         validated_data['company'] = request.user.company
 
         return super().create(validated_data)
-
-        # if Invitation.objects.filter(
-        #     email=value,
-        #     company=request.user.company,
-        #     status=Invitation.STATUS_PENDING).exists():
-        #     raise serializers.ValidationError(
-        #         "A pending invitation already exists for this email."
-        #     )
-        
-        # return value 
 
 class InvitationDetailSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)

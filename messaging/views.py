@@ -21,14 +21,38 @@ class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
         ).order_by('-last_message_at')
 
 
-class MessageViewSet(viewsets.ReadOnlyModelViewSet):
+class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = MessageSerializer
-    
+
     def get_queryset(self):
         return Message.objects.filter(
             conversation__participants=self.request.user
         ).order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        conversation_id = request.data.get("conversation_id")
+        content = request.data.get("content")
+
+        conversation = get_object_or_404(
+            Conversation,
+            id=conversation_id,
+            participants=request.user
+        )
+
+        msg = Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content=content
+        )
+
+        # update conversation
+        conversation.last_message = content
+        conversation.last_message_at = timezone.now()
+        conversation.last_message_by = request.user
+        conversation.save()
+
+        return Response(MessageSerializer(msg).data, status=201)
 
 
 class ConversationMessagesView(generics.ListAPIView):
