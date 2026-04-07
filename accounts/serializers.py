@@ -75,19 +75,28 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 # =====================
 
 class LoginSerializer(serializers.Serializer):
-    """User login serializer."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
     def validate(self, attrs):
-        email = attrs.get("email").lower()
+        email = attrs.get("email")
         password = attrs.get("password")
+
+        if not email or not password:
+            raise serializers.ValidationError("Email and password are required")
+
+        email = email.lower().strip()
+
         user = authenticate(username=email, password=password)
+
         if not user:
             raise serializers.ValidationError("Invalid credentials")
+
         if not user.is_active:
             raise serializers.ValidationError("User account is inactive")
+
         attrs["user"] = user
-        return attrs            
+        return attrs          
 
 class ChangePasswordSerializer(serializers.Serializer):
     """Change password serializer."""
