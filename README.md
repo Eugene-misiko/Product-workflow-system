@@ -198,14 +198,14 @@ npm run dev
 
 ## Project Structure
 
-``bash
+
 printflow/
 │
 ├── backend/
 ├── frontend/
 ├── apps/
 └── README.md
-
+---
 **Contributing**
 We welcome contributions to improve PrintFlow 
 
