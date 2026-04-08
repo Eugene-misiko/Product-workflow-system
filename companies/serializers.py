@@ -72,13 +72,15 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
         ]
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating company info."""
-    
+    """
+    Serializer for updating company info.
+    """
+
     class Meta:
         model = Company
-        fields = [
-            'name', 'logo', 'phone', 'address', 'city', 'country', 'website',
-            'currency', 'currency_symbol', 'deposit_percentage','email'
+        fields = ['name','logo','phone','address','city','country','website','currency','currency_symbol','deposit_percentage','email',
+            'subdomain',
+            'custom_domain',
         ]
 
 
