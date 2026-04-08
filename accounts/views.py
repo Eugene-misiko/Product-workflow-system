@@ -515,8 +515,6 @@ class InvitationListView(generics.ListCreateAPIView):
             invited_by=user,
             company=company
         )
-
-        # ✅ Build domain-based URL
         invite_url = build_invitation_url(invitation)
 
         try:
