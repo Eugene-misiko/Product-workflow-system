@@ -141,14 +141,14 @@ npm run dev
 
 Create a `.env` file in both backend and frontend directories.
 
-**Backend Example:**
-``env
+### Backend Example:
+
 SECRET_KEY=your_secret_key
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 
 **Frontend Example:**
-``env
+env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
   
 **Backend Setup**
