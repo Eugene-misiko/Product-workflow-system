@@ -118,6 +118,37 @@ Make sure you have installed:
 git clone https://github.com/Euene-misiko/Product-workflow-system.git
 cd printflow
 
+## Backend Setup (Django)
+
+```bash
+cd backend
+
+python -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+
+pip install -r requirements.txt
+
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+
+## Frontend Setup (React)
+
+```bash
+cd frontend
+
+npm install
+npm run dev
+
+## Environment Variables
+
+Create a `.env` file in both backend and frontend directories.
+
+**Backend Example:**
+```env
+SECRET_KEY=your_secret_key
+DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
 
   
 
