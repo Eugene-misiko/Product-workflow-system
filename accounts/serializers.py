@@ -79,24 +79,25 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        email = attrs.get("email")
+        
+        email = attrs.get("email").lower().strip()
         password = attrs.get("password")
 
-        if not email or not password:
-            raise serializers.ValidationError("Email and password are required")
-
-        email = email.lower().strip()
-
-        user = authenticate(username=email, password=password)
-
-        if not user:
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             raise serializers.ValidationError("Invalid credentials")
 
+        #  Check password
+        if not user.check_password(password):
+            raise serializers.ValidationError({"detail": "Invalid email or password"})
+
+        # Check active
         if not user.is_active:
-            raise serializers.ValidationError("User account is inactive")
+            raise serializers.ValidationError({"detail": "Account is inactive. Contact admin."})
 
         attrs["user"] = user
-        return attrs          
+        return attrs    
 
 class ChangePasswordSerializer(serializers.Serializer):
     """Change password serializer."""
@@ -135,32 +136,40 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    """Password reset confirmation serializer."""
-    
     token = serializers.CharField()
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
     new_password_confirm = serializers.CharField(write_only=True)
-    
+
     def validate_token(self, value):
         try:
-            reset_token = PasswordResetToken.objects.get(token=value)
-            if not reset_token.is_valid:
-                raise serializers.ValidationError("This reset token has expired or been used.")
-            return reset_token
+            return PasswordResetToken.objects.get(
+                token=value,
+                used=False,
+                expires_at__gt=timezone.now()
+            )
         except PasswordResetToken.DoesNotExist:
-            raise serializers.ValidationError("Invalid reset token.")
-    
-    def validate(self, attrs):
-        if attrs['new_password'] != attrs['new_password_confirm']:
-            raise serializers.ValidationError({"new_password": "Passwords do not match."})
-        return attrs
-    
+            raise serializers.ValidationError("Invalid or expired token.")
+
+        def validate_token(self, value):
+            try:
+                token = PasswordResetToken.objects.get(
+                    token=value,
+                    used=False,
+                    expires_at__gt=timezone.now()
+                )
+                return token
+            except PasswordResetToken.DoesNotExist:
+                raise serializers.ValidationError({"token": "This reset link is invalid or has expired. Please request a new one."})
+
     def save(self):
-        reset_token_obj = self.validated_data['token']
+        reset_token_obj = self.validated_data['token']  
         user = reset_token_obj.user
 
         user.set_password(self.validated_data['new_password'])
         user.save()
+
+        reset_token_obj.mark_used()
+        return user
 
         reset_token_obj.mark_used()
         return user

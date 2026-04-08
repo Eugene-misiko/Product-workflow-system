@@ -217,12 +217,17 @@ class CompanyInvitationCreateView(APIView):
 
         invite_url = f"{settings.FRONTEND_URL}/register-company?token={invitation.token}"
 
-        send_mail(
-            subject='Company Invitation',
-            message=f"Register your company here: {invite_url}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-        )
+        try:
+            send_mail(
+                subject='Company Invitation',
+                message=f"Register your company here: {invite_url}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            invitation.delete()
+            return Response({'error': str(e)}, status=500)
 
         return Response({'message': 'Invitation sent'})
 class CompanyInvitationDetailView(APIView):

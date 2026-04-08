@@ -21,6 +21,7 @@ from django.contrib.auth import authenticate
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from .models import User, Invitation, PasswordResetToken, UserProfile
 from .serializers import (
@@ -116,42 +117,43 @@ class ChangePasswordView(APIView):
 
 
 class PasswordResetRequestView(APIView):
-    """
-    Request password reset email.
-    """
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         email = serializer.validated_data['email']
-        user = User.objects.get(email=email)
-        
-        # Create reset token
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({
+                "message": "If this email exists, a reset link has been sent."
+            })
+        PasswordResetToken.objects.filter(user=user, used=False).delete()    
+        #create new token
         reset_token = PasswordResetToken.objects.create(user=user)
-        
-        # Send email
+
         reset_url = f"{settings.FRONTEND_URL}/reset-password/{reset_token.token}"
         company_name = user.company.name if user.company else "PrintFlow"
-        
-        send_mail(
-            subject=f'Password Reset - {company_name}',
-            message=f'''
-            Hello {user.get_full_name()},
-            You requested to reset your password.
-            Click the following link to reset your password:
-           {reset_url}
-           This link will expire in 24 hours.
-           If you did not request this, please ignore this email.
-            Best regards,
-            {company_name}
-            ''',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=True,
-        )
-        
+
+        try:
+            send_mail(
+                subject=f'Password Reset - {company_name}',
+                message=f'''Hello {user.get_full_name()}, You requested to reset your password. Click the following link:{reset_url} This link expires in 24 hours.
+                If you did not request this, ignore this email.
+                Best regards, {company_name}
+                ''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response({
+                "error": f"Email failed: {str(e)}"
+            }, status=500)
+
         return Response({
             'message': 'Password reset email sent. Please check your inbox.'
         })
@@ -167,7 +169,11 @@ class PasswordResetConfirmView(APIView):
     
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+
+        if not serializer.is_valid():
+            print("ERRORS:", serializer.errors)  
+            return Response(serializer.errors, status=400)
+
         serializer.save()
         return Response({'message': 'Password reset successful. You can now login.'})
 
@@ -477,9 +483,12 @@ class InvitationListView(generics.ListCreateAPIView):
         if user.role == "platform_admin":
             if role != User.ADMIN:
                 raise PermissionDenied("Platform admin can only invite company admins.")
+
+            # company should come from request OR be created beforehand
             company = serializer.validated_data.get("company")
+
             if not company:
-                raise PermissionDenied("Company is required for admin invitation.")
+                raise PermissionDenied("Company must be selected.")
         # COMPANY ADMIN 
         elif user.role == "admin":
             if role == User.ADMIN:
@@ -492,24 +501,27 @@ class InvitationListView(generics.ListCreateAPIView):
             invited_by=user,
             company=company
         )
-        # Send invitation email
-        invite_url=None
-        if invitation.role == User.ADMIN:
-            invite_url = f"{settings.FRONTEND_URL}/accept-invitation/{invitation.token}"
-        
-        send_mail(
-            subject=f'Invitation to join {invitation.company.name}',
-            message=f'''
+
+        try:
+            send_mail(
+                subject=f'Invitation to join {invitation.company.name}',
+                message=f'''
         Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}.
-       {invitation.message}
-       Click the following link to register:
-       {invite_url} This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
-       Best regards, {invitation.company.name}
-            ''',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[invitation.email],
-            fail_silently=True,
-        )
+        {invitation.message}
+
+        Click the following link to register:
+        {settings.FRONTEND_URL}/accept-invitation/{invitation.token}
+
+        This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+        Best regards, {invitation.company.name}
+                ''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[invitation.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            invitation.delete() 
+            raise ValidationError(f"Email failed: {str(e)}")
 
 class CancelInvitationView(APIView):
     """
@@ -517,11 +529,10 @@ class CancelInvitationView(APIView):
     """
     permission_classes = [IsAuthenticated]
     def post(self, request, token):
-        invitation = get_object_or_404(
-            Invitation,
-            token=token,
-            company=request.user.company
-        )
+        invitation = get_object_or_404(Invitation, token=token)
+
+        if request.user.role == "admin" and invitation.company != request.user.company:
+            return Response({"error": "Not allowed"}, status=403)
 
         user = request.user
 
@@ -552,11 +563,10 @@ class ResendInvitationView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, token):
-        invitation = get_object_or_404(
-            Invitation,
-            token=token,
-            company=request.user.company
-        )
+        invitation = get_object_or_404(Invitation, token=token)
+
+        if request.user.role == "admin" and invitation.company != request.user.company:
+            return Response({"error": "Not allowed"}, status=403)
 
         user = request.user
 
@@ -587,7 +597,7 @@ class ResendInvitationView(APIView):
             """,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invitation.email],
-            fail_silently=True,
+            fail_silently=False,
               )
 
         return Response({'message': 'Invitation resent successfully.'})
