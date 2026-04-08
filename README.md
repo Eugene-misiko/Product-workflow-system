@@ -184,22 +184,27 @@ npm install
 # Start development server
 npm run dev
 
-***How the Invitation System Works**
-#Platform Admin invites Company Admin
-#Company Admin invites:
-Clients
-Designers
-Printers
-Invitations are sent via email with secure onboarding links
-Users complete account setup and are assigned roles automatically
-Project Structure
+## How the Invitation System Works
+
+- Platform Admin invites Company Admin  
+- Company Admin invites:
+  - Clients  
+  - Designers  
+  - Printers  
+- Invitations are sent via email with secure onboarding links  
+- Users complete account setup and are assigned roles automatically  
+
+---
+
+## Project Structure
+
+``bash
 printflow/
 │
 ├── backend/
 ├── frontend/
 ├── apps/
 └── README.md
----
 
 **Contributing**
 We welcome contributions to improve PrintFlow 
@@ -215,22 +220,34 @@ git commit -m "Add: your feature description"
 Push to your branch:
 git push origin feature/your-future-name
 
-Open a Pull Request
-Contribution Guidelines
-Follow clean code practices
-Write meaningful commit messages
-Ensure code is tested before submitting
-Keep UI/UX consistent
-Security Notes
-Ensure proper tenant isolation
-Do not expose admin routes to unauthorized users
-Always validate user roles on backend
-Use HTTPS in production
-Contact & Support
+- Open a Pull Request  
+
+---
+
+## Contribution Guidelines
+
+- Follow clean code practices  
+- Write meaningful commit messages  
+- Ensure code is tested before submitting  
+- Keep UI/UX consistent  
+
+---
+
+## Security Notes
+
+- Ensure proper tenant isolation  
+- Do not expose admin routes to unauthorized users  
+- Always validate user roles on backend  
+- Use HTTPS in production  
+
+---
+
+## Contact & Support
+
 For support, questions, or collaboration:
 
- Phone: 0742193774
- Email: eugenemisiko438@gmail.com
+-  Phone: 0742193774  
+-  Email: eugenemisiko438@gmail.com  
 
 ***License**
 -This project is licensed under the MIT License.
