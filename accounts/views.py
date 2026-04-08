@@ -19,6 +19,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.utils import timezone
+from datetime import timedelta
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -30,7 +31,7 @@ from .serializers import (
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     RegisterSerializer, CompanyRegistrationSerializer,
     InvitationSerializer, CreateInvitationSerializer,InvitationDetailSerializer,
-    RegisterUserSerializer
+    RegisterUserSerializer,RegisterWithInvitationSerializer
 )
 
 
@@ -404,7 +405,7 @@ class DeactivateUserView(APIView):
             }, status=status.HTTP_403_FORBIDDEN)
         
         user.is_active = False
-        user.save()
+        user.delete()
         
         return Response({'message': f'User {user.email} has been deactivated.'})
 
@@ -451,7 +452,9 @@ class ChangeUserRoleView(APIView):
 # =====================
 # INVITATION VIEWS
 # =====================
-
+class RegisterWithInvitationView(generics.CreateAPIView):
+    serializer_class = RegisterWithInvitationSerializer
+    permission_classes = [AllowAny]
 class InvitationListView(generics.ListCreateAPIView):
     """
     List and create invitations (admin only).
@@ -552,7 +555,7 @@ class CancelInvitationView(APIView):
             }, status=400)
 
         invitation.status = Invitation.STATUS_CANCELLED
-        invitation.save()
+        invitation.delete()
 
         return Response({'message': 'Invitation cancelled.'})
 
@@ -584,8 +587,9 @@ class ResendInvitationView(APIView):
                 'error': 'Cannot resend an accepted invitation.'
             }, status=400)
 
-        invitation.expires_at = timezone.now() + timezone.timedelta(days=7)
+        invitation.expires_at = timezone.now() + timedelta(days=7)
         invitation.status = Invitation.STATUS_PENDING
+        invitation.accepted_at = None
         invitation.save()
 
         invite_url = f"{settings.FRONTEND_URL}/accept-invitation/{invitation.token}"
@@ -604,17 +608,18 @@ class ResendInvitationView(APIView):
 
 class InvitationDetailView(APIView):
     """
-        Get invitation details by token (for registration page).
+     Get invitation details by token (for registration page).
     """
     permission_classes = [AllowAny]
+
     def get(self, request, token):
-        try:
-            invitation = get_object_or_404(Invitation,token=token,status=Invitation.STATUS_PENDING)
-            if invitation.is_expired:
-                return Response({"error": "Invalid or expired invitation"}, status=400)
+        invitation = get_object_or_404(Invitation, token=token)
 
-            serializer = InvitationDetailSerializer(invitation)
-            return Response(serializer.data)
+        # Force update status correctly
+        if invitation.is_expired and invitation.status == Invitation.STATUS_PENDING:
+            invitation.status = Invitation.STATUS_EXPIRED
+            invitation.save(update_fields=["status"])
 
-        except Invitation.DoesNotExist:
-            return Response({"error": "Invalid token"}, status=404)
+        serializer = InvitationDetailSerializer(invitation)
+        return Response(serializer.data)
+

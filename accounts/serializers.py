@@ -342,7 +342,7 @@ class InvitationSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source='get_role_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     is_valid = serializers.BooleanField(read_only=True)
-    
+    is_expired = serializers.BooleanField(read_only=True)
     class Meta:
         model = Invitation
         fields = [
@@ -420,10 +420,20 @@ class CreateInvitationSerializer(serializers.ModelSerializer):
 class InvitationDetailSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
+    invited_by_name = serializers.CharField(source='invited_by.get_full_name', read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Invitation
-        fields = ['email', 'company_name', 'role', 'role_display', 'is_valid']
+        fields = [
+            'email',
+            'company_name',
+            'role',
+            'role_display',
+            'invited_by_name',
+            'is_valid',
+            'is_expired'
+        ]
 
 
 User = get_user_model()
@@ -474,4 +484,45 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         user.full_clean()
         user.save()
 
-        return user        
+        return user  
+class RegisterWithInvitationSerializer(serializers.Serializer):
+    invitation_token = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        try:
+            invitation = Invitation.objects.get(token=data['invitation_token'])
+        except Invitation.DoesNotExist:
+            raise serializers.ValidationError("Invalid invitation")
+
+        if not invitation.is_valid:
+            raise serializers.ValidationError("Invitation expired or invalid")
+
+        if data['email'] != invitation.email:
+            raise serializers.ValidationError("Email does not match invitation")
+
+        data['invitation'] = invitation
+        return data
+
+    def create(self, validated_data):
+        invitation = validated_data.pop('invitation')
+
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            phone=validated_data.get('phone', ''),
+            company=invitation.company,   
+            role=invitation.role,         
+            is_active=True
+        )
+
+        # Accept invitation
+        invitation.accept(user)
+
+        return user              

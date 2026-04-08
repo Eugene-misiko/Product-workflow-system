@@ -18,6 +18,7 @@ from cloudinary.models import CloudinaryField
 from django.utils import timezone
 import secrets
 import string
+from datetime import timedelta
 from django.core.exceptions import ValidationError
 from .managers import UserManager
 class User(AbstractUser):
@@ -169,12 +170,14 @@ class Invitation(models.Model):
             alphabet = string.ascii_letters + string.digits
             self.token = ''.join(secrets.choice(alphabet) for _ in range(64))
         if not self.expires_at:
-            self.expires_at = timezone.now() + timezone.timedelta(days=7)
+            self.expires_at = timezone.now() + timedelta(days=7)
         super().save(*args, **kwargs)
     
     @property
     def is_expired(self):
-        return timezone.now() > self.expires_at
+        if not self.expires_at:
+            return True
+        return timezone.now() >= self.expires_at    
     
     @property
     def is_valid(self):
@@ -185,7 +188,7 @@ class Invitation(models.Model):
             raise ValidationError("Invitation is not valid")
         user.company = self.company
         user.role = self.role
-        user.is_active = False
+        user.is_active = True
         user.save()
 
         self.status = self.STATUS_ACCEPTED
