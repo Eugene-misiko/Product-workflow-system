@@ -569,24 +569,31 @@ class CancelInvitationView(APIView):
 
 class ResendInvitationView(APIView):
     """
-    Resend an invitation (admin only).
+    Resend an invitation.
+
+    Rules:
+    - Platform admin can resend any invitation
+    - Company admin can only resend invitations within their company
+    - Cannot resend accepted invitations
+
+    Behavior:
+    - Resets expiration (7 days)
+    - Keeps same token
+    - Sends updated invitation link with correct domain/subdomain
     """
+
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request, token):
         invitation = get_object_or_404(Invitation, token=token)
-
-        if request.user.role == "admin" and invitation.company != request.user.company:
-            return Response({"error": "Not allowed"}, status=403)
-
         user = request.user
 
+        # Permission checks
         if user.role == "platform_admin":
             pass
         elif user.role == "admin":
             if invitation.company != user.company:
                 return Response({"error": "Not allowed"}, status=403)
-
         else:
             return Response({"error": "Not allowed"}, status=403)
 
@@ -595,22 +602,25 @@ class ResendInvitationView(APIView):
                 'error': 'Cannot resend an accepted invitation.'
             }, status=400)
 
+        # Reset invitation
         invitation.expires_at = timezone.now() + timedelta(days=7)
         invitation.status = Invitation.STATUS_PENDING
         invitation.accepted_at = None
         invitation.save()
 
-        invite_url = f"{settings.FRONTEND_URL}/accept-invitation/{invitation.token}"
+        # Build domain-based URL
+        invite_url = build_invitation_url(invitation)
 
         send_mail(
             subject=f'Invitation Reminder - {invitation.company.name}',
-            message=f"""Hello, This is a reminder about your invitation to join {invitation.company.name}. Click the link below to register: {invite_url}
+            message=f""" Hello, This is a reminder to join {invitation.company.name}. Click the link below to accept the invitation:{invite_url}
             This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+            Best regards, {invitation.company.name}
             """,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invitation.email],
             fail_silently=False,
-              )
+        )
 
         return Response({'message': 'Invitation resent successfully.'})
 
