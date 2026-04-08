@@ -249,5 +249,6 @@ For support, questions, or collaboration:
 -  Phone: 0742193774  
 -  Email: eugenemisiko438@gmail.com  
 
-***License**
--This project is licensed under the MIT License.
+## License
+
+- This project is licensed under the MIT License.
