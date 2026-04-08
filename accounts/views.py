@@ -13,7 +13,7 @@ NO MANAGEMENT COMMANDS!
 """
 from rest_framework import status, generics
 from rest_framework.views import APIView
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied,ValidationError
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -21,6 +21,7 @@ from django.contrib.auth import authenticate
 from django.utils import timezone
 from datetime import timedelta
 from django.core.mail import send_mail
+from companies.utils import build_invitation_url
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -457,46 +458,56 @@ class RegisterWithInvitationView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 class InvitationListView(generics.ListCreateAPIView):
     """
-    List and create invitations (admin only).
+    List and create invitations.
+    Multi-tenant behavior:
+    - Platform admin can view all invitations
+    - Company admin can only view invitations within their company
+    Invitation creation:
+    - Platform admin can invite ONLY company admins
+    - Company admin can invite designers, printers, and clients
+    - Company is automatically assigned based on the inviter
+    Email:
+    - Sends an invitation link using company subdomain or custom domain
     """
+
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         user = self.request.user
 
-        # PLATFORM ADMIN- see ALL invitations
+        # Platform admin sees all
         if user.role == "platform_admin":
             return Invitation.objects.all().order_by('-created_at')
 
-        # COMPANY ADMIN- only their company
+        # Company admin sees only their company
         if user.company:
             return Invitation.objects.filter(company=user.company).order_by('-created_at')
 
         return Invitation.objects.none()
-    
+
     def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return CreateInvitationSerializer
-        return InvitationSerializer
-    
+        return CreateInvitationSerializer if self.request.method == 'POST' else InvitationSerializer
+
     def perform_create(self, serializer):
         user = self.request.user
         role = serializer.validated_data.get("role")
-        # PLATFORM ADMIN 
+
+        # PLATFORM ADMIN
         if user.role == "platform_admin":
             if role != User.ADMIN:
                 raise PermissionDenied("Platform admin can only invite company admins.")
 
-            # company should come from request OR be created beforehand
             company = serializer.validated_data.get("company")
-
             if not company:
                 raise PermissionDenied("Company must be selected.")
-        # COMPANY ADMIN 
+
+        # COMPANY ADMIN
         elif user.role == "admin":
             if role == User.ADMIN:
                 raise PermissionDenied("Company admin cannot invite another admin.")
+
             company = user.company
+
         else:
             raise PermissionDenied("Not allowed to send invitations.")
 
@@ -505,25 +516,24 @@ class InvitationListView(generics.ListCreateAPIView):
             company=company
         )
 
+        # ✅ Build domain-based URL
+        invite_url = build_invitation_url(invitation)
+
         try:
             send_mail(
                 subject=f'Invitation to join {invitation.company.name}',
-                message=f'''
-        Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}.
-        {invitation.message}
-
-        Click the following link to register:
-        {settings.FRONTEND_URL}/accept-invitation/{invitation.token}
-
-        This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
-        Best regards, {invitation.company.name}
-                ''',
+                message=f"""Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message}Click the link below to accept the invitation:
+                {invite_url}
+                 This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
+                Best regards,  
+                 {invitation.company.name}
+                """,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[invitation.email],
                 fail_silently=False,
             )
         except Exception as e:
-            invitation.delete() 
+            invitation.delete()
             raise ValidationError(f"Email failed: {str(e)}")
 
 class CancelInvitationView(APIView):
