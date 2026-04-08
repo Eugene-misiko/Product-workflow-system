@@ -198,20 +198,23 @@ npm run dev
 
 ## Project Structure
 
-
-printflow/
+CAPSTONE
 │
 ├── backend/
 ├── frontend/
 ├── apps/
 └── README.md
 ---
-**Contributing**
+## Contributing
+
 We welcome contributions to improve PrintFlow 
 
-**Steps to Contribute**
-Fork the repository
-Create a new branch
+### Steps to Contribute
+
+- Fork the repository  
+
+- Create a new branch:
+
 git checkout -b feature/your-feature-name
 
 Make your changes
