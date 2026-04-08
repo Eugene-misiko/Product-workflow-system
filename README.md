@@ -114,7 +114,7 @@ Make sure you have installed:
 
 ## Clone the Repository
 
-git clone https://github.com/[Euene-misiko/Product-workflow-system.git](https://github.com/Eugene-misiko/Product-workflow-system.git)
+git clone https://github.com/Eugene-misiko/Product-workflow-system.git
 cd printflow
 
 ## Backend Setup (Django)
