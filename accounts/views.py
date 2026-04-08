@@ -456,6 +456,17 @@ class ChangeUserRoleView(APIView):
 class RegisterWithInvitationView(generics.CreateAPIView):
     serializer_class = RegisterWithInvitationSerializer
     permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        return Response({
+            "message": "User created successfully",
+            "user_id": user.id
+        }, status=201)
 class InvitationListView(generics.ListCreateAPIView):
     """
     List and create invitations.

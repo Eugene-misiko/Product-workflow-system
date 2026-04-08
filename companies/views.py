@@ -211,6 +211,7 @@ class CompanyInvitationCreateView(APIView):
         invitation = CompanyInvitation.objects.create(
             email=email,
             company_name=company_name,
+            message=request.data.get("message", ""),
             invited_by=request.user,
             expires_at=timezone.now() + timezone.timedelta(days=7)
         )
@@ -247,4 +248,18 @@ class CompanyInvitationDetailView(APIView):
             "email": invitation.email,
             "company_name": invitation.company_name,
             "is_valid": True
-        })        
+        }) 
+
+class CompanyInvitationCancelView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        if not request.user.is_platform_admin:
+            return Response({'error': 'Only platform admin allowed'}, status=403)
+
+        invitation = get_object_or_404(CompanyInvitation, id=pk)
+
+        invitation.status = CompanyInvitation.STATUS_CANCELLED
+        invitation.save()
+
+        return Response({'message': 'Invitation cancelled'})        

@@ -34,7 +34,11 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    ".localhost",
+]
 
 
 # Application definition
@@ -87,6 +91,9 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://.*\.localhost:5173$",
+]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in config("CSRF_TRUSTED_ORIGINS", default="").split(",")

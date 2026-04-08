@@ -166,7 +166,7 @@ class CompanyInvitation(models.Model):
     token = models.CharField(max_length=64, unique=True)
     email = models.EmailField()
     company_name = models.CharField(max_length=200)
-    
+    message = models.TextField(blank=True, null=True)
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

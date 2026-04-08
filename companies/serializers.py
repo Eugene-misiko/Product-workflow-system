@@ -95,7 +95,7 @@ class CompanyInvitationSerializer(serializers.ModelSerializer):
             'id', 'token', 'email', 'company_name',
             'invited_by', 'invited_by_name',
             'status', 'company',
-            'created_at', 'expires_at', 'accepted_at'
+            'created_at', 'expires_at', 'accepted_at','message'
         ]
         read_only_fields = ['id', 'token', 'invited_by', 'status', 'company', 'created_at', 'expires_at', 'accepted_at']
 
