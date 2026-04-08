@@ -147,6 +147,90 @@ SECRET_KEY=your_secret_key
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 
+**Frontend Example:**
+``env
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
   
+**Backend Setup**
+cd backend
 
+# Create virtual environment
+python -m venv venv
 
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On Mac/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations
+python manage.py migrate
+
+# Create superuser
+python manage.py createsuperuser
+
+# Start server
+python manage.py runserver
+
+**Frontend Setup**
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+***How the Invitation System Works**
+#Platform Admin invites Company Admin
+#Company Admin invites:
+Clients
+Designers
+Printers
+Invitations are sent via email with secure onboarding links
+Users complete account setup and are assigned roles automatically
+Project Structure
+printflow/
+│
+├── backend/
+├── frontend/
+├── apps/
+└── README.md
+---
+
+**Contributing**
+We welcome contributions to improve PrintFlow 
+
+**Steps to Contribute**
+Fork the repository
+Create a new branch
+git checkout -b feature/your-feature-name
+
+Make your changes
+Commit your changes:
+git commit -m "Add: your feature description"
+Push to your branch:
+git push origin feature/your-future-name
+
+Open a Pull Request
+Contribution Guidelines
+Follow clean code practices
+Write meaningful commit messages
+Ensure code is tested before submitting
+Keep UI/UX consistent
+Security Notes
+Ensure proper tenant isolation
+Do not expose admin routes to unauthorized users
+Always validate user roles on backend
+Use HTTPS in production
+Contact & Support
+For support, questions, or collaboration:
+
+ Phone: 0742193774
+ Email: eugenemisiko438@gmail.com
+
+***License**
+-This project is licensed under the MIT License.
