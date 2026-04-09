@@ -1,19 +1,17 @@
 from django.conf import settings
 
+
 def build_invitation_url(invitation):
     """
     Build invitation URL for COMPANY USERS ONLY
+    (designer, printer, client)
     """
 
     company = invitation.company
 
-    # Subdomain (PRIMARY)
-    if company.subdomain:
-        return f"http://{company.subdomain}.localhost:5173/accept-invitation/{invitation.token}"
+    # LOCAL DEVELOPMENT
+    if settings.DEBUG:
+        return f"http://{company.slug}.localhost:5173/accept-invitation/{invitation.token}"
 
-    # Custom domain
-    if company.custom_domain:
-        return f"https://{company.custom_domain}/accept-invitation/{invitation.token}"
-
-    # Fallback
-    return f"{settings.FRONTEND_URL}/accept-invitation/{invitation.token}"
+    #PRODUCTION (SUBDOMAIN)
+    return f"https://{company.slug}.printflow.com/accept-invitation/{invitation.token}"

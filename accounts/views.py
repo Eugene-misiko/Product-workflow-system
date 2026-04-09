@@ -532,21 +532,21 @@ class InvitationListView(generics.ListCreateAPIView):
             invited_by=user,
             company=user.company
         )
+
         invite_url = build_invitation_url(invitation)
 
         try:
             send_mail(
                 subject=f'Invitation to join {invitation.company.name}',
-                message=f"""Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message} Click the link below to accept the invitation:
-                {invite_url}
-                 This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
-                Best regards,  
-                 {invitation.company.name}
+                message=f""" Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message} Click the link below: {invite_url}
+                This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}
+                Best regards,
+                {invitation.company.name}
                 """,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[invitation.email],
                 fail_silently=False,
-            )
+                )
         except Exception as e:
             invitation.delete()
             raise ValidationError(f"Email failed: {str(e)}")

@@ -214,6 +214,7 @@ class CompanyInvitationCreateView(APIView):
         invitation = CompanyInvitation.objects.create(
             email=email,
             company_name=company_name,
+            company_slug=slug,
             message=request.data.get("message", ""),
             invited_by=request.user,
             expires_at=timezone.now() + timezone.timedelta(days=7)
@@ -234,6 +235,7 @@ class CompanyInvitationCreateView(APIView):
             return Response({'error': str(e)}, status=500)
 
         return Response({'message': 'Invitation sent'})
+        
 class CompanyInvitationDetailView(APIView):
     permission_classes = [AllowAny]
 
