@@ -20,4 +20,5 @@ urlpatterns = [
     #invite company 
     path('company/invitations/', views.CompanyInvitationCreateView.as_view()),
     path('company-invitations/<str:token>/', views.CompanyInvitationDetailView.as_view()),
+    path('company-cancel/invitations/<str:token>/', views.CompanyInvitationCancelView.as_view()),
 ]

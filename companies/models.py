@@ -7,7 +7,7 @@ from django.conf import settings
 import string
 import random
 from cloudinary.models import CloudinaryField
-
+import uuid
 def generate_company_code():
     """Generate unique company code."""
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -162,8 +162,6 @@ class CompanyInvitation(models.Model):
         (STATUS_EXPIRED, 'Expired'),
         (STATUS_CANCELLED, 'Cancelled'),
     ]
-    
-    token = models.CharField(max_length=64, unique=True)
     email = models.EmailField()
     company_name = models.CharField(max_length=200)
     message = models.TextField(blank=True, null=True)
@@ -174,14 +172,21 @@ class CompanyInvitation(models.Model):
     )
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
-    
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='invitation'
-    )
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = uuid.uuid4().hex
+        super().save(*args, **kwargs)   
+    def generate_token():
+        return uuid.uuid4().hex
+
+    token = models.CharField(max_length=64, unique=True, default=generate_token, editable=False)         
+    # company = models.ForeignKey(
+    #     Company,
+    #     on_delete=models.SET_NULL,
+    #     null=True,
+    #     blank=True,
+    #     related_name='invitation'
+    # )
     
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()

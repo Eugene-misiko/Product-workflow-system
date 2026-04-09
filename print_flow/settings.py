@@ -34,11 +34,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    ".localhost",
-]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -160,10 +156,8 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
-    print(f"--- DATABASE CONNECTION: REMOTE (RENDER) ---")
-    print(f"--- HOST: {DATABASES['default'].get('HOST')} ---")
+
 else:
-    print("--- DATABASE CONNECTION: LOCAL CONFIG ---")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',

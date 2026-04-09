@@ -251,14 +251,35 @@ class CompanyRegistrationView(generics.CreateAPIView):
     serializer_class = CompanyRegistrationSerializer
 
     def create(self, request, *args, **kwargs):
-        from companies.models import Company, CompanySettings
+        from companies.models import Company, CompanySettings, CompanyInvitation
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        if User.objects.filter(role=User.ADMIN, company__slug=data['company_slug']).exists():
-                return Response({'error': 'This company already has an admin.'}, status=status.HTTP_400_BAD_REQUEST)        
-        # Create company
+
+        # GET TOKEN FIRST
+        token = request.data.get("token")
+        if not token:
+            return Response({'error': 'Invitation token is required'}, status=400)
+
+        invitation = get_object_or_404(
+            CompanyInvitation,
+            token=token,
+            status=CompanyInvitation.STATUS_PENDING
+        )
+
+        #  CHECK EXPIRY
+        if invitation.expires_at < timezone.now():
+            return Response({'error': 'Invitation expired'}, status=400)
+
+        # PREVENT DUPLICATE ADMIN
+        if User.objects.filter(
+            role=User.ADMIN,
+            company__slug=data['company_slug']
+        ).exists():
+            return Response({'error': 'This company already has an admin.'}, status=400)
+
+        # CREATE COMPANY
         company = Company.objects.create(
             name=data['company_name'],
             slug=data['company_slug'],
@@ -268,11 +289,10 @@ class CompanyRegistrationView(generics.CreateAPIView):
             city=data.get('company_city', ''),
             country=data.get('company_country', 'Kenya'),
         )
-        
-        # Create company settings
+
         CompanySettings.objects.create(company=company)
-        
-        # Create admin user
+
+        #  CREATE ADMIN USER
         admin = User.objects.create_user(
             email=data['admin_email'],
             password=data['admin_password'],
@@ -283,27 +303,21 @@ class CompanyRegistrationView(generics.CreateAPIView):
             company=company,
             email_verified=True,
         )
-        
-        # Set company admin
+
+        #  LINK ADMIN TO COMPANY
         company.admin = admin
         company.save()
-        
-        # Create profile
+
         UserProfile.objects.get_or_create(user=admin)
-        #acces token
-        token = request.data.get("token")
 
-        invitation = get_object_or_404(
-            CompanyInvitation,
-            token=token,
-            status=CompanyInvitation.STATUS_PENDING
-        )
+        #  MARK INVITATION AS ACCEPTED (FIXED POSITION)
+        invitation.status = CompanyInvitation.STATUS_ACCEPTED
+        invitation.accepted_at = timezone.now()
+        invitation.save()
 
-        if invitation.expires_at < timezone.now():
-            return Response({'error': 'Invitation expired'}, status=400)        
-        # Generate tokens
+        # GENERATE TOKENS
         refresh = RefreshToken.for_user(admin)
-        
+
         return Response({
             'user': UserSerializer(admin).data,
             'company': {
@@ -315,7 +329,7 @@ class CompanyRegistrationView(generics.CreateAPIView):
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             },
-            'message': f'Company "{company.name}" registered successfully! You are now the admin.'
+            'message': f'Company "{company.name}" registered successfully!'
         }, status=status.HTTP_201_CREATED)
         invitation.status = CompanyInvitation.STATUS_ACCEPTED
         invitation.accepted_at = timezone.now()
@@ -486,10 +500,6 @@ class InvitationListView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        # Platform admin sees all
-        if user.role == "platform_admin":
-            return Invitation.objects.all().order_by('-created_at')
-
         # Company admin sees only their company
         if user.company:
             return Invitation.objects.filter(company=user.company).order_by('-created_at')
@@ -499,39 +509,35 @@ class InvitationListView(generics.ListCreateAPIView):
     def get_serializer_class(self):
         return CreateInvitationSerializer if self.request.method == 'POST' else InvitationSerializer
 
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role == "admin" and user.company:
+            return Invitation.objects.filter(company=user.company).order_by('-created_at')
+
+        return Invitation.objects.none()
+
     def perform_create(self, serializer):
         user = self.request.user
+
+        if user.role != "admin":
+            raise PermissionDenied("Only company admins can send invitations.")
+
         role = serializer.validated_data.get("role")
 
-        # PLATFORM ADMIN
-        if user.role == "platform_admin":
-            if role != User.ADMIN:
-                raise PermissionDenied("Platform admin can only invite company admins.")
-
-            company = serializer.validated_data.get("company")
-            if not company:
-                raise PermissionDenied("Company must be selected.")
-
-        # COMPANY ADMIN
-        elif user.role == "admin":
-            if role == User.ADMIN:
-                raise PermissionDenied("Company admin cannot invite another admin.")
-
-            company = user.company
-
-        else:
-            raise PermissionDenied("Not allowed to send invitations.")
+        if role == User.ADMIN:
+            raise PermissionDenied("Company admin cannot invite another admin.")
 
         invitation = serializer.save(
             invited_by=user,
-            company=company
+            company=user.company
         )
         invite_url = build_invitation_url(invitation)
 
         try:
             send_mail(
                 subject=f'Invitation to join {invitation.company.name}',
-                message=f"""Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message}Click the link below to accept the invitation:
+                message=f"""Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message} Click the link below to accept the invitation:
                 {invite_url}
                  This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
                 Best regards,  

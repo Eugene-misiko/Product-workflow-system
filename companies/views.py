@@ -10,12 +10,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
+from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.generics import ListAPIView
 from rest_framework.exceptions import PermissionDenied
 from .models import Company, CompanySettings, CompanyInvitation
+from django.conf import settings
 from .serializers import (
     CompanySerializer, CompanyDetailSerializer,
+
     CompanySettingsSerializer, CompanyUpdateSerializer,
     DashboardStatsSerializer
 )
@@ -197,12 +200,12 @@ class StaffStatsView(APIView):
         })
 class CompanyInvitationCreateView(APIView):
     """
-     invitation view by platform admin
+        invitation view create by platform admin
     """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if not request.user.is_platform_admin:
+        if request.user.role != "platform_admin":
             return Response({'error': 'Only platform admin allowed'}, status=403)
 
         email = request.data.get('email')
@@ -216,7 +219,7 @@ class CompanyInvitationCreateView(APIView):
             expires_at=timezone.now() + timezone.timedelta(days=7)
         )
 
-        invite_url = f"{settings.FRONTEND_URL}/register-company?token={invitation.token}"
+        invite_url = f"{settings.FRONTEND_URL}/platform/register-company?token={invitation.token}"
 
         try:
             send_mail(
@@ -254,7 +257,7 @@ class CompanyInvitationCancelView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        if not request.user.is_platform_admin:
+        if request.user.role != "platform_admin":
             return Response({'error': 'Only platform admin allowed'}, status=403)
 
         invitation = get_object_or_404(CompanyInvitation, id=pk)
