@@ -210,7 +210,7 @@ class CompanyInvitationCreateView(APIView):
 
         email = request.data.get('email')
         company_name = request.data.get('company_name')
-
+        slug = company_name.lower().replace(" ", "-")
         invitation = CompanyInvitation.objects.create(
             email=email,
             company_name=company_name,
@@ -235,7 +235,7 @@ class CompanyInvitationCreateView(APIView):
             return Response({'error': str(e)}, status=500)
 
         return Response({'message': 'Invitation sent'})
-        
+
 class CompanyInvitationDetailView(APIView):
     permission_classes = [AllowAny]
 

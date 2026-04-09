@@ -186,57 +186,32 @@ class PasswordResetConfirmView(APIView):
 
 
 #User registration views
-class RegisterUserView(APIView):
+class RegisterView(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
+        company = getattr(request, "company", None)
+        if not company:
+            return Response(
+                {"error": "Invalid company context (missing subdomain)"},
+                status=400
+            )
         serializer = RegisterUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.save()
+        user = serializer.save(
+            company=company,     
+            role="client"        
+        )
         refresh = RefreshToken.for_user(user)
 
         return Response({
-            "user": {
-                **UserSerializer(user).data,
-                "company_id": user.company.id if user.company else None,
-                "company_name": user.company.name if user.company else None,
-                "is_platform_admin": user.is_platform_admin,
-            },
+            "user": UserSerializer(user).data,
             "tokens": {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
             }
-        }, status=status.HTTP_201_CREATED)
-        
-class RegisterView(generics.CreateAPIView):
-    """
-    User registration via invitation.
-    This is used when a user accepts an invitation to join
-    a company as designer, printer, or client.
+        }, status=201)
     
-    """
-    queryset = User.objects.all()
-    permission_classes = [AllowAny]
-    serializer_class = RegisterSerializer
-    
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        
-        refresh = RefreshToken.for_user(user)
-        
-        return Response({
-            'user': UserSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            },
-            'message': f'Welcome! You have joined {user.company.name}.'
-        }, status=status.HTTP_201_CREATED)
-
-
 class CompanyRegistrationView(generics.CreateAPIView):
     """
     Company registration - creates company and admin user.
