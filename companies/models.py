@@ -165,6 +165,7 @@ class CompanyInvitation(models.Model):
         (STATUS_EXPIRED, 'Expired'),
         (STATUS_CANCELLED, 'Cancelled'),
     ]
+    company_slug = models.SlugField(null=True, blank=True)
     email = models.EmailField()
     company_name = models.CharField(max_length=200)
     message = models.TextField(blank=True, null=True)
