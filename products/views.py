@@ -197,46 +197,43 @@ class FeaturedProductsView(generics.ListAPIView):
 # =====================
 
 class PublicProductListView(generics.ListAPIView):
-    """
-    Public product list (no auth required).
-    Used for public storefront.
-    """
     permission_classes = [AllowAny]
     serializer_class = ProductListSerializer
-    
+
     def get_queryset(self):
-        company_slug = self.request.query_params.get('company')
+        company_slug = self.request.query_params.get("company")
+
         if not company_slug:
             return Product.objects.none()
-        
+
         return Product.objects.filter(
             company__slug=company_slug,
             is_active=True
-        ).select_related('category').order_by('-is_featured', 'name')
+        ).select_related("category")
 
 
 class PublicCategoryListView(generics.ListAPIView):
-    """
-    Public category list (no auth required).
-    """
     permission_classes = [AllowAny]
     serializer_class = CategorySerializer
-    
+
     def get_queryset(self):
         company_slug = self.request.query_params.get('company')
+
         if not company_slug:
             return Category.objects.none()
-        
+
         return Category.objects.filter(
             company__slug=company_slug,
             is_active=True
-        ).prefetch_related('products').order_by('order', 'name')
+        ).order_by('name')
+
 class PublicProductDetailView(generics.RetrieveAPIView):
     permission_classes = [AllowAny]
     serializer_class = ProductSerializer
 
     def get_queryset(self):
-        company_slug = self.request.query_params.get('company')
+        company_slug = self.request.query_params.get("company")
+
         if not company_slug:
             return Product.objects.none()
 
@@ -249,14 +246,15 @@ class PublicCategoryDetailView(generics.RetrieveAPIView):
     serializer_class = CategoryDetailSerializer
 
     def get_queryset(self):
-        company_slug = self.request.query_params.get('company')
+        company_slug = self.request.query_params.get("company")
+
         if not company_slug:
             return Category.objects.none()
 
         return Category.objects.filter(
             company__slug=company_slug,
             is_active=True
-        )        
+        )       
 
 
 

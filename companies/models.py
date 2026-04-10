@@ -143,7 +143,10 @@ class CompanySettings(models.Model):
     
     def __str__(self):
         return f"{self.company.name} Settings"
-
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 class CompanyInvitation(models.Model):
     """
@@ -180,14 +183,7 @@ class CompanyInvitation(models.Model):
         return uuid.uuid4().hex
 
     token = models.CharField(max_length=64, unique=True, default=generate_token, editable=False)         
-    # company = models.ForeignKey(
-    #     Company,
-    #     on_delete=models.SET_NULL,
-    #     null=True,
-    #     blank=True,
-    #     related_name='invitation'
-    # )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     accepted_at = models.DateTimeField(null=True, blank=True)

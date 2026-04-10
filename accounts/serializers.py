@@ -481,10 +481,8 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             role=role,
             company=company
         )
-        user.full_clean()
-        user.save()
 
-        return user  
+        return user
 class RegisterWithInvitationSerializer(serializers.Serializer):
     invitation_token = serializers.CharField()
     first_name = serializers.CharField()

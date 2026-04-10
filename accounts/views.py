@@ -23,6 +23,7 @@ from datetime import timedelta
 from django.core.mail import send_mail
 from companies.utils import build_invitation_url
 from django.conf import settings
+from companies.models import Company
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from .models import User, Invitation, PasswordResetToken, UserProfile
@@ -188,20 +189,31 @@ class PasswordResetConfirmView(APIView):
 #User registration views
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request):
         company = getattr(request, "company", None)
         if not company:
+            company_slug = request.data.get("company_slug")
+            if company_slug:
+                try:
+                    company = Company.objects.get(slug=company_slug)
+                except Company.DoesNotExist:
+                    return Response(
+                        {"error": "Invalid company slug"},
+                        status=400
+                    )
+
+        if not company:
             return Response(
-                {"error": "Invalid company context (missing subdomain)"},
+                {"error": "Invalid company context (missing subdomain or slug)"},
                 status=400
             )
+
         serializer = RegisterUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.save(
-            company=company,     
-            role="client"        
-        )
+        user = serializer.save()
+
         refresh = RefreshToken.for_user(user)
 
         return Response({
