@@ -259,43 +259,43 @@ MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT')
 MPESA_EXPRESS_SHORTCODE = config('MPESA_EXPRESS_SHORTCODE')
 LNM_PHONE_NUMBER = config('LNM_PHONE_NUMBER')
 
-# Logging Configuration
+#Logging Configuration
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {
-#             'format': '{levelname} {asctime} {module} {message}',
-#             'style': '{',
-#         },
-#     },
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'verbose',
-#         },
-#         'file': {
-#             'class': 'logging.FileHandler',
-#             'filename': 'printflow.log',
-#             'formatter': 'verbose',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['console'],
-#             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-#         },
-#         'payments': {
-#             'handlers': ['console', 'file'],
-#             'level': os.getenv('PAYMENTS_LOG_LEVEL', 'DEBUG'),
-#         },
-#         'printflow': {
-#             'handlers': ['console', 'file'],
-#             'level': os.getenv('PRINTFLOW_LOG_LEVEL', 'INFO'),
-#         },
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'printflow.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+        'payments': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('PAYMENTS_LOG_LEVEL', 'DEBUG'),
+        },
+        'printflow': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('PRINTFLOW_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
 
 PRINTFLOW = {
     'ADMIN_EMAIL': os.environ.get('PRINTFLOW_ADMIN_EMAIL'),
