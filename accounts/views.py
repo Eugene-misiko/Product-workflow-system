@@ -50,9 +50,7 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         user = serializer.validated_data['user']
-
         refresh = RefreshToken.for_user(user)
 
         return Response({
@@ -262,14 +260,14 @@ class CompanyRegistrationView(generics.CreateAPIView):
         # PREVENT DUPLICATE ADMIN
         if User.objects.filter(
             role=User.ADMIN,
-            company__slug=data['company_slug']
+            company__slug=invitation.company_slug
         ).exists():
             return Response({'error': 'This company already has an admin.'}, status=400)
 
         # CREATE COMPANY
         company = Company.objects.create(
             name=data['company_name'],
-            slug=data['company_slug'],
+            slug=invitation.company_slug,
             email=data['company_email'],
             phone=data['company_phone'],
             address=data['company_address'],
@@ -304,7 +302,10 @@ class CompanyRegistrationView(generics.CreateAPIView):
 
         # GENERATE TOKENS
         refresh = RefreshToken.for_user(admin)
-
+        invitation.status = CompanyInvitation.STATUS_ACCEPTED
+        invitation.accepted_at = timezone.now()
+        invitation.company = company
+        invitation.save()  
         return Response({
             'user': UserSerializer(admin).data,
             'company': {
@@ -318,10 +319,7 @@ class CompanyRegistrationView(generics.CreateAPIView):
             },
             'message': f'Company "{company.name}" registered successfully!'
         }, status=status.HTTP_201_CREATED)
-        invitation.status = CompanyInvitation.STATUS_ACCEPTED
-        invitation.accepted_at = timezone.now()
-        invitation.company = company
-        invitation.save()        
+      
 
 
 

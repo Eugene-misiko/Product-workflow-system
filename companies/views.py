@@ -220,7 +220,7 @@ class CompanyInvitationCreateView(APIView):
             expires_at=timezone.now() + timezone.timedelta(days=7)
         )
 
-        invite_url = f"{settings.FRONTEND_URL}/store/{slug}/register?token={invitation.token}"
+        invite_url = f"{settings.FRONTEND_URL}/store/{invitation.company_slug}/register?token={invitation.token}"
 
         try:
             send_mail(

@@ -261,7 +261,7 @@ class CompanyRegistrationSerializer(serializers.Serializer):
     
     # Company fields
     company_name = serializers.CharField(max_length=200)
-    company_slug = serializers.SlugField(max_length=200)
+    #company_slug = serializers.SlugField(max_length=200)
     company_email = serializers.EmailField()
     company_phone = serializers.CharField(max_length=20)
     company_address = serializers.CharField()
