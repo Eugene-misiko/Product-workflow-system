@@ -113,31 +113,34 @@ Make sure you have installed:
 ---
 
 ## Clone the Repository
-
+```bash
 git clone https://github.com/Eugene-misiko/Product-workflow-system.git
 cd printflow
-
+```
 ## Backend Setup (Django)
 
 cd backend
-
+```bash
 python -m venv venv
-source venv/bin/activate   
-On Windows: venv\Scripts\activate
-
+source venv/bin/activate   \
+```
+On Windows:
+```bash
+venv\Scripts\activate
+ 
 pip install -r requirements.txt
 
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
-
+```
 ## Frontend Setup (React)
-
+```bash
 cd frontend
 
 npm install
 npm run dev
-
+```
 ## Environment Variables
 
 Create a `.env` file in both backend and frontend directories.
@@ -157,7 +160,9 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api
 cd backend
 ```
 ## Create virtual environment
+```bash
 python -m venv venv
+```
 
 ## Activate virtual environment
 ## On Windows:
@@ -169,20 +174,27 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 ## Install dependencies
+```bash
 pip install -r requirements.txt
+```
 
 ## Run migrations
+```bash
 python manage.py migrate
+```
 
 ## Create superuser
+```bash
 python manage.py createsuperuser
-
+```
 ## Start server
+```bash
 python manage.py runserver
-
+```
 **Frontend Setup**
+```bash
 cd frontend
-
+```
 ## Install dependencies
 ```bash
 npm install
