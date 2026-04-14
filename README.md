@@ -149,21 +149,25 @@ DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 
 **Frontend Example:**
-env
+```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
-  
+  ```
 **Backend Setup**
+```bash
 cd backend
-
+```
 ## Create virtual environment
 python -m venv venv
 
 ## Activate virtual environment
 ## On Windows:
+```bash
 venv\Scripts\activate
+```
 ## On Mac/Linux:
+```bash
 source venv/bin/activate
-
+```
 ## Install dependencies
 pip install -r requirements.txt
 
@@ -180,11 +184,14 @@ python manage.py runserver
 cd frontend
 
 ## Install dependencies
+```bash
 npm install
+```
 
 ## Start development server
+```bash
 npm run dev
-
+```
 ## How the Invitation System Works
 
 - Platform Admin invites Company Admin  
@@ -219,10 +226,12 @@ We welcome contributions to improve PrintFlow
 git checkout -b feature/your-feature-name
 
 Make your changes
+```bash
 Commit your changes:
 git commit -m "Add: your feature description"
 Push to your branch:
 git push origin feature/your-future-name
+```
 
 - Open a Pull Request  
 
