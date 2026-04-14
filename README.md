@@ -1,4 +1,4 @@
-### PrintFlow – Multi-Tenant Print Management System
+# PrintFlow – Multi-Tenant Print Management System
 
 - PrintFlow is a multi-tenant print management platform built with Django (DRF) and React (Vite).  
 - It enables organizations to manage print orders efficiently from creation to delivery while maintaining strict role-based access and tenant isolation.
@@ -122,7 +122,8 @@ cd printflow
 cd backend
 
 python -m venv venv
-source venv/bin/activate   # On Windows: venv\Scripts\activate
+source venv/bin/activate   
+On Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 
@@ -154,34 +155,34 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api
 **Backend Setup**
 cd backend
 
-# Create virtual environment
+## Create virtual environment
 python -m venv venv
 
-# Activate virtual environment
-# On Windows:
+## Activate virtual environment
+## On Windows:
 venv\Scripts\activate
-# On Mac/Linux:
+## On Mac/Linux:
 source venv/bin/activate
 
-# Install dependencies
+## Install dependencies
 pip install -r requirements.txt
 
-# Run migrations
+## Run migrations
 python manage.py migrate
 
-# Create superuser
+## Create superuser
 python manage.py createsuperuser
 
-# Start server
+## Start server
 python manage.py runserver
 
 **Frontend Setup**
 cd frontend
 
-# Install dependencies
+## Install dependencies
 npm install
 
-# Start development server
+## Start development server
 npm run dev
 
 ## How the Invitation System Works
