@@ -220,7 +220,10 @@ class CompanyInvitationCreateView(APIView):
             expires_at=timezone.now() + timezone.timedelta(days=7)
         )
 
-        invite_url = f"{settings.FRONTEND_URL}/store/{invitation.company_slug}/register?token={invitation.token}"
+        if settings.DEBUG:
+            invite_url = f"http://{invitation.company_slug}.localhost:5173/register?token={invitation.token}"
+        else:
+            invite_url = f"https://{invitation.company_slug}.printflow.com/register?token={invitation.token}"
 
         try:
             send_mail(

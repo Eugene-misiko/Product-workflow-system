@@ -523,4 +523,19 @@ class RegisterWithInvitationSerializer(serializers.Serializer):
         # Accept invitation
         invitation.accept(user)
 
-        return user              
+        return user 
+    def save(self, **kwargs):
+        invitation = self.validated_data['invitation']
+
+        user = User.objects.create_user(
+            email=self.validated_data['email'],
+            password=self.validated_data['password'],
+            role=invitation.role,
+            company=invitation.company  
+        )
+
+        invitation.status = Invitation.STATUS_ACCEPTED
+        invitation.accepted_at = timezone.now()
+        invitation.save()
+
+        return user                     

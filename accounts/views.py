@@ -170,9 +170,8 @@ class PasswordResetConfirmView(APIView):
     
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            print("ERRORS:", serializer.errors)  
+        print("ERRORS:", serializer.errors) 
+        if not serializer.is_valid():  
             return Response(serializer.errors, status=400)
 
         serializer.save()
@@ -482,15 +481,6 @@ class InvitationListView(generics.ListCreateAPIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-
-        # Company admin sees only their company
-        if user.company:
-            return Invitation.objects.filter(company=user.company).order_by('-created_at')
-
-        return Invitation.objects.none()
-
     def get_serializer_class(self):
         return CreateInvitationSerializer if self.request.method == 'POST' else InvitationSerializer
 
@@ -512,7 +502,8 @@ class InvitationListView(generics.ListCreateAPIView):
 
         if role == User.ADMIN:
             raise PermissionDenied("Company admin cannot invite another admin.")
-
+        if user.role == "platform_admin":
+            raise PermissionDenied("Platform admin cannot use this endpoint.")
         invitation = serializer.save(
             invited_by=user,
             company=user.company
@@ -523,9 +514,13 @@ class InvitationListView(generics.ListCreateAPIView):
         try:
             send_mail(
                 subject=f'Invitation to join {invitation.company.name}',
-                message=f""" Hello, You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}. {invitation.message} Click the link below: {invite_url}
-                This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}
-                Best regards,
+                message=f"""
+                Hello,
+                You have been invited to join {invitation.company.name} as a {invitation.get_role_display()}.
+                Click below to get started:
+                {invite_url}
+                This link expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}
+                Best regards,  
                 {invitation.company.name}
                 """,
                 from_email=settings.DEFAULT_FROM_EMAIL,
@@ -642,4 +637,3 @@ class InvitationDetailView(APIView):
 
         serializer = InvitationDetailSerializer(invitation)
         return Response(serializer.data)
-

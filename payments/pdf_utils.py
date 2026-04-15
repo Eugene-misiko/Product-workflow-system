@@ -300,14 +300,14 @@ def generate_receipt_pdf(receipt):
     
     # Payment Amount
     amount_data = [
-        ['Amount Paid:', f"${receipt.amount_paid:.2f}"],
+        ['Amount Paid:', f"Ksh{receipt.amount_paid:.2f}"],
     ]
     if receipt.payment_type == 'deposit':
         amount_data.append(['Payment For:', f'Deposit ({receipt.invoice.deposit_percentage}%)'])
-        amount_data.append(['Remaining Balance:', f"${receipt.invoice.balance_due:.2f}"])
+        amount_data.append(['Remaining Balance:', f"Ksh{receipt.invoice.balance_due:.2f}"])
     elif receipt.payment_type == 'balance':
         amount_data.append(['Payment For:', 'Balance Payment'])
-        amount_data.append(['Total Paid:', f"${receipt.invoice.amount_paid:.2f}"])
+        amount_data.append(['Total Paid:', f"Ksh{receipt.invoice.amount_paid:.2f}"])
     else:
         amount_data.append(['Payment For:', 'Full Payment'])
     
