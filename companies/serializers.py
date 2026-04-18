@@ -27,8 +27,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             'id', 'name', 'slug', 'code', 'logo',
-            'email', 'phone', 'address', 'city', 'country', 'website',
-            'custom_domain', 'subdomain',
+            'email', 'phone', 'address', 'city', 'country', 'website', 
             'currency', 'currency_symbol', 'deposit_percentage',
             'is_active', 'subscription_plan',
             'staff_count', 'clients_count', 'orders_count',
@@ -63,8 +62,7 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
             'working_days', 'opening_time', 'closing_time', 'timezone',
             'email_notifications', 'sms_notifications',
             'accept_mpesa', 'accept_cash', 'accept_card', 'accept_bank_transfer',
-            'mpesa_shortcode', 'mpesa_passkey',
-            'mpesa_consumer_key', 'mpesa_consumer_secret',
+            'mpesa_shortcode', 
             'offer_pickup', 'offer_delivery',
             'delivery_fee', 'free_delivery_threshold',
             'facebook', 'instagram', 'twitter', 'whatsapp_number',

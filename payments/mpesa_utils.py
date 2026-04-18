@@ -2,6 +2,7 @@ import base64
 import requests
 from django.utils import timezone
 from django.conf import settings
+from django.conf import settings as django_settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,31 +49,37 @@ def get_access_token():
         logger.error(f"Error getting M-Pesa access token: {str(e)}")
         return None
 
-def generate_password(shortcode, timestamp):
+def generate_password(shortcode, timestamp, passkey):
     """
     Generate password for STK Push request.
     """
-    data = f"{shortcode}{settings.MPESA_PASSKEY}{timestamp}"
-    return base64.b64encode(data.encode()).decode("utf-8")
-    def format_phone(phone):
-        if phone.startswith("0"):
-            return "254" + phone[1:]
-        elif phone.startswith("+254"):
-            return phone[1:]
-        return phone
+    data_to_encode = shortcode + passkey + timestamp
+    return base64.b64encode(data_to_encode.encode()).decode()
+
+def format_phone(phone):
+    if phone.startswith("0"):
+        return "254" + phone[1:]
+    elif phone.startswith("+254"):
+        return phone[1:]
+    return phone
+
 def initialize_stk_push(mpesa_request,company):
     """
     Initialize an M-Pesa STK Push request.
     Sends an STK Push request to Safaricom to prompt the user
     to enter their M-Pesa PIN on their phone.
     """
+    company_settings = company.settings
+
     if not all([
-        company.mpesa_shortcode,
+        company_settings,
+        company_settings.mpesa_shortcode,
         settings.MPESA_PASSKEY,
         settings.MPESA_CONSUMER_KEY,
         settings.MPESA_CONSUMER_SECRET
     ]):
-        return {"error": "M-Pesa not fully configured"}   
+        return {"error": "M-Pesa not fully configured"}
+
     access_token = get_access_token()
     
     if not access_token:
@@ -83,7 +90,7 @@ def initialize_stk_push(mpesa_request,company):
     
     api_url = get_mpesa_url("mpesa/stkpush/v1/processrequest")
     timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
-    password = generate_password(company.mpesa_shortcode, timestamp)
+    password = generate_password(company_settings.mpesa_shortcode,timestamp,settings.MPESA_PASSKEY)
     
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -91,15 +98,15 @@ def initialize_stk_push(mpesa_request,company):
     }
     phone = format_phone(mpesa_request.phone_number)
     payload = {
-        "BusinessShortCode": company.mpesa_shortcode,
+        "BusinessShortCode": company_settings.mpesa_shortcode,
         "Password": password,
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
         "Amount": int(mpesa_request.amount),
         "PartyA": phone,
-        "PartyB": company.mpesa_shortcode,
+        "PartyB": company_settings.mpesa_shortcode,
         "PhoneNumber": phone,
-        "CallBackURL": f"{settings.MPESA_CALLBACK_URL}?company_id={company.id}",
+        "CallBackURL": f"{django_settings.MPESA_CALLBACK_URL}?company_id={company.id}",
         "AccountReference": mpesa_request.account_reference or "PrintFlow Payment",
         "TransactionDesc": mpesa_request.transaction_desc or "Printing Order Payment"
     }

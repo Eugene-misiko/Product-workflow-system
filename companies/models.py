@@ -143,10 +143,6 @@ class CompanySettings(models.Model):
     
     def __str__(self):
         return f"{self.company.name} Settings"
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
 
 class CompanyInvitation(models.Model):
     """

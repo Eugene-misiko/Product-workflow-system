@@ -14,6 +14,7 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 import random
+from companies.models import Company
 import string
 import uuid
 
@@ -95,6 +96,7 @@ class Invoice(models.Model):
 class MpesaRequest(models.Model):
     """M-Pesa STK Push Request."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mpesa_requests')
+    company = models.ForeignKey(Company,on_delete=models.CASCADE,null=True,blank=True)
     order = models.ForeignKey('orders.Order', on_delete=models.CASCADE, related_name='mpesa_requests')
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='mpesa_requests')
     phone_number = models.CharField(max_length=15)

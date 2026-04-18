@@ -11,7 +11,6 @@ urlpatterns = [
     path('company/update/', views.CompanyUpdateView.as_view(), name='company_update'),
     # Settings
     path('company/settings/', views.CompanySettingsView.as_view(), name='company_settings'),
-    path('company/payment-settings/', views.PaymentSettingsView.as_view(), name='payment_settings'),
     # Dashboard
     path('company/dashboard/', views.CompanyDashboardView.as_view(), name='company_dashboard'),
     # Staff

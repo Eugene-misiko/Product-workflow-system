@@ -14,6 +14,7 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.generics import ListAPIView
 from rest_framework.exceptions import PermissionDenied
+from accounts.serializers import UserSerializer
 from .models import Company, CompanySettings, CompanyInvitation
 from django.conf import settings
 from .serializers import (
@@ -68,47 +69,6 @@ class CompanySettingsView(generics.RetrieveUpdateAPIView):
         # Get or create the company settings
         settings, _ = CompanySettings.objects.get_or_create(company=company)
         return settings   
-class PaymentSettingsView(APIView):
-    """
-    Get or update payment settings (admin only).
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        if not request.user.is_company_admin:
-            return Response({'error': 'Admin only'}, status=403)
-        
-        settings, _ = CompanySettings.objects.get_or_create(company=request.user.company)
-        
-        return Response({
-            'accept_mpesa': settings.accept_mpesa,
-            'accept_cash': settings.accept_cash,
-            'accept_card': settings.accept_card,
-            'accept_bank_transfer': settings.accept_bank_transfer,
-            'mpesa_shortcode': settings.mpesa_shortcode,
-            'mpesa_passkey': settings.mpesa_passkey,
-            'mpesa_consumer_key': settings.mpesa_consumer_key,
-            'mpesa_consumer_secret': settings.mpesa_consumer_secret,
-        })        
-    
-    def put(self, request):
-        if not request.user.is_company_admin:
-            return Response({'error': 'Admin only'}, status=403)
-        settings, _ = CompanySettings.objects.get_or_create(company=request.user.company)
-        settings.accept_mpesa = request.data.get('accept_mpesa', settings.accept_mpesa)
-        settings.accept_cash = request.data.get('accept_cash', settings.accept_cash)
-        settings.accept_card = request.data.get('accept_card', settings.accept_card)
-        settings.accept_bank_transfer = request.data.get('accept_bank_transfer', settings.accept_bank_transfer)
-        if request.data.get('mpesa_shortcode'):
-            settings.mpesa_shortcode = request.data['mpesa_shortcode']
-        if request.data.get('mpesa_passkey'):
-            settings.mpesa_passkey = request.data['mpesa_passkey']
-        if request.data.get('mpesa_consumer_key'):
-            settings.mpesa_consumer_key = request.data['mpesa_consumer_key']
-        if request.data.get('mpesa_consumer_secret'):
-            settings.mpesa_consumer_secret = request.data['mpesa_consumer_secret']
-        settings.save()
-        return Response({'message': 'Payment settings updated successfully.'})  
 
 class CompanyDashboardView(APIView):
     """
@@ -173,7 +133,7 @@ class StaffListView(generics.ListAPIView):
     List company staff (designers and printers).
     """
     permission_classes = [IsAuthenticated]
-    serializer_class = 'accounts.serializers.UserSerializer'
+    serializer_class = UserSerializer
     
     def get_queryset(self):
         return User.objects.filter(
