@@ -13,48 +13,45 @@ Fallback behavior:
 """
 
 import logging
-from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
 
 
-class TenantMiddleware(MiddlewareMixin):
+class TenantMiddleware:
     """
-    Middleware to resolve the current tenant (Company) from the request.
-    Adds:
-        request.tenant - Company instance or None
+    Middleware to resolve tenant from subdomain.
+    Attaches:
+        request.tenant
     """
 
-    def process_request(self, request):
-        """
-        Process incoming request and attach tenant.
-        """
-        # Lazy import to avoid circular imports
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Lazy import 
         try:
             from companies.models import Company
         except ImportError as e:
             logger.error(f"Failed to import Company model: {e}")
             request.tenant = None
-            return
+            return self.get_response(request)
 
         try:
-            host = request.get_host().split(':')[0] 
-            subdomain = host.split('.')[0]
+            host = request.get_host().split(":")[0]
+            subdomain = host.split(".")[0]
 
-            # Local environments
+            # Local dev handling
             if subdomain in ["localhost", "127", "0"]:
                 request.tenant = None
-                return
-            # Attempt to find tenant
-            try:
-                request.tenant = Company.objects.get(slug=subdomain)
-
-            except Company.DoesNotExist:
-                logger.warning(
-                    f"No tenant found for subdomain: {subdomain}"
-                )
-                request.tenant = None
+            else:
+                try:
+                    request.tenant = Company.objects.get(slug=subdomain)
+                except Company.DoesNotExist:
+                    logger.warning(f"No tenant for subdomain: {subdomain}")
+                    request.tenant = None
 
         except Exception as e:
             logger.error(f"Tenant middleware failed: {e}")
             request.tenant = None
+
+        return self.get_response(request)
