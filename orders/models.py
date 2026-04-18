@@ -3,6 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 import random
 import string
+from django.db import transaction
 from cloudinary.models import CloudinaryField
 def generate_order_number():
     date_part = timezone.now().strftime('%Y%m%d')
@@ -207,12 +208,27 @@ class OrderItem(models.Model):
     def save(self, *args, **kwargs):
         self.unit_price = self.product.get_price_for_quantity(self.quantity)
         self.subtotal = self.unit_price * self.quantity
+
         super().save(*args, **kwargs)
-        
-        # Update order total
-        self.order.subtotal = sum(item.subtotal for item in self.order.items.all())
-        self.order.total_price = self.order.subtotal + self.order.tax + self.order.delivery_fee - self.order.discount
-        self.order.save()
+
+        # safely update order totals AFTER item save
+        self.update_order_totals()
+
+
+    def update_order_totals(self):
+        order = self.order
+
+        with transaction.atomic():
+            order.subtotal = sum(item.subtotal for item in order.items.all())
+
+            order.total_price = (
+                order.subtotal +
+                order.tax +
+                order.delivery_fee -
+                order.discount
+            )
+
+            order.save(update_fields=["subtotal", "total_price"])
 
 class OrderItemFieldValue(models.Model):
     """Values for custom product fields."""

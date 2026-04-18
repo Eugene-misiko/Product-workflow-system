@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-
+from companies.models import Company
 from payments.models import Invoice, MpesaRequest, MpesaResponse, Payment, Receipt
 from payments.serializers import MpesaRequestSerializer, MpesaResponseSerializer, StkPushSerializer
 from payments.mpesa_utils import initialize_stk_push
@@ -56,6 +56,7 @@ def stk_push(request):
     # Create M-Pesa request
     mpesa_request = MpesaRequest.objects.create(
         user=request.user,
+        company=invoice.company, 
         order=invoice.order,
         invoice=invoice,
         phone_number=serializer.validated_data['phone_number'],
@@ -65,7 +66,7 @@ def stk_push(request):
     )
 
     # Initialize STK Push
-    response_data = initialize_stk_push(mpesa_request)
+    response_data = initialize_stk_push(mpesa_request, request.user.company)
 
     if 'error' in response_data or 'MerchantRequestID' not in response_data:
         return Response({
@@ -159,19 +160,25 @@ def mpesa_callback(request):
         mpesa_response.save()
 
         # Update invoice amounts
-        invoice.amount_paid += amount_paid or mpesa_response.request.amount
+        paid = amount_paid or mpesa_response.request.amount
+        if not Payment.objects.filter(mpesa_response=mpesa_response).exists():
+            invoice.amount_paid += paid
         if invoice.amount_paid >= invoice.deposit_amount:
             invoice.deposit_paid = invoice.deposit_amount
         invoice.balance_due = invoice.total_amount - invoice.amount_paid
         invoice.save()  # Auto-updates status
-
+        payment_type = (
+            Payment.PAYMENT_TYPE_DEPOSIT
+            if mpesa_response.request.amount == invoice.deposit_amount
+            else Payment.PAYMENT_TYPE_BALANCE
+        )       
         # Create Payment record
         payment = Payment.objects.create(
             company=invoice.company,
             invoice=invoice,
             amount=amount_paid or mpesa_response.request.amount,
-            payment_type=Payment.PAYMENT_TYPE_DEPOSIT if invoice.status == 'partial' else Payment.PAYMENT_TYPE_BALANCE,
             payment_method=Payment.METHOD_MPESA,
+            payment_type=payment_type,
             status=Payment.STATUS_COMPLETED,
             mpesa_response=mpesa_response,
             transaction_id=mpesa_code,

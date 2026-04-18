@@ -111,7 +111,7 @@ class Product(models.Model):
         slug = base_slug
         counter = 1
         
-        while Category.objects.filter(company=self.company, slug=slug).exists():
+        while Product.objects.filter(company=self.company, slug=slug).exists():
             slug = f"{base_slug}-{counter}"
             counter += 1
         

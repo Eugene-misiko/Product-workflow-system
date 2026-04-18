@@ -1,13 +1,15 @@
 from .models import Notification
 
-def notify(user, message):
+def notify(user, company, title, message, notification_type="system", **kwargs):
+    """"
+    Helper function to create a notification.
     """
-    Create a notification for a given user.
-    
-    Args:
-        user: User instance who will receive the notification
-        message: String message for the notification
-    """
-    if user is not None and message:
-        Notification.objects.create(user=user, message=message)
+    Notification.objects.create(
+        user=user,
+        company=company,
+        title=title,
+        message=message,
+        notification_type=notification_type,
+        **kwargs
+    )
 

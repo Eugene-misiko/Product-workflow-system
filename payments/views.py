@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import HttpResponse
 from django.db.models import Sum
+from rest_framework.decorators import api_view, permission_classes
 import logging
 
 from .models import Invoice, Payment, Receipt, MpesaRequest, MpesaResponse
@@ -39,8 +40,14 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 # ----------------------------
 # Download Invoice PDF
 # ----------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def download_invoice(request, pk):
-    invoice = get_object_or_404(Invoice, pk=pk, company=request.user.company)
+    invoice = get_object_or_404(
+        Invoice,
+        pk=pk,
+        company=request.user.company
+    )
 
     if request.user.role != 'admin' and invoice.order.user != request.user:
         return HttpResponse('Unauthorized', status=401)
@@ -51,9 +58,18 @@ def download_invoice(request, pk):
 # ----------------------------
 # Send Invoice (Email)
 # ----------------------------
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def send_invoice(request, pk):
-    invoice = get_object_or_404(Invoice, pk=pk, company=request.user.company)
-    # Send email logic here
+    invoice = get_object_or_404(
+        Invoice,
+        pk=pk,
+        company=request.user.company
+    )
+
+    if request.user.role != 'admin':
+        return Response({'error': 'Only admin can send invoice'}, status=403)
+
     return Response({'message': 'Invoice sent.'})
 
 

@@ -120,8 +120,8 @@ def generate_invoice_pdf(invoice):
         items_data.append([
             item.product.name,
             str(item.quantity),
-            f"${item.unit_price:.2f}",
-            f"${item.subtotal:.2f}"
+            f"Ksh{item.unit_price:.2f}",
+            f"Ksh{item.subtotal:.2f}"
         ])
     
     items_table = Table(items_data, colWidths=[8*cm, 2.5*cm, 3*cm, 3*cm])

@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from decimal import Decimal
+from payments.models import Invoice
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Order, OrderItem, PrintJob, Transportation, OrderStatusHistory
 from .serializers import (
     OrderSerializer, OrderDetailSerializer, CreateOrderSerializer,
@@ -42,11 +45,27 @@ class OrderViewSet(viewsets.ModelViewSet):
         if self.action in ['retrieve', 'update', 'partial_update']:
             return OrderDetailSerializer
         return OrderSerializer
-    
+        
     def perform_create(self, serializer):
-        serializer.save(
+        order = serializer.save(
             user=self.request.user,
             company=self.request.user.company
+        )
+
+        # IMPORTANT: reload after items are saved by serializer
+        order.refresh_from_db()
+
+        total_amount = order.total_price
+
+        deposit_amount = total_amount * Decimal('0.7')
+
+        Invoice.objects.create(
+            company=order.company,
+            order=order,
+            total_amount=total_amount,
+            deposit_amount=deposit_amount,
+            balance_due=total_amount,
+            status=Invoice.STATUS_PENDING
         )
 
 class AssignDesignerView(APIView):
@@ -92,7 +111,8 @@ class AssignDesignerView(APIView):
             related_object_id=order.id
         )
         
-        return Response({'message': 'Designer assigned successfully.'})
+        return Response({'message': 'Designer assigned successfully.'
+        , 'order': OrderSerializer(order).data})
 
 class AssignPrinterView(APIView):
     """Assign printer to order (admin only)."""
@@ -102,8 +122,12 @@ class AssignPrinterView(APIView):
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk, company=request.user.company)
         
-        if order.status not in [Order.STATUS_APPROVED_FOR_PRINTING, Order.STATUS_PRINTING_QUEUED]:
-            return Response({'error': 'Order must be approved for printing first.'}, status=400)
+        if order.needs_design:
+            if order.status != Order.STATUS_APPROVED_FOR_PRINTING:
+                return Response({"error": "Order must be approved for printing first."}, status=400)
+        else:
+            if order.status != Order.STATUS_PENDING:
+                return Response({"error": "Order must be pending to assign printer."}, status=400)
         
         serializer = AssignPrinterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -119,8 +143,9 @@ class AssignPrinterView(APIView):
         order.status = Order.STATUS_PRINTING_QUEUED
         order.save()
         
-        PrintJob.objects.get_or_create(order=order, defaults={'assigned_printer': printer})
-        
+        print_job, created = PrintJob.objects.get_or_create(order=order)
+        print_job.assigned_printer = printer
+        print_job.save()
         Notification.objects.create(
             company=order.company,
             user=printer,
@@ -131,7 +156,8 @@ class AssignPrinterView(APIView):
             related_object_id=order.id
         )
         
-        return Response({'message': 'Printer assigned successfully.'})
+        return Response({'message': 'Printer assigned successfully.'
+        , 'order': OrderSerializer(order).data})
 
 class StartDesignView(APIView):
     """Designer starts working on an order."""
@@ -153,20 +179,22 @@ class StartDesignView(APIView):
             note='Design work started'
         )
         
-        return Response({'message': 'Design work started.'})
+        return Response({'message': 'Design work started.',
+        'order': OrderSerializer(order).data})
 
 
 class SubmitDesignView(APIView):
-    """Designer submits completed design."""
-    
+    parser_classes = [MultiPartParser, FormParser] 
     permission_classes = [IsAuthenticated]
     
     def post(self, request, pk):
-        order = get_object_or_404(Order, pk=pk, company=request.user.company)
-        
-        if request.user != order.assigned_designer:
-            return Response({'error': 'You are not assigned to this order.'}, status=403)
-        
+        order = get_object_or_404(
+            Order,
+            pk=pk,
+            assigned_designer=request.user,
+            company=request.user.company
+        )
+
         if not order.can_submit_design:
             return Response({'error': 'Cannot submit design at this stage.'}, status=400)
         
@@ -175,6 +203,7 @@ class SubmitDesignView(APIView):
         
         if serializer.validated_data.get('design_file'):
             order.design_file = serializer.validated_data['design_file']
+        
         if serializer.validated_data.get('design_notes'):
             order.design_notes = serializer.validated_data['design_notes']
         
@@ -200,7 +229,10 @@ class SubmitDesignView(APIView):
             related_object_id=order.id
         )
         
-        return Response({'message': 'Design submitted for approval.'})
+        return Response({
+            'message': 'Design submitted for approval.',
+            'order': OrderSerializer(order, context={'request': request}).data
+        })
 
 
 class ApproveDesignView(APIView):
@@ -255,7 +287,7 @@ class ApproveDesignView(APIView):
                     related_object_id=order.id
                 )
             
-            return Response({'message': 'Design rejected. Designer has been notified.'})
+            return Response({'message': 'Design rejected. Designer has been notified.', 'order': OrderSerializer(order).data})
 
 
 class CancelOrderView(APIView):
@@ -268,7 +300,7 @@ class CancelOrderView(APIView):
         
         if order.status in [Order.STATUS_COMPLETED, Order.STATUS_CANCELLED]:
             return Response({'error': 'Cannot cancel this order.'}, status=400)
-        
+        old_status = order.status 
         reason = request.data.get('reason', '')
         order.status = Order.STATUS_CANCELLED
         order.cancellation_reason = reason
@@ -276,13 +308,13 @@ class CancelOrderView(APIView):
         
         OrderStatusHistory.objects.create(
             order=order,
-            old_status=order.status,
+            old_status=old_status, 
             new_status=Order.STATUS_CANCELLED,
             changed_by=request.user,
             note=f'Order cancelled: {reason}'
         )
         
-        return Response({'message': 'Order cancelled.'})
+        return Response({'message': 'Order cancelled.', 'order': OrderSerializer(order).data})
 
 
 class PrintJobViewSet(viewsets.ModelViewSet):
@@ -382,7 +414,7 @@ class DesignerAssignmentListView(generics.ListAPIView):
         return Order.objects.filter(
             assigned_designer=self.request.user
         ).exclude(status__in=[Order.STATUS_COMPLETED, Order.STATUS_CANCELLED]).order_by('-created_at')
-
+        
 class PrinterJobListView(generics.ListAPIView):
     """List print jobs assigned to current printer."""
     permission_classes = [IsAuthenticated]

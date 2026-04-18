@@ -170,7 +170,7 @@ class PasswordResetConfirmView(APIView):
     
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
-        print("ERRORS:", serializer.errors) 
+        
         if not serializer.is_valid():  
             return Response(serializer.errors, status=400)
 
@@ -610,7 +610,7 @@ class ResendInvitationView(APIView):
 
         send_mail(
             subject=f'Invitation Reminder - {invitation.company.name}',
-            message=f""" Hello, This is a reminder to join {invitation.company.name}. Click the link below to accept the invitation:{invite_url}
+            message=f""" Hello, This is a reminder to join {invitation.company.name}. Click the link below to accept the invitation: {invite_url}
             This invitation expires on {invitation.expires_at.strftime("%Y-%m-%d %H:%M")}.
             Best regards, {invitation.company.name}
             """,

@@ -61,6 +61,8 @@ def initialize_stk_push(mpesa_request):
     Sends an STK Push request to Safaricom to prompt the user
     to enter their M-Pesa PIN on their phone.
     """
+    if not company.mpesa_shortcode:
+        return {"error": "Company M-Pesa not configured"}    
     access_token = get_access_token()
     
     if not access_token:
@@ -79,13 +81,13 @@ def initialize_stk_push(mpesa_request):
     }
     
     payload = {
-        "BusinessShortCode": settings.MPESA_EXPRESS_SHORTCODE,
+        "BusinessShortCode": company.mpesa_shortcode,
         "Password": password,
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
         "Amount": int(mpesa_request.amount),
         "PartyA": mpesa_request.phone_number,
-        "PartyB": settings.MPESA_EXPRESS_SHORTCODE,
+        "PartyB": company.mpesa_shortcode,
         "PhoneNumber": mpesa_request.phone_number,
         "CallBackURL": settings.MPESA_CALLBACK_URL,
         "AccountReference": mpesa_request.account_reference or "PrintFlow Payment",

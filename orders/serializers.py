@@ -37,20 +37,23 @@ class OrderSerializer(serializers.ModelSerializer):
     designer_name = serializers.CharField(source='assigned_designer.get_full_name', read_only=True)
     printer_name = serializers.CharField(source='assigned_printer.get_full_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
+    design_file_url = serializers.SerializerMethodField()
     class Meta:
         model = Order
         fields = [
             'id', 'order_number', 'user', 'user_name',
-            'assigned_designer', 'designer_name',
+            'assigned_designer', 'designer_name','design_file_url',
             'assigned_printer', 'printer_name',
             'status', 'status_display', 'priority',
             'subtotal', 'tax', 'delivery_fee', 'discount', 'total_price',
             'needs_design', 'design_description',
-            'created_at', 'updated_at', 'items'
+            'created_at', 'updated_at', 'items','design_file','design_file_url'
         ]
         read_only_fields = ['id', 'order_number', 'subtotal', 'total_price', 'created_at', 'updated_at']
-
+    def get_design_file_url(self, obj):
+        if obj.design_file:
+            return obj.design_file.url
+        return None
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
@@ -92,7 +95,11 @@ class CreateOrderSerializer(serializers.ModelSerializer):
         
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
-        
+            #added new outcome
+        if validated_data.get('client_files') or validated_data.get('design_file'):
+            validated_data['needs_design'] = False
+        else:
+            validated_data['needs_design'] = True        
         OrderStatusHistory.objects.create(
             order=order,
             old_status='',
