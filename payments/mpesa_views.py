@@ -56,7 +56,6 @@ def stk_push(request):
     # Create M-Pesa request
     mpesa_request = MpesaRequest.objects.create(
         user=request.user,
-        company=invoice.company, 
         order=invoice.order,
         invoice=invoice,
         phone_number=serializer.validated_data['phone_number'],
@@ -113,7 +112,7 @@ def mpesa_callback(request):
         - Uses Invoice.save() to auto-update status based on amount_paid
     """
     company_id = request.GET.get("company_id")
-    ip = request.META.get('REMOTE_ADDR')
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
     if ip not in ALLOWED_IPS:
         return Response({"error": "Unauthorized"}, status=403)
     data = request.data
@@ -164,46 +163,46 @@ def mpesa_callback(request):
         mpesa_response.save()
 
         # Update invoice amounts
-    paid = amount_paid or mpesa_response.request.amount
+        paid = amount_paid or mpesa_response.request.amount
 
-    with transaction.atomic():
-        if not Payment.objects.filter(mpesa_response=mpesa_response).exists():
-            invoice.amount_paid += paid
+        with transaction.atomic():
+            if not Payment.objects.filter(mpesa_response=mpesa_response).exists():
+                invoice.amount_paid += paid
 
-            if invoice.amount_paid >= invoice.deposit_amount:
-                invoice.deposit_paid = invoice.deposit_amount
+                if invoice.amount_paid >= invoice.deposit_amount:
+                    invoice.deposit_paid = invoice.deposit_amount
 
-            invoice.balance_due = invoice.total_amount - invoice.amount_paid
-            #invoice.save()
+                invoice.balance_due = invoice.total_amount - invoice.amount_paid
+                invoice.save()
 
-            payment_type = (
-                Payment.PAYMENT_TYPE_DEPOSIT
-                if mpesa_response.request.amount == invoice.deposit_amount
-                else Payment.PAYMENT_TYPE_BALANCE
-            )
+                payment_type = (
+                    Payment.PAYMENT_TYPE_DEPOSIT
+                    if mpesa_response.request.amount == invoice.deposit_amount
+                    else Payment.PAYMENT_TYPE_BALANCE
+                )
 
-            # payment = Payment.objects.create(
-            #     company=invoice.company,
-            #     invoice=invoice,
-            #     amount=paid,
-            #     payment_method=Payment.METHOD_MPESA,
-            #     payment_type=payment_type,
-            #     status=Payment.STATUS_COMPLETED,
-            #     mpesa_response=mpesa_response,
-            #     transaction_id=mpesa_code,
-            #     completed_at=timezone.now()
-            # )
+                payment = Payment.objects.create(
+                    company=invoice.company,
+                    invoice=invoice,
+                    amount=paid,
+                    payment_method=Payment.METHOD_MPESA,
+                    payment_type=payment_type,
+                    status=Payment.STATUS_COMPLETED,
+                    mpesa_response=mpesa_response,
+                    transaction_id=mpesa_code,
+                    completed_at=timezone.now()
+                )
 
-            # Receipt.objects.create(
-            #     company=invoice.company,
-            #     user=user,
-            #     order=order,
-            #     invoice=invoice,
-            #     payment=payment,
-            #     mpesa_receipt=mpesa_code,
-            #     amount_paid=paid,
-            #     payment_type=payment.payment_type
-            # )
+                Receipt.objects.create(
+                    company=invoice.company,
+                    user=user,
+                    order=order,
+                    invoice=invoice,
+                    payment=payment,
+                    mpesa_receipt=mpesa_code,
+                    amount_paid=paid,
+                    payment_type=payment.payment_type
+                )
 
         # Send Notification
         Notification.objects.create(
