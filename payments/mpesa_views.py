@@ -10,7 +10,7 @@ from payments.models import Invoice, MpesaRequest, MpesaResponse, Payment, Recei
 from payments.serializers import MpesaRequestSerializer, MpesaResponseSerializer, StkPushSerializer
 from payments.mpesa_utils import initialize_stk_push
 from notifications.models import Notification
-
+from django.db import transaction
 logger = logging.getLogger(__name__)
 
 
@@ -89,7 +89,7 @@ def stk_push(request):
         status=status.HTTP_201_CREATED
     )
 
-
+ALLOWED_IPS = ["196.201.214.200", "196.201.214.206"]  
 @api_view(['POST'])
 def mpesa_callback(request):
     """
@@ -112,6 +112,10 @@ def mpesa_callback(request):
         - Multitenancy enforced via MpesaResponse -> Invoice -> Company
         - Uses Invoice.save() to auto-update status based on amount_paid
     """
+    company_id = request.GET.get("company_id")
+    ip = request.META.get('REMOTE_ADDR')
+    if ip not in ALLOWED_IPS:
+        return Response({"error": "Unauthorized"}, status=403)
     data = request.data
     stk_callback = data.get('Body', {}).get('stkCallback', {})
 
@@ -160,42 +164,46 @@ def mpesa_callback(request):
         mpesa_response.save()
 
         # Update invoice amounts
-        paid = amount_paid or mpesa_response.request.amount
+    paid = amount_paid or mpesa_response.request.amount
+
+    with transaction.atomic():
         if not Payment.objects.filter(mpesa_response=mpesa_response).exists():
             invoice.amount_paid += paid
-        if invoice.amount_paid >= invoice.deposit_amount:
-            invoice.deposit_paid = invoice.deposit_amount
-        invoice.balance_due = invoice.total_amount - invoice.amount_paid
-        invoice.save()  # Auto-updates status
-        payment_type = (
-            Payment.PAYMENT_TYPE_DEPOSIT
-            if mpesa_response.request.amount == invoice.deposit_amount
-            else Payment.PAYMENT_TYPE_BALANCE
-        )       
-        # Create Payment record
-        payment = Payment.objects.create(
-            company=invoice.company,
-            invoice=invoice,
-            amount=amount_paid or mpesa_response.request.amount,
-            payment_method=Payment.METHOD_MPESA,
-            payment_type=payment_type,
-            status=Payment.STATUS_COMPLETED,
-            mpesa_response=mpesa_response,
-            transaction_id=mpesa_code,
-            completed_at=timezone.now()
-        )
 
-        # Create Receipt
-        Receipt.objects.create(
-            company=invoice.company,
-            user=user,
-            order=order,
-            invoice=invoice,
-            payment=payment,
-            mpesa_receipt=mpesa_code,
-            amount_paid=amount_paid or mpesa_response.request.amount,
-            payment_type=payment.payment_type
-        )
+            if invoice.amount_paid >= invoice.deposit_amount:
+                invoice.deposit_paid = invoice.deposit_amount
+
+            invoice.balance_due = invoice.total_amount - invoice.amount_paid
+            #invoice.save()
+
+            payment_type = (
+                Payment.PAYMENT_TYPE_DEPOSIT
+                if mpesa_response.request.amount == invoice.deposit_amount
+                else Payment.PAYMENT_TYPE_BALANCE
+            )
+
+            # payment = Payment.objects.create(
+            #     company=invoice.company,
+            #     invoice=invoice,
+            #     amount=paid,
+            #     payment_method=Payment.METHOD_MPESA,
+            #     payment_type=payment_type,
+            #     status=Payment.STATUS_COMPLETED,
+            #     mpesa_response=mpesa_response,
+            #     transaction_id=mpesa_code,
+            #     completed_at=timezone.now()
+            # )
+
+            # Receipt.objects.create(
+            #     company=invoice.company,
+            #     user=user,
+            #     order=order,
+            #     invoice=invoice,
+            #     payment=payment,
+            #     mpesa_receipt=mpesa_code,
+            #     amount_paid=paid,
+            #     payment_type=payment.payment_type
+            # )
 
         # Send Notification
         Notification.objects.create(
