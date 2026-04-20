@@ -68,21 +68,43 @@ class Invoice(models.Model):
             date_part = timezone.now().strftime('%Y%m%d')
             random_part = ''.join(random.choices(string.digits, k=4))
             self.invoice_number = f"INV-{date_part}-{random_part}"
-        
+
         if self.order:
             self.subtotal = self.order.subtotal
             self.tax = self.order.tax
             self.delivery_fee = self.order.delivery_fee
             self.discount = self.order.discount
             self.total_amount = self.order.total_price
-            self.deposit_amount = (self.total_amount * self.deposit_percentage) / 100
-            self.balance_due = self.total_amount - self.amount_paid
-        
+
+        # compute deposit from total
+        self.deposit_amount = (self.total_amount * self.deposit_percentage) / 100
+
+        if self.pk:
+            total_paid = sum(p.amount for p in self.payments.filter(status='completed'))
+            deposit_paid = sum(
+                p.amount for p in self.payments.filter(
+                    status='completed',
+                    payment_type='deposit'
+                )
+            )
+        else:
+            total_paid = 0
+            deposit_paid = 0
+
+        self.amount_paid = total_paid
+        self.deposit_paid = deposit_paid
+        self.balance_due = self.total_amount - self.amount_paid
+
+        # STATUS LOGIC
         if self.amount_paid >= self.total_amount:
             self.status = self.STATUS_PAID
-        elif self.amount_paid >= self.deposit_amount and self.amount_paid < self.total_amount:
+        elif self.amount_paid >= self.deposit_amount:
             self.status = self.STATUS_PARTIAL
-        
+        elif self.amount_paid > 0:
+            self.status = self.STATUS_PENDING
+        else:
+            self.status = self.STATUS_DRAFT
+
         super().save(*args, **kwargs)
     
     @property
@@ -208,7 +230,7 @@ class Receipt(models.Model):
     receipt_number = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     mpesa_receipt = models.CharField(max_length=100, blank=True)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2)
-    payment_type = models.CharField(max_length=20)
+    payment_type = models.CharField(max_length=20,choices=Payment.PAYMENT_TYPE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
