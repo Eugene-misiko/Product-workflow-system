@@ -171,7 +171,7 @@ def generate_invoice_pdf(invoice):
     # Payment Instructions
     content.append(Paragraph("Payment Instructions:", heading_style))
     content.append(Paragraph(
-        f"A deposit of {invoice.deposit_percentage}% (${invoice.deposit_amount:.2f}) is required before work can begin. "
+        f"A deposit of {invoice.deposit_percentage}% (Ksh{invoice.deposit_amount:.2f}) is required before work can begin. "
         "Payment can be made via M-Pesa or bank transfer.",
         normal_style
     ))
