@@ -75,7 +75,13 @@ class AssignDesignerView(APIView):
     
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk, company=request.user.company)
-        
+
+        invoice = getattr(order, 'invoice', None)
+        if not invoice or not invoice.is_deposit_paid:
+            return Response(
+                {'error': 'Deposit must be paid before assigning a designer.'},
+                status=400
+            )        
         if not order.can_assign_designer:
             return Response({'error': 'Cannot assign designer to this order.'}, status=400)
         
