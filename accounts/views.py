@@ -404,7 +404,7 @@ class DeactivateUserView(APIView):
             }, status=status.HTTP_403_FORBIDDEN)
         
         user.is_active = False
-        user.delete()
+        user.save()
         
         return Response({'message': f'User {user.email} has been deactivated.'})
 
@@ -560,7 +560,7 @@ class CancelInvitationView(APIView):
             }, status=400)
 
         invitation.status = Invitation.STATUS_CANCELLED
-        invitation.delete()
+        invitation.save()
 
         return Response({'message': 'Invitation cancelled.'})
 
