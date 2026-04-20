@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.db.models import Sum
 from rest_framework.decorators import api_view, permission_classes
 import logging
-
+from django.http import HttpResponseForbidden
 from .models import Invoice, Payment, Receipt, MpesaRequest, MpesaResponse
 from .serializers import (
     InvoiceSerializer, PaymentSerializer, CreatePaymentSerializer, 
@@ -61,6 +61,7 @@ def download_invoice(request, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_invoice(request, pk):
+    """Send invoice to client via email."""
     invoice = get_object_or_404(
         Invoice,
         pk=pk,
@@ -77,6 +78,7 @@ def send_invoice(request, pk):
 # Pending Deposit Invoices
 # ----------------------------
 class PendingDepositInvoicesView(generics.ListAPIView):
+    """List invoices that are pending deposit payment."""
     permission_classes = [IsAuthenticated]
     serializer_class = InvoiceSerializer
 
@@ -91,6 +93,7 @@ class PendingDepositInvoicesView(generics.ListAPIView):
 # Pending Balance Invoices
 # ----------------------------
 class PendingBalanceInvoicesView(generics.ListAPIView):
+    """List invoices that have paid deposit but still have balance due."""
     permission_classes = [IsAuthenticated]
     serializer_class = InvoiceSerializer
 
@@ -105,6 +108,7 @@ class PendingBalanceInvoicesView(generics.ListAPIView):
 # Payment ViewSet (Read-only)
 # ----------------------------
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Payments for invoices."""
     permission_classes = [IsAuthenticated]
     serializer_class = PaymentSerializer
 
@@ -122,6 +126,7 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
 # Receipt ViewSet (Read-only)
 # ----------------------------
 class ReceiptViewSet(viewsets.ReadOnlyModelViewSet):
+    """Receipts for completed payments."""
     permission_classes = [IsAuthenticated]
     serializer_class = ReceiptSerializer
 
@@ -139,10 +144,11 @@ class ReceiptViewSet(viewsets.ReadOnlyModelViewSet):
 # Download Receipt PDF
 # ----------------------------
 def download_receipt(request, pk):
+    """Download receipt PDF."""
     receipt = get_object_or_404(Receipt, pk=pk, company=request.user.company)
 
     if request.user.role != 'admin' and receipt.user != request.user:
-        return HttpResponse('Unauthorized', status=401)
+        return HttpResponseForbidden('Unauthorized')
 
     return generate_receipt_pdf(receipt)
 
@@ -151,6 +157,7 @@ def download_receipt(request, pk):
 # Record Manual Payment (Admin only)
 # ----------------------------
 class RecordPaymentView(APIView):
+    """Manually record a payment for an invoice (Admin only)."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -159,13 +166,24 @@ class RecordPaymentView(APIView):
 
         serializer = CreatePaymentSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-
+       
         invoice = get_object_or_404(
             Invoice,
             id=serializer.validated_data['invoice_id'],
             company=request.user.company
         )
+        amount = serializer.validated_data['amount']
+        payment_type = serializer.validated_data['payment_type']
+        # prevent overpayment
+        if amount > invoice.balance_due:
+            return Response({'error': 'Payment amount exceeds remaining balance.'}, status=400)
 
+        # prevent paying balance before deposit
+        if payment_type == 'balance' and not invoice.is_deposit_paid:
+            return Response(
+                {"error": "Deposit must be paid before balance"},
+                status=400
+            )
         payment = Payment.objects.create(
             company=invoice.company,
             invoice=invoice,
@@ -178,18 +196,15 @@ class RecordPaymentView(APIView):
             recorded_by=request.user,
             completed_at=timezone.now()
         )
+        mpesa_receipt =payment.transaction_id if payment.payment_method == 'mpesa' else ''
 
-        # Update invoice amounts and status
+        # Update invoice payment info
         invoice.amount_paid += payment.amount
+
         if payment.payment_type == 'deposit':
             invoice.deposit_paid += payment.amount
-        invoice.balance_due = invoice.total_amount - invoice.amount_paid
-
-        if invoice.amount_paid >= invoice.total_amount:
-            invoice.status = 'paid'
-        elif invoice.amount_paid >= invoice.deposit_amount:
-            invoice.status = 'partial'
-        invoice.save()
+        # This will trigger the save() method to recalculate amounts and update status  
+        invoice.save()   
 
         # Create receipt
         receipt = Receipt.objects.create(
@@ -198,6 +213,7 @@ class RecordPaymentView(APIView):
             order=invoice.order,
             invoice=invoice,
             payment=payment,
+            mpesa_receipt=mpesa_receipt,
             amount_paid=payment.amount,
             payment_type=payment.payment_type
         )
