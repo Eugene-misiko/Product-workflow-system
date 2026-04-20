@@ -42,12 +42,12 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'order_number', 'user', 'user_name',
-            'assigned_designer', 'designer_name','design_file_url',
+            'assigned_designer', 'designer_name', 
             'assigned_printer', 'printer_name',
             'status', 'status_display', 'priority',
             'subtotal', 'tax', 'delivery_fee', 'discount', 'total_price',
             'needs_design', 'design_description',
-            'created_at', 'updated_at', 'items','design_file','design_file_url'
+            'created_at', 'updated_at', 'items','design_file_url'
         ]
         read_only_fields = ['id', 'order_number', 'subtotal', 'total_price', 'created_at', 'updated_at']
     def get_design_file_url(self, obj):
@@ -90,16 +90,14 @@ class CreateOrderSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        
-        order = Order.objects.create(**validated_data)
-        
-        for item_data in items_data:
-            OrderItem.objects.create(order=order, **item_data)
-            #added new outcome
         if validated_data.get('client_files') or validated_data.get('design_file'):
             validated_data['needs_design'] = False
         else:
-            validated_data['needs_design'] = True        
+            validated_data['needs_design'] = True           
+        order = Order.objects.create(**validated_data)
+        
+        for item_data in items_data:
+            OrderItem.objects.create(order=order, **item_data)      
         OrderStatusHistory.objects.create(
             order=order,
             old_status='',
