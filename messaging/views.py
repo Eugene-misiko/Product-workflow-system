@@ -11,14 +11,26 @@ from .serializers import (
     CreateMessageSerializer, StartConversationSerializer
 )
 # Create your views here.
-class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
+class ConversationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = ConversationSerializer
-    
+
     def get_queryset(self):
         return Conversation.objects.filter(
             participants=self.request.user
         ).order_by('-last_message_at')
+
+    def perform_destroy(self, instance):
+        # ensure user is part of conversation
+        if self.request.user not in instance.participants.all():
+            raise PermissionDenied("Not allowed")
+        instance.delete()
+
+    def perform_update(self, serializer):
+        conversation = self.get_object()
+        if self.request.user not in conversation.participants.all():
+            raise PermissionDenied("Not allowed")
+        serializer.save()
 
 
 class MessageViewSet(viewsets.ModelViewSet):

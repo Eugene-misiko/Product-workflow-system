@@ -10,7 +10,6 @@ app_name = 'messaging'
 
 urlpatterns = [
     path('', include(router.urls)),
-    
     path('start-conversation/', views.StartConversationView.as_view(), name='start_conversation'),
     path('conversations/<int:pk>/messages/', views.ConversationMessagesView.as_view(), name='conversation_messages'),
     path('conversations/<int:pk>/typing/', views.SetTypingStatusView.as_view(), name='set_typing'),
