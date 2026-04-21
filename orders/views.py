@@ -118,7 +118,7 @@ class AssignDesignerView(APIView):
         )
         
         return Response({'message': 'Designer assigned successfully.'
-        , 'order': OrderSerializer(order).data})
+        , 'order': OrderSerializer(order, context={'request': request}).data})
 
 class AssignPrinterView(APIView):
     """Assign printer to order (admin only)."""
@@ -127,7 +127,14 @@ class AssignPrinterView(APIView):
     
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk, company=request.user.company)
-        
+        invoice = getattr(order, 'invoice', None)
+        if not invoice or not invoice.is_deposit_paid:
+            return Response(
+                {'error': 'Deposit must be paid before assigning a printer.'},
+                status=400
+            )        
+        if not order.can_assign_printer:
+            return Response({'error': 'Cannot assign printer to this order.'}, status=400)        
         if order.needs_design:
             if order.status != Order.STATUS_APPROVED_FOR_PRINTING:
                 return Response({"error": "Order must be approved for printing first."}, status=400)
@@ -163,7 +170,7 @@ class AssignPrinterView(APIView):
         )
         
         return Response({'message': 'Printer assigned successfully.'
-        , 'order': OrderSerializer(order).data})
+        , 'order': OrderSerializer(order, context={'request': request}).data})
 
 class StartDesignView(APIView):
     """Designer starts working on an order."""
@@ -186,7 +193,7 @@ class StartDesignView(APIView):
         )
         
         return Response({'message': 'Design work started.',
-        'order': OrderSerializer(order).data})
+        'order': OrderSerializer(order, context={'request': request}).data})
 
 
 class SubmitDesignView(APIView):
@@ -293,7 +300,7 @@ class ApproveDesignView(APIView):
                     related_object_id=order.id
                 )
             
-            return Response({'message': 'Design rejected. Designer has been notified.', 'order': OrderSerializer(order).data})
+            return Response({'message': 'Design rejected. Designer has been notified.', 'order': OrderSerializer(order, context={'request': request}).data})
 
 
 class CancelOrderView(APIView):
@@ -320,7 +327,7 @@ class CancelOrderView(APIView):
             note=f'Order cancelled: {reason}'
         )
         
-        return Response({'message': 'Order cancelled.', 'order': OrderSerializer(order).data})
+        return Response({'message': 'Order cancelled.', 'order': OrderSerializer(order, context={'request': request}).data})
 
 
 class PrintJobViewSet(viewsets.ModelViewSet):
@@ -341,22 +348,18 @@ class PrintJobViewSet(viewsets.ModelViewSet):
 
 class StartPrintJobView(APIView):
     """Start printing."""
-    
     permission_classes = [IsAuthenticated]
-    
     def post(self, request, pk):
-        print_job = get_object_or_404(PrintJob, pk=pk, order__company=request.user.company)
+        print_job = get_object_or_404(PrintJob, order__id=pk, order__company=request.user.company)
         print_job.start()
-        return Response({'message': 'Printing started.'})
+        return Response({'message': 'Printing started.'}, status=200)
 
 
 class MoveToPolishingView(APIView):
     """Move to polishing phase."""
-    
     permission_classes = [IsAuthenticated]
-    
     def post(self, request, pk):
-        print_job = get_object_or_404(PrintJob, pk=pk, order__company=request.user.company)
+        print_job = get_object_or_404(PrintJob, order__id=pk, order__company=request.user.company)
         print_job.move_to_polishing()
         return Response({'message': 'Moved to polishing phase.'})
 
@@ -367,7 +370,7 @@ class CompletePrintJobView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, pk):
-        print_job = get_object_or_404(PrintJob, pk=pk, order__company=request.user.company)
+        print_job = get_object_or_404(PrintJob, order__id=pk, order__company=request.user.company)
         print_job.complete()
         
         Notification.objects.create(

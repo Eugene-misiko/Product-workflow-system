@@ -87,8 +87,11 @@ def initialize_stk_push(mpesa_request,company):
             'error': 'Failed to get access token',
             'details': 'Could not authenticate with Safaricom'
         }
-    
-    api_url = get_mpesa_url("mpesa/stkpush/v1/processrequest")
+        
+    if settings.MPESA_ENVIRONMENT == "production":
+        api_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+    else:
+        api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
     timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
     password = generate_password(company_settings.mpesa_shortcode,timestamp,settings.MPESA_PASSKEY)
     
