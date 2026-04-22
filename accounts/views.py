@@ -13,6 +13,7 @@ NO MANAGEMENT COMMANDS!
 """
 from rest_framework import status, generics
 from rest_framework.views import APIView
+from django.db import transaction
 from rest_framework.exceptions import PermissionDenied,ValidationError
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -202,11 +203,11 @@ class RegisterView(APIView):
 
         if not company:
             return Response(
-                {"error": "Invalid company context (missing subdomain or slug)"},
+                {"error": "Invalid company context missing "},
                 status=400
             )
 
-        serializer = RegisterUserSerializer(data=request.data)
+        serializer = RegisterUserSerializer(data=request.data,context={"company": company})
         serializer.is_valid(raise_exception=True)
 
         user = serializer.save()
@@ -264,60 +265,55 @@ class CompanyRegistrationView(generics.CreateAPIView):
             return Response({'error': 'This company already has an admin.'}, status=400)
 
         # CREATE COMPANY
-        company = Company.objects.create(
-            name=data['company_name'],
-            slug=invitation.company_slug,
-            email=data['company_email'],
-            phone=data['company_phone'],
-            address=data['company_address'],
-            city=data.get('company_city', ''),
-            country=data.get('company_country', 'Kenya'),
-        )
+        with transaction.atomic():
+            company = Company.objects.create(
+                name=data['company_name'],
+                slug=invitation.company_slug,
+                email=data['company_email'],
+                phone=data['company_phone'],
+                address=data['company_address'],
+                city=data.get('company_city', ''),
+                country=data.get('company_country', 'Kenya'),
+            )
 
-        CompanySettings.objects.create(company=company)
+            CompanySettings.objects.create(company=company)
 
-        #  CREATE ADMIN USER
-        admin = User.objects.create_user(
-            email=data['admin_email'],
-            password=data['admin_password'],
-            first_name=data['admin_first_name'],
-            last_name=data['admin_last_name'],
-            phone=data.get('admin_phone', ''),
-            role=User.ADMIN,
-            company=company,
-            email_verified=True,
-        )
+            #  CREATE ADMIN USER
+            admin = User.objects.create_user(
+                email=data['admin_email'],
+                password=data['admin_password'],
+                first_name=data['admin_first_name'],
+                last_name=data['admin_last_name'],
+                phone=data.get('admin_phone', ''),
+                role=User.ADMIN,
+                company=company,
+                email_verified=True,
+            )
 
-        #  LINK ADMIN TO COMPANY
-        company.admin = admin
-        company.save()
+            #  LINK ADMIN TO COMPANY
+            company.admin = admin
+            company.save()
 
-        UserProfile.objects.get_or_create(user=admin)
-
-        #  MARK INVITATION AS ACCEPTED (FIXED POSITION)
-        invitation.status = CompanyInvitation.STATUS_ACCEPTED
-        invitation.accepted_at = timezone.now()
-        invitation.save()
-
-        # GENERATE TOKENS
-        refresh = RefreshToken.for_user(admin)
-        invitation.status = CompanyInvitation.STATUS_ACCEPTED
-        invitation.accepted_at = timezone.now()
-        invitation.company = company
-        invitation.save()  
-        return Response({
-            'user': UserSerializer(admin).data,
-            'company': {
-                'id': company.id,
-                'name': company.name,
-                'slug': company.slug,
-            },
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            },
-            'message': f'Company "{company.name}" registered successfully!'
-        }, status=status.HTTP_201_CREATED)
+            UserProfile.objects.get_or_create(user=admin)
+            # GENERATE TOKENS
+            refresh = RefreshToken.for_user(admin)
+            invitation.status = CompanyInvitation.STATUS_ACCEPTED
+            invitation.accepted_at = timezone.now()
+            invitation.company = company
+            invitation.save()  
+            return Response({
+                'user': UserSerializer(admin).data,
+                'company': {
+                    'id': company.id,
+                    'name': company.name,
+                    'slug': company.slug,
+                },
+                'tokens': {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                },
+                'message': f'Company "{company.name}" registered successfully!'
+            }, status=status.HTTP_201_CREATED)
       
 
 

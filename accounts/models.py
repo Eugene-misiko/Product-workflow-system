@@ -51,7 +51,8 @@ class User(AbstractUser):
         on_delete=models.CASCADE,
         related_name='users',
         null=True,
-        blank=True
+        blank=True,
+        db_index=True,
     )
     is_staff = models.BooleanField(default=False)
     avatar = CloudinaryField('image', folder='profiles/', blank=True, null=True)

@@ -439,7 +439,6 @@ class InvitationDetailSerializer(serializers.ModelSerializer):
 User = get_user_model()
 
 class RegisterUserSerializer(serializers.ModelSerializer):
-    company_id = serializers.IntegerField(write_only=True)
     role = serializers.ChoiceField(choices=[User.CLIENT],default=User.CLIENT)
 
     class Meta:
@@ -450,19 +449,11 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "password",
-            "company_id",
             "role",
         ]
         extra_kwargs = {
             "password": {"write_only": True}
         }
-
-    def validate_company_id(self, value):
-        try:
-            company = Company.objects.get(id=value, is_active=True)
-        except Company.DoesNotExist:
-            raise serializers.ValidationError("Company does not exist")
-        return value
 
     def validate_role(self, value):
         
@@ -471,10 +462,10 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        company_id = validated_data.pop("company_id")
         role = validated_data.pop("role", User.CLIENT)
 
-        company = Company.objects.get(id=company_id)
+        # company is passed from view
+        company = self.context.get("company")
 
         user = User.objects.create_user(
             **validated_data,
