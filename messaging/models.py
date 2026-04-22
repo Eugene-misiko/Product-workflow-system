@@ -30,6 +30,7 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
     content = models.TextField()
+    company = models.ForeignKey('companies.Company', on_delete=models.CASCADE, related_name='messages',blank=True,null=True) 
     attachments = models.JSONField(default=list, blank=True)
     is_edited = models.BooleanField(default=False)
     edited_at = models.DateTimeField(null=True, blank=True)
@@ -43,3 +44,8 @@ class Message(models.Model):
     
     def __str__(self):
         return f"{self.sender.email}: {self.content[:50]}"
+
+    def save(self, *args, **kwargs):
+        if not self.company_id:
+            self.company = self.conversation.company
+        super().save(*args, **kwargs)

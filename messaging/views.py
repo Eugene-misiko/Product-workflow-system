@@ -17,7 +17,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Conversation.objects.filter(
-            participants=self.request.user
+            participants=self.request.user,
+             company=self.request.tenant
         ).order_by('-last_message_at')
 
     def perform_destroy(self, instance):
@@ -39,7 +40,8 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Message.objects.filter(
-            conversation__participants=self.request.user
+            conversation__participants=self.request.user,
+            company=self.request.tenant
         ).order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
@@ -55,7 +57,8 @@ class MessageViewSet(viewsets.ModelViewSet):
         msg = Message.objects.create(
             conversation=conversation,
             sender=request.user,
-            content=content
+            content=content,
+            company=request.tenant
         )
 
         # update conversation
@@ -75,9 +78,10 @@ class ConversationMessagesView(generics.ListAPIView):
         conversation = get_object_or_404(
             Conversation,
             pk=self.kwargs['pk'],
-            participants=self.request.user
+            participants=self.request.user,
+            company=self.request.tenant
         )
-        return Message.objects.filter(conversation=conversation).order_by('created_at')
+        return Message.objects.filter(conversation=conversation,company=self.request.tenant).order_by('created_at')
 class StartConversationView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
