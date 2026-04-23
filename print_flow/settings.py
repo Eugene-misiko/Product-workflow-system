@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'orders',
     'products',
+    'channels',
     'messaging',
     'payments',
     'notifications',
@@ -133,6 +134,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'print_flow.wsgi.application'
+ASGI_APPLICATION = 'print_flow.asgi.application'
+REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
