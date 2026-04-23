@@ -449,3 +449,25 @@ class UnassignedOrdersView(generics.ListAPIView):
             Q(needs_design=True, assigned_designer__isnull=True, status='pending') |
             Q(status='approved_for_printing', assigned_printer__isnull=True)
         ).order_by('-created_at')
+
+class MarkOutForDeliveryView(APIView):
+    """Mark transportation as out for delivery."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        transport = get_object_or_404(
+            Transportation,
+            pk=pk,
+            order__company=request.user.company
+        )
+
+        transport.status = Transportation.STATUS_IN_TRANSIT
+        transport.save()
+
+        transport.order.update_status(
+            Order.STATUS_OUT_FOR_DELIVERY,
+            user=request.user,
+            note="Order is out for delivery"
+        )
+
+        return Response({"message": "Marked as out for delivery"})
