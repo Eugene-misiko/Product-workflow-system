@@ -11,6 +11,8 @@ from payments.serializers import MpesaRequestSerializer, MpesaResponseSerializer
 from payments.mpesa_utils import initialize_stk_push
 from notifications.models import Notification
 from django.db import transaction
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 logger = logging.getLogger(__name__)
 
 
@@ -167,13 +169,6 @@ def mpesa_callback(request):
 
         with transaction.atomic():
             if not Payment.objects.filter(mpesa_response=mpesa_response).exists():
-                invoice.amount_paid += paid
-
-                if invoice.amount_paid >= invoice.deposit_amount:
-                    invoice.deposit_paid = invoice.deposit_amount
-
-                invoice.balance_due = invoice.total_amount - invoice.amount_paid
-                invoice.save()
 
                 payment_type = (
                     Payment.PAYMENT_TYPE_DEPOSIT
@@ -193,6 +188,27 @@ def mpesa_callback(request):
                     completed_at=timezone.now()
                 )
 
+                # SAVE INSIDE TRANSACTION
+                invoice.save()
+
+                def notify():
+                    channel_layer = get_channel_layer()
+                    group_name = f"payments_{invoice.company_id}"
+                    async_to_sync(channel_layer.group_send)(
+                        group_name,
+                        {
+                            "type": "send_notification",
+                            "data": {
+                                "type": "payment_update",
+                                "invoice_id": invoice.id,
+                                "status": invoice.status,
+                                "amount_paid": str(invoice.amount_paid),
+                            }
+                        }
+                    )
+
+                # TRIGGER AFTER COMMIT
+                transaction.on_commit(notify)
                 Receipt.objects.create(
                     company=invoice.company,
                     user=user,
@@ -203,17 +219,6 @@ def mpesa_callback(request):
                     amount_paid=paid,
                     payment_type=payment.payment_type
                 )
-
-        # Send Notification
-        Notification.objects.create(
-            company=invoice.company,
-            user=user,
-            notification_type=Notification.TYPE_PAYMENT,
-            title='Payment Successful',
-            message=f'Your payment of {amount_paid or mpesa_response.request.amount} for order {order.order_number} was successful. Receipt: {mpesa_code}',
-            related_object_type='order',
-            related_object_id=order.id
-        )
 
         logger.info(f"Payment successful: {mpesa_code}")
 

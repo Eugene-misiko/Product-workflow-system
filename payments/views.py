@@ -6,8 +6,12 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import HttpResponse
 from django.db.models import Sum
+from django.template.loader import render_to_string
 from rest_framework.decorators import api_view, permission_classes
 import logging
+from django.core.mail import EmailMultiAlternatives
+from django.core.mail import send_mail
+from django.conf import settings
 from django.http import HttpResponseForbidden
 from .models import Invoice, Payment, Receipt, MpesaRequest, MpesaResponse
 from .serializers import (
@@ -61,7 +65,6 @@ def download_invoice(request, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_invoice(request, pk):
-    """Send invoice to client via email."""
     invoice = get_object_or_404(
         Invoice,
         pk=pk,
@@ -71,7 +74,45 @@ def send_invoice(request, pk):
     if request.user.role != 'admin':
         return Response({'error': 'Only admin can send invoice'}, status=403)
 
-    return Response({'message': 'Invoice sent.'})
+    client = invoice.order.user
+
+    if not client.email:
+        return Response({'error': 'Client has no email'}, status=400)
+
+    # Payment link (adjust domain later)
+    payment_url = f"{settings.FRONTEND_URL}/payments?invoice={invoice.id}"
+
+    # HTML email
+    print("Rendering email template...")
+    html_content = render_to_string('emails/invoice.html', {
+        'name': client.get_full_name() or client.username,
+        'invoice_number': invoice.invoice_number,
+        'amount': invoice.total_amount,
+        'payment_url': payment_url,
+    })
+
+    # Email setup
+    email = EmailMultiAlternatives(
+        subject=f"Invoice {invoice.invoice_number}",
+        body="Please view this invoice in HTML format.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[client.email]
+    )
+
+    email.attach_alternative(html_content, "text/html")
+
+    # Attach YOUR PDF
+    pdf_response = generate_invoice_pdf(invoice)
+
+    email.attach(
+        f"Invoice_{invoice.invoice_number}.pdf",
+        pdf_response.content,  
+        'application/pdf'
+    )
+
+    email.send()
+
+    return Response({'message': 'Invoice sent with PDF + payment link.'})
 
 
 # ----------------------------
@@ -201,10 +242,10 @@ class RecordPaymentView(APIView):
         # Update invoice payment info
         invoice.amount_paid += payment.amount
 
-        if payment.payment_type == 'deposit':
-            invoice.deposit_paid += payment.amount
+        # if payment.payment_type == 'deposit':
+        #     invoice.deposit_paid += payment.amount
         # This will trigger the save() method to recalculate amounts and update status  
-        invoice.save()   
+        #invoice.save()   
 
         # Create receipt
         receipt = Receipt.objects.create(
