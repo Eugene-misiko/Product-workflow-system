@@ -471,3 +471,24 @@ class MarkOutForDeliveryView(APIView):
         )
 
         return Response({"message": "Marked as out for delivery"})
+class MarkDeliveredView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        transport = get_object_or_404(
+            Transportation,
+            pk=pk,
+            order__company=request.user.company
+        )
+
+        transport.status = Transportation.STATUS_DELIVERED
+        transport.actual_delivery_time = timezone.now()
+        transport.save()
+
+        transport.order.update_status(
+            Order.STATUS_COMPLETED,
+            user=request.user,
+            note="Order delivered"
+        )
+
+        return Response({"message": "Order delivered successfully"})        
