@@ -1,5 +1,6 @@
 from rest_framework import status, generics, viewsets
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -12,7 +13,7 @@ from .serializers import (
     OrderSerializer, OrderDetailSerializer, CreateOrderSerializer,
     AssignDesignerSerializer, AssignPrinterSerializer,
     SubmitDesignSerializer, ApproveDesignSerializer,
-    PrintJobSerializer, TransportationSerializer
+    PrintJobSerializer, TransportationSerializer,CreateTransportationSerializer
 )
 from accounts.models import User
 from notifications.models import Notification
@@ -372,6 +373,7 @@ class CompletePrintJobView(APIView):
     def post(self, request, pk):
         print_job = get_object_or_404(PrintJob, order__id=pk, order__company=request.user.company)
         print_job.complete()
+        Transportation.objects.get_or_create(order=print_job.order)
         
         Notification.objects.create(
             company=print_job.order.company,
@@ -386,20 +388,19 @@ class CompletePrintJobView(APIView):
         return Response({'message': 'Print job completed.'})
 
 
-class TransportationViewSet(viewsets.ModelViewSet):
-    """Transportation/Delivery management."""
-    
-    permission_classes = [IsAuthenticated]
+class TransportationViewSet(ModelViewSet):
+    queryset = Transportation.objects.all()
     serializer_class = TransportationSerializer
-    
-    def get_queryset(self):
-        user = self.request.user
-        queryset = Transportation.objects.filter(order__company=user.company)
-        
-        if user.role == User.CLIENT:
-            queryset = queryset.filter(order__user=user)
-        
-        return queryset.order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        if Transportation.objects.filter(order_id=request.data.get("order_id")).exists():
+            return Response({"detail": "Already exists"}, status=400)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
 
 
 # Dashboard Views
@@ -491,4 +492,5 @@ class MarkDeliveredView(APIView):
             note="Order delivered"
         )
 
-        return Response({"message": "Order delivered successfully"})        
+        return Response({"message": "Order delivered successfully"}) 
+            

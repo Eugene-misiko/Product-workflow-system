@@ -30,5 +30,10 @@ urlpatterns = [
     path('my-assignments/', views.DesignerAssignmentListView.as_view(), name='my_assignments'),
     path('my-print-jobs/', views.PrinterJobListView.as_view(), name='my_print_jobs'),
     path('unassigned/', views.UnassignedOrdersView.as_view(), name='unassigned_orders'),
+
+    # Transportation actions
+    path('transportation/<int:pk>/out-for-delivery/', views.MarkOutForDeliveryView.as_view(),name='out_for_delivery'),
+    path('transportation/<int:pk>/delivered/',views.MarkDeliveredView.as_view(),name='mark_delivered'),
+
 ]
 

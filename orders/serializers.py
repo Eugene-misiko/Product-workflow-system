@@ -143,20 +143,27 @@ class PrintJobSerializer(serializers.ModelSerializer):
 
 class TransportationSerializer(serializers.ModelSerializer):
     order_number = serializers.CharField(source='order.order_number', read_only=True)
-    
+    order_id = serializers.PrimaryKeyRelatedField(
+        queryset=Order.objects.all(),
+        source='order',
+        write_only=True
+    )
+
     class Meta:
         model = Transportation
         fields = [
-            'id', 'order', 'order_number',
+            'id', 'order', 'order_id', 'order_number',
             'transport_type', 'status',
-            'delivery_address', 'delivery_city', 'delivery_phone', 'delivery_instructions',
+            'delivery_address', 'delivery_city', 'delivery_phone',
+            'delivery_instructions',
             'pickup_location', 'pickup_scheduled_time',
-            'delivery_scheduled_time', 'estimated_arrival', 'actual_delivery_time',
-            'tracking_number', 'tracking_url', 'driver_name', 'driver_phone',
-            'delivery_fee', 'notes',
+            'delivery_scheduled_time', 'estimated_arrival',
+            'actual_delivery_time',
+            'tracking_number', 'tracking_url', 'driver_name',
+            'driver_phone', 'delivery_fee', 'notes',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'order']
 
 
 class CreateTransportationSerializer(serializers.ModelSerializer):
