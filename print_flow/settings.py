@@ -34,10 +34,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [
-    ".printflow.com",
-    "printflow.com",
-]
+ALLOWED_HOSTS = [host for host in os.getenv("ALLOWED_HOSTS", "").split(",") if host]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-company-slug",
 ]
