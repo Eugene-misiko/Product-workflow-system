@@ -34,7 +34,10 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    ".printflow.com",
+    "printflow.com",
+]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-company-slug",
 ]
