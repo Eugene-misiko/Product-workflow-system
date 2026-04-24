@@ -14,4 +14,4 @@ def build_invitation_url(invitation):
         return f"http://localhost:5173/accept-invitation/{invitation.token}"
 
     #PRODUCTION (SUBDOMAIN)
-    return f"https://{company.slug}.printflow.com/accept-invitation/{invitation.token}" 
+    return f"https://{company.slug}/accept-invitation/{invitation.token}" 
