@@ -21,7 +21,7 @@ from .serializers import (
     CompanySerializer, CompanyDetailSerializer,
 
     CompanySettingsSerializer, CompanyUpdateSerializer,
-    DashboardStatsSerializer
+    DashboardStatsSerializer,CompanyInvitationSerializer
 )
 from accounts.models import User
 
@@ -160,74 +160,179 @@ class StaffStatsView(APIView):
         })
 class CompanyInvitationCreateView(APIView):
     """
-        invitation view create by platform admin
+    Platform-admin-only endpoint to create and email a company-setup
+    invitation.
+    Request body:
+        email        (str) recipient's email address
+        company_name (str) the company the admin will register
+        message      (str, optional) a personal note in the invite email
+    Behaviour:
+        1. Validates that the caller is a platform_admin.
+        2. Creates a CompanyInvitation record (token auto-generated on the
+           model) that expires in 7 days.
+        3. Builds an environment-aware registration URL:
+              DEBUG  → http://localhost:5173/platform/register-company/?token=…
+              PROD   https://<slug>.printflow.com/platform/register-company/?token=…
+        4. Sends the invitation email.  If sending fails the invitation row
+           is deleted so the DB stays consistent, and a 500 is returned.
+    Returns 200 {"message": "Invitation sent", "id": <int>, "token": <str>}
+    on success so the frontend can optimistically add the record to state.
     """
     permission_classes = [IsAuthenticated]
-
+ 
     def post(self, request):
         if request.user.role != "platform_admin":
-            return Response({'error': 'Only platform admin allowed'}, status=403)
-
-        email = request.data.get('email')
-        company_name = request.data.get('company_name')
-        slug = company_name.lower().replace(" ", "-")
+            return Response(
+                {"error": "Only platform admins can send invitations."},
+                status=403,
+            )
+ 
+        email = request.data.get("email", "").strip()
+        company_name = request.data.get("company_name", "").strip()
+ 
+        if not email:
+            return Response({"error": "email is required."}, status=400)
+        if not company_name:
+            return Response({"error": "company_name is required."}, status=400)
+ 
+        # Normalise the slug the same way the frontend does
+        slug = (
+            company_name.lower()
+            .strip()
+            .replace(" ", "-")
+        )
+        # Remove any characters that are not alphanumeric or hyphens
+        import re
+        slug = re.sub(r"[^a-z0-9-]+", "", slug)
+        slug = slug.strip("-")
+ 
         invitation = CompanyInvitation.objects.create(
             email=email,
             company_name=company_name,
             company_slug=slug,
             message=request.data.get("message", ""),
             invited_by=request.user,
-            expires_at=timezone.now() + timezone.timedelta(days=7)
+            expires_at=timezone.now() + timezone.timedelta(days=7),
         )
-
+ 
+        token = str(invitation.token)
+ 
         if settings.DEBUG:
-            invite_url = f"http://{invitation.company_slug}.localhost:5173/register?token={invitation.token}"
+            invite_url = (
+                f"http://localhost:5173/platform/register-company/"
+                f"?token={token}&company={slug}"
+            )
         else:
-            invite_url = f"https://{invitation.company_slug}.printflow.com/register?token={invitation.token}"
-
+            invite_url = (
+                f"https://{slug}.printflow.com/platform/register-company/"
+                f"?token={token}"
+            )
+ 
         try:
             send_mail(
-                subject='Company Invitation',
-                message=f"Register your company here: {invite_url}",
+                subject="You're invited to set up your company on PrintFlow",
+                message=(
+                    f"Hello,\n\n"
+                    f"{request.user.get_full_name()} has invited you to register "
+                    f"your company ({company_name}) on PrintFlow.\n\n"
+                    f"Click the link below to get started (expires in 7 days):\n"
+                    f"{invite_url}\n\n"
+                    f"{'Message: ' + invitation.message if invitation.message else ''}"
+                ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
                 fail_silently=False,
             )
-        except Exception as e:
+        except Exception as exc:
             invitation.delete()
-            return Response({'error': str(e)}, status=500)
-
-        return Response({'message': 'Invitation sent'})
-
-class CompanyInvitationDetailView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, token):
-        invitation = get_object_or_404(
-            CompanyInvitation,
-            token=token,
-            status=CompanyInvitation.STATUS_PENDING
+            return Response({"error": str(exc)}, status=500)
+ 
+        serializer = CompanyInvitationSerializer(invitation)
+        return Response(
+            {"message": "Invitation sent", **serializer.data},
+            status=201,
         )
-
-        if invitation.expires_at < timezone.now():
-            return Response({"error": "Expired"}, status=400)
-
+ 
+ 
+class CompanyInvitationListView(APIView):
+    """
+    Returns all company invitations (platform-admin only).
+    Ordered by most-recently created first.
+    """
+    permission_classes = [IsAuthenticated]
+ 
+    def get(self, request):
+        if request.user.role != "platform_admin":
+            return Response(
+                {"error": "Only platform admins can view invitations."},
+                status=403,
+            )
+ 
+        invitations = CompanyInvitation.objects.all().order_by("-created_at")
+        serializer = CompanyInvitationSerializer(invitations, many=True)
+        return Response(serializer.data)
+ 
+ 
+class CompanyInvitationDetailView(APIView):
+    """
+ 
+    Public endpoint used during the registration flow to validate an
+    invitation token before the new admin fills in their details.
+ 
+    Returns 400 if the invitation is expired or has already been used/
+    cancelled.  Returns the company pre-fill data on success so the
+    Register page can lock those fields.
+    """
+    permission_classes = [AllowAny]
+ 
+    def get(self, request, token):
+        invitation = get_object_or_404(CompanyInvitation, token=token)
+ 
+        if invitation.expires_at and invitation.expires_at < timezone.now():
+            return Response({"error": "This invitation has expired."}, status=400)
+ 
+        if invitation.status != "pending":
+            return Response(
+                {"error": "This invitation has already been used or cancelled."},
+                status=400,
+            )
+ 
         return Response({
             "email": invitation.email,
             "company_name": invitation.company_name,
-            "is_valid": True
-        }) 
-
+            "company_slug": invitation.company_slug,
+            "is_valid": True,
+        })
+ 
+ 
 class CompanyInvitationCancelView(APIView):
+    """
+
+    Platform-admin-only endpoint to cancel a pending invitation by its
+    token (string).  Using the token (not the PK) keeps the frontend
+    consistent — it stores and references invitations by token.
+ 
+    Returns 200 {"message": "Invitation cancelled"} on success.
+    Returns 400 if the invitation is not in a cancellable state.
+    """
     permission_classes = [IsAuthenticated]
-
-    def post(self, request, pk):
+ 
+    def post(self, request, token):
         if request.user.role != "platform_admin":
-            return Response({'error': 'Only platform admin allowed'}, status=403)
-
-        invitation = get_object_or_404(CompanyInvitation, id=pk)
-
+            return Response(
+                {"error": "Only platform admins can cancel invitations."},
+                status=403,
+            )
+ 
+        invitation = get_object_or_404(CompanyInvitation, token=token)
+ 
+        if invitation.status != "pending":
+            return Response(
+                {"error": "Only pending invitations can be cancelled."},
+                status=400,
+            )
+ 
         invitation.status = CompanyInvitation.STATUS_CANCELLED
-        invitation.save()
-
-        return Response({'message': 'Invitation cancelled'})        
+        invitation.save(update_fields=["status"])
+ 
+        return Response({"message": "Invitation cancelled", "token": str(token)})
