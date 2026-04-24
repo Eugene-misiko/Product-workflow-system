@@ -34,7 +34,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [host for host in os.getenv("ALLOWED_HOSTS", "").split(",") if host]
+ALLOWED_HOSTS = ['*']
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-company-slug",
 ]
