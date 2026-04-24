@@ -224,7 +224,7 @@ class CompanyInvitationCreateView(APIView):
             )
         else:
             invite_url = (
-                f"https://{slug}.printflow.com/platform/register-company/"
+                f"https://printflow.vercel.app/{slug}/platform/register-company"
                 f"?token={token}"
             )
  
