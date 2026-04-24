@@ -1,31 +1,56 @@
 import json
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 
+logger = logging.getLogger(__name__)
+
 class NotificationConsumer(AsyncWebsocketConsumer):
-
     async def connect(self):
-        user = self.scope.get("user")
+        self.user = self.scope.get("user")
 
-        if not user or user.is_anonymous:
+         #Check if user exists and is authenticated
+        if not self.user or self.user.is_anonymous:
+            logger.warning("WebSocket connection rejected: Anonymous User")
             await self.close()
             return
 
-        self.group_name = f"payments_{user.company_id}"
+        #Get company_id (with fallback to avoid crashes)
+        company_id = getattr(self.user, "company_id", None)
+        
+        if not company_id:
+            logger.warning(f"WebSocket rejected: User {self.user.id} has no company_id")
+            await self.close()
+            return
 
-        await self.channel_layer.group_add(
-            self.group_name,
-            self.channel_name
-        )
+        self.group_name = f"payments_{company_id}"
 
-        await self.accept()
-
-    async def disconnect(self, close_code):
-        group = getattr(self, "group_name", None)
-        if group:
-            await self.channel_layer.group_discard(
-                group,
+        # Join the group
+        try:
+            await self.channel_layer.group_add(
+                self.group_name,
                 self.channel_name
             )
+            await self.accept()
+            logger.info(f"WebSocket connected: User {self.user.id} joined {self.group_name}")
+            
+        except Exception as e:
+            logger.error(f"Failed to join group: {str(e)}")
+            await self.close()
+
+    async def disconnect(self, close_code):
+        if hasattr(self, "group_name"):
+            await self.channel_layer.group_discard(
+                self.group_name,
+                self.channel_name
+            )
+            logger.info(f"WebSocket disconnected: {self.group_name}")
 
     async def send_notification(self, event):
-        await self.send(text_data=json.dumps(event["data"]))
+        """
+        Expects event['data'] to be a dictionary.
+        This matches your React frontend JSON.parse logic.
+        """
+        try:
+            await self.send(text_data=json.dumps(event["data"]))
+        except Exception as e:
+            logger.error(f"Error sending WebSocket message: {e}")
