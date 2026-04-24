@@ -140,11 +140,10 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [REDIS_URL],
+            "hosts": [os.environ.get("REDIS_URL")],
         },
     },
 }
-
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -220,6 +219,14 @@ CLOUDINARY_STORAGE = {
     "API_KEY": config("CLOUDINARY_API_KEY"),
     "API_SECRET": config("CLOUDINARY_API_SECRET"),
 }
+# Initialize the Cloudinary library globally
+cloudinary.config(
+    cloud_name=config("CLOUDINARY_CLOUD_NAME"),
+    api_key=config("CLOUDINARY_API_KEY"),
+    api_secret=config("CLOUDINARY_API_SECRET"),
+    secure=True
+)
+
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -274,7 +281,9 @@ MPESA_EXPRESS_SHORTCODE = config('MPESA_EXPRESS_SHORTCODE')
 LNM_PHONE_NUMBER = config('LNM_PHONE_NUMBER')
 
 #Logging Configuration
-
+# Allow IP check bypass when running behind ngrok in development.
+# Set MPESA_DEV_MODE=False in production.
+MPESA_DEV_MODE = config('MPESA_DEV_MODE', default=False, cast=bool)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

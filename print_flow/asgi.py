@@ -13,13 +13,6 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
 # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'print_flow.settings')
 
 # application = get_asgi_application()
-import os
-import django
-from channels.routing import ProtocolTypeRouter, URLRouter
-from django.core.asgi import get_asgi_application
-from channels.auth import AuthMiddlewareStack
-import notifications.routing  # we will create this
-
 # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'print_flow.settings')
 # django.setup()
 
@@ -32,12 +25,25 @@ import notifications.routing  # we will create this
 #         )
 #     ),
 # })
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
+import os
+import django
+from django.core.asgi import get_asgi_application
 
-    "websocket": AuthMiddlewareStack(
-        URLRouter(
-            notifications.routing.websocket_urlpatterns
-        )
+# A. Set settings
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'print_flow.settings')
+
+# B. Start Django HTTP (This MUST happen first)
+django_asgi_app = get_asgi_application()
+
+# C. Import Channels stuff ONLY AFTER B is done
+from channels.routing import ProtocolTypeRouter, URLRouter
+from print_flow.middleware import JWTAuthMiddleware
+import notifications.routing
+
+application = ProtocolTypeRouter({
+    "http": django_asgi_app,
+    "websocket": JWTAuthMiddleware(
+        URLRouter(notifications.routing.websocket_urlpatterns)
     ),
 })
+

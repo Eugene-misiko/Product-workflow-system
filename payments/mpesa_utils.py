@@ -113,6 +113,7 @@ def initialize_stk_push(mpesa_request,company):
         "AccountReference": mpesa_request.account_reference or "PrintFlow Payment",
         "TransactionDesc": mpesa_request.transaction_desc or "Printing Order Payment"
     }
+    print("🚨 CALLBACK URL BEING SENT:", payload["CallBackURL"])
     
     logger.info(f"STK Push Request: Phone={phone}, Amount={mpesa_request.amount}")
     
@@ -150,7 +151,7 @@ def query_stk_status(checkout_request_id, company):
     
     api_url = get_mpesa_url("mpesa/stkpushquery/v1/query")
     timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
-    password = generate_password(company.mpesa_shortcode, timestamp)
+    password = generate_password(company.mpesa_shortcode, timestamp, settings.MPESA_PASSKEY)
     
     headers = {
         "Authorization": f"Bearer {access_token}",
