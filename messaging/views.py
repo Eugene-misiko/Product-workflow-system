@@ -18,7 +18,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Conversation.objects.filter(
             participants=self.request.user,
-             company=self.request.company
+             company=self.request.user.company
         ).order_by('-last_message_at')
 
     def perform_destroy(self, instance):
