@@ -124,41 +124,46 @@ class PasswordResetRequestView(APIView):
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         email = serializer.validated_data['email']
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({
-                "message": "If this email exists, a reset link has been sent."
-            })
+            return Response({"message": "If this email exists, a reset link has been sent."})
+
         PasswordResetToken.objects.filter(user=user, used=False).delete()    
-        #create new token
         reset_token = PasswordResetToken.objects.create(user=user)
 
-        reset_url = f"{settings.FRONTEND_URL}/reset-password/{reset_token.token}"
+
+        base_url = settings.FRONTEND_URL.rstrip('/')
+        full_reset_url = f"{base_url}/reset-password/{reset_token.token}"
+        
+        print(f"DEBUG: Full link being sent -> {full_reset_url}")
+
         company_name = user.company.name if user.company else "PrintFlow"
+
+        # Clean up the message string to ensure the link is on its own clear line
+        email_message = (
+            f"Hello {user.get_full_name()},\n\n"
+            f"You requested to reset your password. Click the link below to proceed:\n\n"
+            f"{full_reset_url}\n\n"
+            f"This link expires in 24 hours. If you did not request this, please ignore this email.\n\n"
+            f"Best regards,\n{company_name}"
+        )
 
         try:
             send_mail(
                 subject=f'Password Reset - {company_name}',
-                message=f'''Hello {user.get_full_name()}, You requested to reset your password. Click the following link:{reset_url} This link expires in 24 hours.
-                If you did not request this, ignore this email.
-                Best regards, {company_name}
-                ''',
+                message=email_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
                 fail_silently=False,
             )
         except Exception as e:
-            return Response({
-                "error": f"Email failed: {str(e)}"
-            }, status=500)
+            return Response({"error": f"Email failed: {str(e)}"}, status=500)
 
-        return Response({
-            'message': 'Password reset email sent. Please check your inbox.'
-        })
+        return Response({'message': 'Password reset email sent. Please check your inbox.'})
+
 
 
 class PasswordResetConfirmView(APIView):

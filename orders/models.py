@@ -156,7 +156,11 @@ class Order(models.Model):
     @property
     def can_start_printing(self):
         return self.status in [self.STATUS_APPROVED_FOR_PRINTING, self.STATUS_PRINTING_QUEUED]
-    
+    @property
+    def can_assign_printer(self):
+        if self.needs_design:
+            return self.status == self.STATUS_APPROVED_FOR_PRINTING
+        return self.status == self.STATUS_PENDING    
     def update_status(self, new_status, user=None, note=''):
         """Update order status and create history record."""
         old_status = self.status

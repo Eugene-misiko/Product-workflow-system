@@ -23,8 +23,9 @@ import cloudinary
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
+# frontend url
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:5173").rstrip('/')
+print(f"--- LOADING FRONTEND_URL: {FRONTEND_URL} ---")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -81,7 +82,6 @@ MIDDLEWARE = [
     
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-FRONTEND_URL = config("FRONTEND_URL")
 # CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS").split(",")
 # CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS").split(",")
 CORS_ALLOW_CREDENTIALS=True

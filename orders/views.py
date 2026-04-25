@@ -129,11 +129,6 @@ class AssignPrinterView(APIView):
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk, company=request.user.company)
         invoice = getattr(order, 'invoice', None)
-        if not invoice or not invoice.is_deposit_paid:
-            return Response(
-                {'error': 'Deposit must be paid before assigning a printer.'},
-                status=400
-            )        
         if not order.can_assign_printer:
             return Response({'error': 'Cannot assign printer to this order.'}, status=400)        
         if order.needs_design:
